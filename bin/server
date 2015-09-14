@@ -1,0 +1,6 @@
+#!/usr/bin/env PYTHONPATH=. python 
+from web.app import app
+from stock import Exchange
+
+Exchange.run_in_thread()
+app.run(use_reloader=False)

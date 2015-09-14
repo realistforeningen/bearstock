@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://necolas.github.io/normalize.css/3.0.2/normalize.css">
+
+  {% assets "css" %}
+  <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+  
+  {% assets "buy" %}
+    <script src="{{ ASSET_URL }}"></script>
+  {% endassets %}
+  <title>BearStock</title>
+</head>
+<body>
+  <script>startApp()</script>
+</body>
+</html>
+

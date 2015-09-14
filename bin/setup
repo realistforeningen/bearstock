@@ -1,0 +1,17 @@
+#!/usr/bin/env PYTHONPATH=. python 
+from stock import Database
+
+db = Database.default()
+
+# Ensure schema exists
+for statement in open('schema.sql').read().split(';'):
+	db.e(statement)
+
+# Ensure the prices
+db.ensure_prices()
+
+# Ensure products are in
+from products import products
+db.import_products(products)
+
+

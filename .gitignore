@@ -1,0 +1,6 @@
+/env
+/node_modules
+*.pyc
+.webassets-cache
+assets
+/app.db
