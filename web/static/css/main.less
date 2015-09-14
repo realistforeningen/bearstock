@@ -9,6 +9,8 @@ body {
   background: #ecf0f1;
 
   font-family: 'Karla', sans-serif;
+
+  font-size: 20px;
 }
 
 .grow {
@@ -19,7 +21,7 @@ button {
   outline: 0;
 }
 
-._app .header {
+._app > .header {
   background: #c0392b;
   padding: 0.5em 1em;
   color: #ecf0f1;
@@ -41,7 +43,24 @@ button {
   background: #e74c3c;
 }
 
-._app .trader {
+.trader {
+  font-size: 42px;
+  .flex-display;
+  .flex-direction(column);
+  .align-items(center);
+
+  & > .header {
+    margin: 16px 0 0;
+  }
+
+  ._key-pad {
+
+    & > .label {
+      font-size: 1.5em;
+    }
+
+  }
+  
 }
 
 ._product-list {

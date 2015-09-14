@@ -8,6 +8,11 @@ def window.startApp
 
 let tojson = do |data| data.json
 
+extend class ElementTag
+	def commit
+		render
+		self
+
 tag app
 	prop priceId
 	prop buyer
@@ -70,7 +75,7 @@ tag app
 							<order-list orders=orders>
 				else
 					<.trader>
-						<div> "Enter trader code"
+						<.header> "Enter trader code"
 						<key-pad@pad :go="login">
 
 	def addProductToOrder product
@@ -96,9 +101,6 @@ tag app
 tag product-list
 	prop products
 	prop disabled
-
-	def commit
-		render
 
 	def render
 		if !products
@@ -145,12 +147,37 @@ tag order-list
 		evt.cancel
 		mainApp.removeOrder idx
 
+tag blinker < span
+	prop interval
+	prop visible, default: true
+	prop timeout
+
+	def setVisibleTimeout
+		if timeout
+			return
+
+		timeout = setTimeout(&, interval * 1000) do
+			timeout = null
+			visible = !visible
+			render
+			setVisibleTimeout
+
+	def build
+		setVisibleTimeout
+		super
+
+	def render
+		if visible
+			css 'visibility', 'visible'
+		else
+			css 'visibility', 'hidden'
+
 tag key-pad
 	def render
 		<self>
 			<div.label>
 				<span.num> @number
-				<span.cursor> "_"
+				<blinker.cursor interval=0.5> "_"
 			<.pad>
 				for i in [1 .. 9]
 					<button .number :tap=["press", i]> i
