@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "imba": "^0.12.1",
+    "imba": "^0.13.0",
     "less": "^2.5.1",
     "whatwg-fetch": "^0.9.0"
   }
