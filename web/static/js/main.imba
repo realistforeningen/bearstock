@@ -180,7 +180,7 @@ tag key-pad
 				<blinker.cursor interval=0.5> "_"
 			<.pad>
 				for i in [1 .. 9]
-					<button .number :tap=["press", i]> i
+					<button@{i} .number :tap=["press", i]> i
 				<button .number :tap="clear"> "X"
 				<button .number :tap=["press", 0]> "0"
 				if @number
