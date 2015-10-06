@@ -4,11 +4,13 @@ body {
   cursor: default;
   background: #fff;
 
-  box-sizing: border-box;
-
   font-family: 'Karla', sans-serif;
 
   font-size: 20px;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 div {
