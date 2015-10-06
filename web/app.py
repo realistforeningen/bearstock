@@ -7,31 +7,6 @@ npm.register()
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['ASSETS_DEBUG'] = True
-
-assets = Environment(app)
-
-css = Bundle(
-    'css/main.less',
-    filters='less',
-    output='assets/style.css'
-)
-
-libs = Bundle(
-    npm.resolve('whatwg-fetch'),
-    npm.resolve('imba/lib/browser/imba'),
-    filters='nodebug',
-    output='assets/libs.js'
-)
-
-core = Bundle(
-    'js/main.imba',
-    filters='imba',
-    output='assets/core.js'
-)
-
-assets.register('buy', libs, core, output='assets/buy.js')
-assets.register('css', css)
 
 @app.before_request
 def before_request():

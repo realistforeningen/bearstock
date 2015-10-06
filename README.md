@@ -24,6 +24,12 @@ Set up the database:
 $ bin/setup
 ```
 
+Build the JavaScript:
+
+```
+$ (cd web; webpack)
+```
+
 Run the server:
 
 ```
@@ -38,7 +44,6 @@ Visit <http://localhost:5000/>.
 stock.py          -  Database and stock logic
 web/app.py        -  Flask app responsible for the web front end
 web/js/main.imba  -  User interface for buying beers
-web/css           -  Styling
 
 schema.sql        -  Schema for the database
 products.py       -  Products for sale. Used by bin/setup.

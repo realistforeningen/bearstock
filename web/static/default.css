@@ -1,0 +1,10 @@
+body {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  background: #ecf0f1;
+
+  font-family: 'Karla', sans-serif;
+
+  font-size: 20px;
+}

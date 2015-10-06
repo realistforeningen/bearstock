@@ -1,7 +1,10 @@
 {
   "dependencies": {
     "imba": "^0.13.0",
+    "imba-loader": "^1.0.1",
+    "imba-styles": "git://github.com/judofyr/imba-styles.git#e58a9b976c41fb0322d591d22f298412f175496b",
     "less": "^2.5.1",
+    "webpack": "^1.12.2",
     "whatwg-fetch": "^0.9.0"
   }
 }
