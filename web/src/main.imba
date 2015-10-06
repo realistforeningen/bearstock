@@ -256,14 +256,14 @@ tag scroll-hint
 		height: spacing
 		width: '100%'
 		zIndex: 1000
-		background: 'linear-gradient(to bottom, white, rgba(255,255,255,0)'
+		background: 'linear-gradient(to bottom, white, rgba(255,255,255,0))'
 
 	let bottomGradient = styles.css
 		position: 'absolute'
 		bottom: 0
 		height: spacing
 		width: '100%'
-		background: 'linear-gradient(to top, white, rgba(255,255,255,0)'
+		background: 'linear-gradient(to top, white, rgba(255,255,255,0))'
 		zIndex: 1000
 
 	let scrollerStyles = styles.css
@@ -274,8 +274,10 @@ tag scroll-hint
 
 	let contentStyles = styles.css
 		flexDirection: 'inherit'
+		flex: '0 0 auto'
 
 	let lineText = styles.css
+		flex: '0 0 auto'
 		fontSize: '0.5em'
 		color: '#ccc'
 		textTransform: 'uppercase'
