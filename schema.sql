@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS products (
   base_price INTEGER NOT NULL,
 
   -- How many we have *before* any orders
-  quantity INTEGER NOT NULL
+  quantity INTEGER NOT NULL,
+
+  tags TEXT NOT NULL
 );
 
 -- This contains the full prices at a single point in time.

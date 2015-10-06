@@ -28,8 +28,9 @@ class Database:
         for product in products:
             with self.conn:
                 self.e('DELETE FROM products WHERE code = ?', (product['code'],))
-                values = (product["code"], product["name"], product["base_price"])
-                self.e('INSERT INTO products (code, name, base_price, quantity) VALUES (?, ?, ?, 0)', values)
+                tags = "|".join(product["tags"])
+                values = (product["code"], product["name"], product["base_price"], tags)
+                self.e('INSERT INTO products (code, name, base_price, quantity, tags) VALUES (?, ?, ?, 0, ?)', values)
 
     def ensure_prices(self):
         with self.conn:
@@ -65,6 +66,7 @@ class Database:
                     "code": code,
                     "name": product["name"],
                     "price": product["base_price"] + prices.get(code, 0),
+                    "tags": product["tags"].split("|")
                 })
         return products
 
