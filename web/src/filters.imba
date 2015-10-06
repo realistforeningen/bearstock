@@ -1,5 +1,6 @@
 export class ProductCollection
 	def initialize(products, appliedFilters)
+		@unfilteredCount = products:length
 		@products = []
 
 		@pendingFilters = []
@@ -48,4 +49,10 @@ export class ProductCollection
 
 	def toArray
 		@products
+
+	def count
+		@products:length
+
+	def isFiltered
+		count < @unfilteredCount
 		
