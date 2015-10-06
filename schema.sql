@@ -41,11 +41,11 @@ CREATE TABLE IF NOT EXISTS orders (
 
   -- How much the buyer must pay. Computed using:
   -- price.base_price + price[product]
-  cost INTEGER NOT NULL,
+  relative_cost INTEGER NOT NULL,
 
   -- How much the stock won/lost. Computed using:
   -- price[product]
-  stock_cost INTEGER NOT NULL,
+  absolute_cost INTEGER NOT NULL,
 
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
