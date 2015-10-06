@@ -73,7 +73,6 @@ tag app
 
 	let main = styles.css
 		height: '100%'
-		display: 'flex'
 		flexDirection: 'column'
 
 	let header = styles.css
@@ -81,11 +80,9 @@ tag app
 		borderBottom: '3px solid #52616B'
 		color: '#fff'
 		padding: '0.5em 1em'
-		display: 'flex'
 
 	let content = styles.css
 		flex: 1
-		display: 'flex'
 		justifyContent: 'center'
 
 	def render
@@ -135,7 +132,6 @@ tag buy-view
 		@collection ?= ProductCollection.new(products, appliedFilters)
 
 	let main = styles.css
-		display: 'flex'
 		flexDirection: 'row'
 		alignItems: 'stretch'
 		flex: 1
@@ -173,7 +169,6 @@ tag buy-view
 		padding: "1em 0.5em 1em 1em"
 		flex: '0 0 auto'
 
-		display: 'flex'
 		flexDirection: 'row'
 		alignItems: 'baseline'
 
@@ -229,7 +224,6 @@ tag buy-view
 tag login-view
 	let main = styles.css
 		fontSize: '42px'
-		display: 'flex'
 		flexDirection: 'column'
 		alignItems: 'center'
 
