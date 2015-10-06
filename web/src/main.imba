@@ -270,7 +270,6 @@ tag scroll-hint
 		flexDirection: 'inherit'
 		flex: '1 0 0'
 		overflowY: 'scroll'
-		padding: "{spacing} 0"
 
 	let contentStyles = styles.css
 		flexDirection: 'inherit'
@@ -282,12 +281,17 @@ tag scroll-hint
 		color: '#ccc'
 		textTransform: 'uppercase'
 
+	let filler = styles.css
+		flex: '0 0 auto'
+		height: spacing
 
 	def scroller
 		<div@scroller styles=scrollerStyles>
+			<div styles=filler>
 			<div styles=lineText> <line> "Start of list"
 			content
 			<div styles=lineText> <line> "End of list"
+			<div styles=filler>
 
 	def content
 		<div@content styles=contentStyles>
