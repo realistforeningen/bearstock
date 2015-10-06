@@ -1,6 +1,7 @@
 require 'imba'
 require 'whatwg-fetch'
 extern fetch
+Object:assign = require 'object-assign'
 
 let styles = require 'imba-styles'
 
@@ -170,6 +171,7 @@ tag buy-view
 		color: '#1E2022'
 		margin: "5px 0"
 		padding: "1em 0.5em 1em 1em"
+		flex: '0 0 auto'
 
 		display: 'flex'
 		flexDirection: 'row'

@@ -12,6 +12,7 @@ body {
 }
 
 div {
+  display: -webkit-flex;
   display: flex;
 }
 

@@ -4,6 +4,7 @@
     "imba-loader": "^1.0.1",
     "imba-styles": "git://github.com/judofyr/imba-styles.git#b4700ee9741c265a22cec6d71255f56b26ad83ca",
     "less": "^2.5.1",
+    "object-assign": "^4.0.1",
     "webpack": "^1.12.2",
     "whatwg-fetch": "^0.9.0"
   }
