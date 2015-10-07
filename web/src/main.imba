@@ -104,7 +104,7 @@ tag app
 					if products
 						<buy-view@buy disabled=isLocked>
 					else
-						<div> "Loading..."
+						<loading-view>
 				else
 					<login-view>
 
@@ -137,6 +137,18 @@ tag app
 		clearOrder
 		buyer = null
 		@buy.reset if @buy
+
+tag loading-view
+	let main = styles.css
+		fontSize: '3em'
+		fontWeight: 'bold'
+
+		flexDirection: 'column'
+		justifyContent: 'center'
+
+	def render
+		<self styles=main>
+			<div> "Loading prices…"
 
 tag buy-view
 	prop disabled
