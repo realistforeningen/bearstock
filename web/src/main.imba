@@ -180,6 +180,11 @@ tag buy-view
 		fontSize: '1em'
 		height: 0
 
+	let flash = styles.css
+		animationName: 'flash'
+		animationDuration: '300ms'
+		animationIterationCount: 1
+
 
 	def render
 		<self styles=main>
@@ -221,7 +226,22 @@ tag buy-view
 		@appliedFilters = []
 		@collection = null
 
-	def buy product
+	def buy product, evt
+		let button = evt.target.closest(".{boxStyle.className}")
+		if button.hasFlag(flash.className)
+			# Do nothing while it flashes
+			return
+
+		
+		# TODO: refactor into "once"
+		let unflasher = do
+			button.unflag(flash.className)
+			button.dom.removeEventListener("animationend", unflasher)
+
+		button.dom.addEventListener("animationend", unflasher, false)
+
+		button.flag(flash.className)
+
 		mainApp.addProductToOrder product
 
 tag login-view

@@ -21,3 +21,16 @@ div {
 html, body {
   height: 100%;
 }
+
+@-webkit-keyframes flash {
+  from {
+    background-color: rgba(0,0,0,0.7);
+  }
+}
+
+@keyframes flash {
+  from {
+    background-color: rgba(0,0,0,0.7);
+  }
+}
+
