@@ -104,7 +104,7 @@ tag app
 			<div styles=content>
 				if buyer
 					if products
-						<buy-view disabled=isLocked>
+						<buy-view@buy disabled=isLocked>
 					else
 						<div> "Loading..."
 				else
@@ -138,6 +138,7 @@ tag app
 	def logout
 		clearOrder
 		buyer = null
+		@buy.reset if @buy
 
 tag buy-view
 	prop disabled
@@ -243,6 +244,9 @@ tag buy-view
 
 	def clearFilters
 		return alert if disabled
+		reset
+
+	def reset
 		@appliedFilters = []
 		@collection = null
 
