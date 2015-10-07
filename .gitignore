@@ -4,3 +4,4 @@
 .webassets-cache
 assets
 /app.db
+/bower_components
