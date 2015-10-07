@@ -6,6 +6,7 @@ Object:assign = require 'object-assign'
 let styles = require 'imba-styles'
 
 import ProductCollection from "./filters"
+import animate from "./animation"
 
 var mainApp
 
@@ -24,12 +25,17 @@ let grow = styles.css flex: 1
 let bold = styles.css fontWeight: 'bold'
 let screen = styles.css height: '100%'
 let hbox = styles.css flexDirection: 'column'
+let flash = styles.css
+	animationName: 'flash'
+	animationDuration: '300ms'
+	animationIterationCount: 1
 
 tag app
 	prop priceId
 	prop buyer
 	prop products
 	prop orders
+	prop orderState
 
 	def fetchProducts
 		fetch("/products")
@@ -98,7 +104,7 @@ tag app
 			<div styles=content>
 				if buyer
 					if products
-						<buy-view>
+						<buy-view disabled=isLocked>
 					else
 						<div> "Loading..."
 				else
@@ -112,9 +118,16 @@ tag app
 
 	def clearOrder
 		orders = []
+		orderState = null
+
+	def isLocked
+		!!orderState
 
 	def pay
-		orders = []
+		Object.freeze(orders)
+		orderState = "paying"
+		setTimeout(&, 2000) do
+			orderState = "paid"
 
 	def login number
 		buyer = {
@@ -123,9 +136,11 @@ tag app
 		}
 
 	def logout
+		clearOrder
 		buyer = null
 
 tag buy-view
+	prop disabled
 	prop appliedFilters
 
 	def appliedFilters
@@ -183,11 +198,6 @@ tag buy-view
 		fontSize: '1em'
 		height: 0
 
-	let flash = styles.css
-		animationName: 'flash'
-		animationDuration: '300ms'
-		animationIterationCount: 1
-
 
 	def render
 		<self styles=main>
@@ -215,37 +225,33 @@ tag buy-view
 							<div styles=bold> "{product:price} NOK"
 
 			<div styles=column>
-				<order-list>
+				<order-list@order-list>
+
+	def alert
+		@order-list.alert
 
 	def removeFilter idx
+		return alert if disabled
+
 		@appliedFilters.splice(idx, 1)
 		@collection = null
 
 	def applyFilter name
+		return alert if disabled
 		@appliedFilters.push(name)
 		@collection = null
 
 	def clearFilters
+		return alert if disabled
 		@appliedFilters = []
 		@collection = null
 
 	def buy product, evt
+		return alert if disabled
+
 		let button = evt.target.closest(".{boxStyle.className}")
-		if button.hasFlag(flash.className)
-			# Do nothing while it flashes
-			return
-
-		
-		# TODO: refactor into "once"
-		let unflasher = do
-			button.unflag(flash.className)
-			button.dom.removeEventListener("animationend", unflasher)
-
-		button.dom.addEventListener("animationend", unflasher, false)
-
-		button.flag(flash.className)
-
-		mainApp.addProductToOrder product
+		if animate(button, flash)
+			mainApp.addProductToOrder product
 
 tag login-view
 	let main = styles.css
@@ -365,6 +371,9 @@ tag order-list
 	def orders
 		mainApp.orders
 
+	def orderState
+		mainApp.orderState
+
 	def buyer
 		mainApp.buyer
 
@@ -399,13 +408,13 @@ tag order-list
 		margin: '0.5em 0 1em'
 		alignSelf: 'flex-start'
 		
-	let confirm = styles.css
+	let positive = styles.css
 		background: '#27ae60'
 
-	let abort = styles.css
+	let negative = styles.css
 		background: '#E84545'
 
-	let logoutButton = styles.css
+	let neutral = styles.css
 		background: '#C9D6DF'
 
 	let orderStyle = styles.css
@@ -418,27 +427,48 @@ tag order-list
 		<self styles=main>
 			<div styles=hbox>
 				<div styles=name> "Welcome {buyer:name}"
-				<div styles=extra> "Amount to pay:"
+				<div styles=extra>
+					if orderState == "paid"
+						"You paid:"
+					else
+						"Amount to pay:"
+
 				<div styles=totalStyle> "{total} NOK"
 
-			if orders:length
 				<div styles=buttons>
-					<div styles=[button, abort] :tap="abort"> "Abort"
-					<div styles=[button, confirm] :tap="confirm"> "Confirm"
+					if orderState == "paying"
+						<div@pendingButton styles=[button, neutral]>
+							<span> "Confirming order"
+							<blinker interval=1> "…"
+					elif orderState == "paid"
+						<div@paidButton styles=[button, positive] :tap="logout">
+							<span> "Order confirmed! Log out."
+					elif orders:length
+						<div styles=[button, negative] :tap="abort"> "Abort"
+						<div styles=[button, positive] :tap="confirm"> "Confirm"
+					
+				if orders:length
+					<div> "Order:"
 
-				<div> "Order:"
+					for order, idx in orders
+						<div@{idx} styles=orderStyle :tap=["remove", idx]> "1 \u00d7 {order:name} @ {order:price} NOK"
+				else
+					<div styles=[button, neutral] :tap="logout"> "Log out"
 
-				for order, idx in orders
-					<div@{idx} styles=orderStyle :tap=["remove", idx]> "1 \u00d7 {order:name} @ {order:price} NOK"
-
-			else
-				<div styles=[button, logoutButton] :tap="logout"> "Log out"
+	def alert
+		if orderState == "paying"
+			animate(@pendingButton, flash)
+		else
+			animate(@paidButton, flash)
 
 	def remove idx
 		mainApp.removeOrder idx
 
 	def abort
 		mainApp.clearOrder
+
+	def confirm
+		mainApp.pay
 
 	def logout
 		mainApp.logout
