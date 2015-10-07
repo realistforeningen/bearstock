@@ -110,6 +110,9 @@ tag app
 	def removeOrder idx
 		orders.splice(idx, 1)
 
+	def clearOrder
+		orders = []
+
 	def pay
 		orders = []
 
@@ -355,18 +358,28 @@ tag order-list
 	let totalStyle = styles.css
 		fontSize: '2em'
 
+	let buttons = styles.css
+		flexDirection: 'row'
+		justifyContent: 'space-between'
+
 	let confirm = styles.css
+		background: '#27ae60'
+		padding: '1em 1em'
+		alignSelf: 'flex-start'
+		borderRadius: '10px'
+		margin: '0.5em 0 1em'
+
+	let abort = styles.css
 		background: '#E84545'
 		padding: '1em 1em'
 		alignSelf: 'flex-start'
 		borderRadius: '10px'
 		margin: '0.5em 0 1em'
 
+
 	let orderStyle = styles.css
-		background: '#C9D6DF'
-		padding: '1em 1em'
+		fontSize: '0.8em'
 		alignSelf: 'flex-start'
-		borderRadius: '10px'
 		margin: "5px 0"
 
 
@@ -377,7 +390,9 @@ tag order-list
 				<div styles=totalStyle> "{total} NOK"
 
 			if orders:length
-				<div styles=confirm :tap="confirm"> "Confirm"
+				<div styles=buttons>
+					<div styles=abort :tap="abort"> "Abort"
+					<div styles=confirm :tap="confirm"> "Confirm"
 
 				<div> "Order:"
 
@@ -386,6 +401,9 @@ tag order-list
 
 	def remove idx
 		mainApp.removeOrder idx
+
+	def abort
+		mainApp.clearOrder
 
 tag blinker < span
 	prop interval
