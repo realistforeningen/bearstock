@@ -122,6 +122,9 @@ tag app
 			name: "Magnus"
 		}
 
+	def logout
+		buyer = null
+
 tag buy-view
 	prop appliedFilters
 
@@ -212,7 +215,7 @@ tag buy-view
 							<div styles=bold> "{product:price} NOK"
 
 			<div styles=column>
-				<order-list orders=mainApp.orders>
+				<order-list>
 
 	def removeFilter idx
 		@appliedFilters.splice(idx, 1)
@@ -359,7 +362,11 @@ tag line
 
 
 tag order-list
-	prop orders
+	def orders
+		mainApp.orders
+
+	def buyer
+		mainApp.buyer
 
 	def total
 		var amount = 0
@@ -372,6 +379,10 @@ tag order-list
 		flexDirection: 'column'
 		overflow: 'hidden'
 
+	let name = styles.css
+		marginBottom: '1em'
+		fontSize: '1.2em'
+
 	let extra = styles.css
 		color: '#333'
 
@@ -382,20 +393,20 @@ tag order-list
 		flexDirection: 'row'
 		justifyContent: 'space-between'
 
-	let confirm = styles.css
-		background: '#27ae60'
+	let button = styles.css
 		padding: '1em 1em'
-		alignSelf: 'flex-start'
 		borderRadius: '10px'
 		margin: '0.5em 0 1em'
+		alignSelf: 'flex-start'
+		
+	let confirm = styles.css
+		background: '#27ae60'
 
 	let abort = styles.css
 		background: '#E84545'
-		padding: '1em 1em'
-		alignSelf: 'flex-start'
-		borderRadius: '10px'
-		margin: '0.5em 0 1em'
 
+	let logoutButton = styles.css
+		background: '#C9D6DF'
 
 	let orderStyle = styles.css
 		fontSize: '0.8em'
@@ -406,24 +417,31 @@ tag order-list
 	def render
 		<self styles=main>
 			<div styles=hbox>
+				<div styles=name> "Welcome {buyer:name}"
 				<div styles=extra> "Amount to pay:"
 				<div styles=totalStyle> "{total} NOK"
 
 			if orders:length
 				<div styles=buttons>
-					<div styles=abort :tap="abort"> "Abort"
-					<div styles=confirm :tap="confirm"> "Confirm"
+					<div styles=[button, abort] :tap="abort"> "Abort"
+					<div styles=[button, confirm] :tap="confirm"> "Confirm"
 
 				<div> "Order:"
 
 				for order, idx in orders
 					<div@{idx} styles=orderStyle :tap=["remove", idx]> "1 \u00d7 {order:name}"
 
+			else
+				<div styles=[button, logoutButton] :tap="logout"> "Log out"
+
 	def remove idx
 		mainApp.removeOrder idx
 
 	def abort
 		mainApp.clearOrder
+
+	def logout
+		mainApp.logout
 
 tag blinker < span
 	prop interval
