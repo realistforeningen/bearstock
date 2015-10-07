@@ -24,5 +24,7 @@ def index():
 
 @app.route('/products')
 def products():
-    return jsonify(products=g.db.current_products_with_prices())
+    products, prices = g.db.current_products_with_prices()
+    print prices
+    return jsonify(products=products, price_id=prices["_id"])
 

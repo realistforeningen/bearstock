@@ -68,7 +68,7 @@ class Database:
                     "price": product["base_price"] + prices.get(code, 0),
                     "tags": product["tags"].split("|")
                 })
-        return products
+        return products, prices
 
     def current_products_with_history(self):
         prices = self.latest_prices()
