@@ -445,7 +445,7 @@ tag order-list
 
 tag blinker < span
 	prop interval
-	prop visible, default: true
+	prop visible
 	prop timeout
 
 	def setVisibleTimeout
@@ -459,6 +459,7 @@ tag blinker < span
 			setVisibleTimeout
 
 	def build
+		visible = yes
 		setVisibleTimeout
 		super
 
