@@ -46,7 +46,6 @@ tag app
 	def updateProductsNow data
 		products = data:products
 		priceId = data:price_id
-		render
 
 	def updateProducts data
 		if !priceId
@@ -58,7 +57,6 @@ tag app
 
 		# Avoid updating the UI beneath the user's finger
 		products = null
-		render
 
 		setTimeout(&, 2000) do
 			updateProductsNow data
@@ -497,6 +495,10 @@ tag blinker < span
 		setVisibleTimeout
 		super
 
+	def commit
+		# don't render
+		self
+
 	def render
 		if visible
 			css 'visibility', 'visible'
@@ -517,6 +519,9 @@ tag key-pad
 
 	let go = styles.css
 		background: 'red'
+
+	def commit
+		self
 
 	def render
 		<self styles=main>
