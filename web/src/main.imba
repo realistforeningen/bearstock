@@ -429,7 +429,7 @@ tag order-list
 				<div> "Order:"
 
 				for order, idx in orders
-					<div@{idx} styles=orderStyle :tap=["remove", idx]> "1 \u00d7 {order:name}"
+					<div@{idx} styles=orderStyle :tap=["remove", idx]> "1 \u00d7 {order:name} @ {order:price} NOK"
 
 			else
 				<div styles=[button, logoutButton] :tap="logout"> "Log out"
