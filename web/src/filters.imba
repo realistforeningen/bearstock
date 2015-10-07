@@ -12,6 +12,7 @@ export class ProductCollection
 				addProduct(product)
 
 		cleanFilters
+		sortData
 
 	def matches product
 		for filter in @appliedFilters
@@ -40,6 +41,13 @@ export class ProductCollection
 				@pendingFilters.splice(idx, 1)
 			else
 				idx++
+
+	def sortData
+		@pendingFilters.sort do |a, b|
+			a.localeCompare(b)
+
+		@products.sort do |a, b|
+			a:name.localeCompare(b:name)
 
 	def appliedFilters
 		@appliedFilters
