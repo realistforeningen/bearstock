@@ -8,6 +8,9 @@ let styles = require 'imba-styles'
 import ProductCollection from "./filters"
 import animate from "./animation"
 
+require "!style!raw!./normalize.css"
+require "!style!raw!./default.css"
+
 var mainApp
 
 def window.startApp
