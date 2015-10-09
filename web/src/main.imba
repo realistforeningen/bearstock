@@ -8,8 +8,8 @@ let styles = require 'imba-styles'
 import ProductCollection from "./filters"
 import animate from "./animation"
 
-require "!style!raw!./normalize.css"
-require "!style!raw!./default.css"
+require "./normalize.css"
+require "./default.css"
 
 var mainApp
 
