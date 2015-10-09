@@ -13,11 +13,7 @@ module.exports = {
       { test: /\.css$/, loader: 'style!raw' },
       {
         test: /plottable\/plottable\.js/,
-        loader: 'imports?SVGTypewriter=svg-typewriter/svgtypewriter,d3=d3/d3.js,_=plottable/plottable.css,require=>false'
-      },
-      {
-        test: /svgtypewriter\.js/,
-        loader: 'exports?SVGTypewriter'
+        loader: 'imports?d3=d3/d3.js,_=plottable/plottable.css,require=>false'
       }
   	]
   },
