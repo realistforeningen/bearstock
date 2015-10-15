@@ -19,11 +19,6 @@ def window.startApp
 
 let tojson = do |data| data.json
 
-extend class ElementTag
-	def commit
-		render
-		self
-
 let grow = styles.css flex: 1
 let bold = styles.css fontWeight: 'bold'
 let screen = styles.css height: '100%'
