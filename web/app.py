@@ -24,3 +24,17 @@ def products():
     print prices
     return jsonify(products=products, price_id=prices["_id"])
 
+@app.route('/orders', methods=['POST'])
+def orders_create():
+    body = request.get_json()
+    with g.db.conn:
+        for order in body["orders"]:
+            g.db.insert("orders",
+                buyer_id=1, # TODO
+                product_code=order["code"],
+                price_id=body["price_id"],
+                absolute_cost=order["price"],
+                relative_cost=0, # TODO
+            )
+    return jsonify(ok=True)
+

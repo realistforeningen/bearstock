@@ -127,7 +127,20 @@ tag app
 	def pay
 		Object.freeze(orders)
 		orderState = "paying"
-		setTimeout(&, 2000) do
+
+		# TODO: Refactor into generic JSON-request?
+		# TODO: Don't send name/tags
+		let req = fetch "/orders"
+			method: 'post'
+			headers: {'Content-Type': 'application/json'}
+			body: JSON.stringify
+				price_id: priceId
+				orders: orders
+
+		req.then do |res|
+			if res:status != 200
+				# TODO: Handle this better
+				window.alert("Payment failed!")
 			orderState = "paid"
 
 	def login number
