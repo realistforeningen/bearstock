@@ -2,7 +2,7 @@
   "dependencies": {
     "bower": "^1.5.3",
     "exports-loader": "^0.6.2",
-    "imba": "^0.13.2",
+    "imba": "0.13.5",
     "imba-loader": "^1.0.1",
     "imba-styles": "git://github.com/judofyr/imba-styles.git#b4700ee9741c265a22cec6d71255f56b26ad83ca",
     "imports-loader": "^0.6.4",
