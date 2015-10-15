@@ -282,6 +282,7 @@ tag buy-view
 	def clearFilters
 		return alert if disabled
 		reset
+		render
 
 	def reset
 		@appliedFilters = []
