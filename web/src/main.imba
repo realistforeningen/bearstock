@@ -567,11 +567,11 @@ tag key-pad
 	def render
 		<self styles=main>
 			<div>
-				<span> @number
+				<span> (@number.toString if @number)
 				<blinker interval=0.5> "_"
 			<div styles=pad>
 				for i in [1 .. 9]
-					<button@{i} styles=button :tap=["press", i]> i
+					<button@{i} styles=button :tap=["press", i]> i.toString
 				<button styles=button :tap="clear"> "X"
 				<button styles=button :tap=["press", 0]> "0"
 				if @number
