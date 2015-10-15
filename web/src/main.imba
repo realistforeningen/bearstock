@@ -44,6 +44,7 @@ tag app
 	def updateProductsNow data
 		products = data:products
 		priceId = data:price_id
+		render
 
 	def updateProducts data
 		if !priceId
@@ -55,6 +56,7 @@ tag app
 
 		# Avoid updating the UI beneath the user's finger
 		products = null
+		render
 
 		setTimeout(&, 2000) do
 			updateProductsNow data
