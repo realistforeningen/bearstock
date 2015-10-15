@@ -332,6 +332,7 @@ tag scroll-hint
 		flexDirection: 'inherit'
 		flex: '1 0 0'
 		overflowY: 'scroll'
+		overflow-scrolling: 'touch'
 
 	let contentStyles = styles.css
 		flexDirection: 'inherit'
