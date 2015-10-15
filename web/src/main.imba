@@ -132,11 +132,20 @@ tag app
 				price_id: priceId
 				orders: orders
 
+		let startTime = Date.new
+
 		req.then do |res|
 			if res:status != 200
 				# TODO: Handle this better
 				window.alert("Payment failed!")
-			orderState = "paid"
+
+			# We want it to take some time
+			let pending = 1000 - (Date.new - startTime)
+			if pending < 0
+				orderState = "paid"
+			else
+				setTimeout(&, pending) do
+					orderState = "paid"
 
 	def login number
 		buyer = {
