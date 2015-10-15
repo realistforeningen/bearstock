@@ -14,4 +14,6 @@ db.ensure_prices()
 from products import products
 db.import_products(products)
 
+db.ensure_buyer()
+
 

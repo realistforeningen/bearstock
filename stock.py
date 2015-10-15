@@ -50,6 +50,14 @@ class Database:
             if price_count == 0:
                 self.insert_prices({})
 
+    def ensure_buyer(self):
+        with self.conn:
+            try:
+                self.insert("buyers", id=1, name="Test Buyer")
+            except sqlite3.IntegrityError:
+                # All fine
+                return
+
     def insert_prices(self, prices):
         data = pickle.dumps(prices)
         self.e('INSERT INTO prices (data) VALUES (?)', (data,))
