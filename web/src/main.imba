@@ -1,4 +1,4 @@
-require 'imba'
+require 'imba/src/imba/browser'
 require 'whatwg-fetch'
 extern fetch
 Object:assign = require 'object-assign'
