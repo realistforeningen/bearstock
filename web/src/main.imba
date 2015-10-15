@@ -60,11 +60,8 @@ tag app
 			updateProductsNow data
 
 	def renderContinously
-		@tick = do
-			window:requestAnimationFrame(@tick)
+		setInterval(&, 500) do
 			render
-
-		@tick()
 
 	def build
 		super
@@ -108,13 +105,16 @@ tag app
 
 	def addProductToOrder product
 		orders.push product
+		render
 
 	def removeOrder idx
 		orders.splice(idx, 1)
+		render
 
 	def clearOrder
 		orders = []
 		orderState = null
+		render
 
 	def isLocked
 		!!orderState
@@ -122,6 +122,7 @@ tag app
 	def pay
 		Object.freeze(orders)
 		orderState = "paying"
+		render
 
 		# TODO: Refactor into generic JSON-request?
 		# TODO: Don't send name/tags
@@ -143,20 +144,24 @@ tag app
 			let pending = 1000 - (Date.new - startTime)
 			if pending < 0
 				orderState = "paid"
+				render
 			else
 				setTimeout(&, pending) do
 					orderState = "paid"
+					render
 
 	def login number
 		buyer = {
 			id: number
 			name: "Magnus"
 		}
+		render
 
 	def logout
 		clearOrder
 		buyer = null
 		@buy.reset if @buy
+		render
 
 tag loading-view
 	let main = styles.css
@@ -266,11 +271,13 @@ tag buy-view
 
 		@appliedFilters.splice(idx, 1)
 		@collection = null
+		render
 
 	def applyFilter name
 		return alert if disabled
 		@appliedFilters.push(name)
 		@collection = null
+		render
 
 	def clearFilters
 		return alert if disabled
@@ -279,6 +286,7 @@ tag buy-view
 	def reset
 		@appliedFilters = []
 		@collection = null
+		render
 
 	def buy product, evt
 		return alert if disabled
