@@ -24,6 +24,18 @@ class Database:
     def e(self, *args):
         return self.conn.execute(*args)
 
+    def insert(self, table, **data):
+        keys = []
+        values = []
+        placeholders = []
+        for key in data:
+            keys.append(key)
+            values.append(data[key])
+            placeholders.append('?')
+
+        sql = 'INSERT INTO %s (%s) VALUES (%s)' % (table, ', '.join(keys), ', '.join(placeholders))
+        return self.e(sql, values)
+
     def import_products(self, products):
         for product in products:
             with self.conn:
