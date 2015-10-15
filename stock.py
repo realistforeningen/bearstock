@@ -131,5 +131,12 @@ class Exchange:
 
         while True:
             print " * Stock is ticking"
+            self.tick()
             time.sleep(5*60)
+
+    def tick(self):
+        # self.db.fetchAllDataRequired()
+        # prices = self.runEivindMagic()
+        # self.db.insertPrices(prices)
+        pass
 
