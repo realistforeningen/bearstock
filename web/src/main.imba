@@ -286,7 +286,6 @@ tag buy-view
 	def reset
 		@appliedFilters = []
 		@collection = null
-		render
 
 	def buy product, evt
 		return alert if disabled
