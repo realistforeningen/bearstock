@@ -59,6 +59,10 @@ tag app
 		setTimeout(&, 2000) do
 			updateProductsNow data
 
+	def fetchProductsLoop
+		setInterval(&, 10*1000) do
+			fetchProducts
+
 	def renderContinously
 		setInterval(&, 500) do
 			render
@@ -67,6 +71,7 @@ tag app
 		super
 		styles.freeze
 		fetchProducts
+		fetchProductsLoop
 		renderContinously
 		self
 
