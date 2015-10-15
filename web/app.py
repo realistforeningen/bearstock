@@ -1,9 +1,5 @@
-from flask import Flask, render_template, g, jsonify
-from flask.ext.assets import Environment, Bundle
+from flask import Flask, render_template, g, jsonify, request
 from stock import Database
-
-import npm
-npm.register()
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
