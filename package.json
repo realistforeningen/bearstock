@@ -4,7 +4,7 @@
     "exports-loader": "^0.6.2",
     "imba": "0.13.5",
     "imba-loader": "^1.0.1",
-    "imba-styles": "git://github.com/judofyr/imba-styles.git#b4700ee9741c265a22cec6d71255f56b26ad83ca",
+    "imba-styles": "git://github.com/judofyr/imba-styles.git#bb120c7844a69b7bfc6351df374d4bae70623cb4",
     "imports-loader": "^0.6.4",
     "less": "^2.5.1",
     "object-assign": "^4.0.1",
