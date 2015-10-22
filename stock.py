@@ -83,6 +83,11 @@ class Database:
         prices["_id"] = row["id"]
         return prices
 
+    def find_prices(self, id):
+        row = self.e('SELECT data FROM prices WHERE id = ?', (id,)).fetchone()
+        if row:
+            return pickle.loads(row['data'])
+
     def prices_count(self):
         return self.e('SELECT COUNT(*) FROM prices').fetchone()[0]
 

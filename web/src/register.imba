@@ -162,6 +162,7 @@ tag app
 			method: 'post'
 			headers: {'Content-Type': 'application/json'}
 			body: JSON.stringify
+				buyer_id: buyer:id
 				price_id: priceId
 				orders: orders
 
