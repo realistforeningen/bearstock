@@ -39,12 +39,12 @@ CREATE TABLE IF NOT EXISTS orders (
   product_code TEXT NOT NULL REFERENCES products(code),
   price_id INTEGER NOT NULL REFERENCES prices(id),
 
-  -- How much the buyer must pay. Computed using:
-  -- price.base_price + price[product]
-  relative_cost INTEGER NOT NULL,
-
   -- How much the stock won/lost. Computed using:
   -- price[product]
+  relative_cost INTEGER NOT NULL,
+
+  -- How much the buyer must pay. Computed using:
+  -- price.base_price + price[product]
   absolute_cost INTEGER NOT NULL,
 
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
