@@ -74,7 +74,7 @@ class Database:
 
     # How much money is on our own account?
     def stock_account(self):
-        return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0]
+        return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0] or 0
 
     def latest_prices(self):
         row = self.e('SELECT * FROM prices ORDER BY id DESC LIMIT 1').fetchone()
@@ -82,6 +82,11 @@ class Database:
         prices = pickle.loads(row["data"])
         prices["_id"] = row["id"]
         return prices
+
+    def find_prices(self, id):
+        row = self.e('SELECT data FROM prices WHERE id = ?', (id,)).fetchone()
+        if row:
+            return pickle.loads(row['data'])
 
     def prices_count(self):
         return self.e('SELECT COUNT(*) FROM prices').fetchone()[0]
@@ -92,10 +97,10 @@ class Database:
 
     def stock_left(self):
         cursor = self.e("""
-            SELECT code, quantity - COUNT(orders.id)
+            SELECT coalesce(orders.product_code, products.code) as code, quantity - COUNT(orders.id)
             FROM products
             LEFT OUTER JOIN orders ON orders.product_code = products.code
-            GROUP BY product_code
+            GROUP BY code
         """)
         return todict(cursor)
 
@@ -136,6 +141,12 @@ class Database:
 
         return dict(products)
 
+    def find_buyer(self, buyer_id):
+        cursor = self.e('SELECT * FROM buyers WHERE id = ?', (buyer_id,))
+        row = cursor.fetchone()
+        if row:
+            return dictmapper(row)
+
     def current_products_with_prices(self):
         products = []
         with self.conn:
@@ -166,10 +177,6 @@ class Database:
             }
 
         return products
-
-    def update_prices(self, data):
-        sdata = pickle.dumps(data)
-        self.e('INSERT INTO prices (data) VALUES (?)', (sdata,))
 
     def orders_before(self, ts):
         return torows(self.e('SELECT * FROM orders WHERE created_at <= ? ORDER BY created_at', (ts,)))
@@ -231,4 +238,6 @@ class Exchange:
                 )
 
             new_adjustments = pl.finalize()
-            self.db.update_prices(new_adjustments)
+            for key in new_adjustments:
+                new_adjustments[key] = int(new_adjustments[key])
+            self.db.insert_prices(new_adjustments)
