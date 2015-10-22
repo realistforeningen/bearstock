@@ -84,4 +84,4 @@ class PriceLogic:
         for pid, purchase in enumerate(self.products[code]['price_data']):
             if pid >= lookback_to:
                 transactions += (purchase['sold_units'] if purchase else 0)
-        return transactions*p['ex_periods']/(self.pid-lookback_to)
+        return transactions*p['ex_periods']/max(1, self.pid-lookback_to)
