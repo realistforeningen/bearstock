@@ -27,6 +27,11 @@ def products():
     products = g.db.current_products_with_prices()
     return jsonify(products=products)
 
+@app.route('/prices/<code>')
+def prices(code):
+    prices = g.db.prices_for_product(code)
+    return jsonify(prices=prices)
+
 @app.route('/orders', methods=['POST'])
 def orders_create():
     body = request.get_json()
