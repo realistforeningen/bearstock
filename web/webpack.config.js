@@ -1,10 +1,13 @@
 var webpack = require('webpack');
 
 module.exports = {
-  entry: './src/main',
+  entry: {
+    register: './src/register',
+    stats: './src/stats'
+  },
 
   output: {
-  	filename: 'static/assets/main.js'
+  	filename: 'static/assets/[name].js'
   },
 
   module: {
