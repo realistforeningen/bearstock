@@ -1,4 +1,6 @@
 
+from math import exp
+
 ## params
 
 BASE_PARAMETERS = {
@@ -67,7 +69,9 @@ class PriceLogic:
         }
         self.products[code]['expected'] = self._expected_sales(code)
         self.products[code]['adjustment'] = self._compute_adjustment(code)
-        print 'Adjustment[%s] = %.2f (prev: %.2f)' % (code, self.products[code]['adjustment'], self.products[code]['prev_adj'])
+        print 'Adjustment[%s] = %.2f (prev: %.2f)' % (
+            code, self.products[code]['adjustment'], self.products[code]['prev_adj']
+        )
 
     def _compute_adjustment(self, code):
         product = self.products[code]
@@ -93,8 +97,14 @@ class PriceLogic:
             w[2]*delta_purchase
         )/(weight_abs_sum if weight_abs_sum != 0 else 1)
         decrease_by *= product['fraction_left']/max(1, product['expected'])
+        ## compute increase
+        a, b = 1, 1
+        increase_by = b*(4. - 2./(product['expected'] + 1))*(4. - 3.*product['fraction_left'])*sum(
+            data['sold_units']*exp(-(self.pid - pid)/a)
+            for pid, data in enumerate(product['price_data'])
+        )
 
-        return -decrease_by
+        return -decrease_by + increase_by
 
     def finalize(self):
         """Finalize the price calculations.
