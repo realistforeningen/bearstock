@@ -167,10 +167,6 @@ class Database:
 
         return products
 
-    def update_prices(self, data):
-        sdata = pickle.dumps(data)
-        self.e('INSERT INTO prices (data) VALUES (?)', (sdata,))
-
     def orders_before(self, ts):
         return torows(self.e('SELECT * FROM orders WHERE created_at <= ? ORDER BY created_at', (ts,)))
 
@@ -231,4 +227,4 @@ class Exchange:
                 )
 
             new_adjustments = pl.finalize()
-            self.db.update_prices(new_adjustments)
+            self.db.insert_prices(new_adjustments)
