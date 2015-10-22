@@ -115,7 +115,7 @@ class Database:
             adjustments = pickle.loads(row['data'])
 
             for product_code in adjustments:
-                products[product_code][idx]["adjustment"] = adjustments[key]
+                products[product_code][idx]["adjustment"] = adjustments[product_code]
 
         # Then find the number of products sold per period
         cursor = self.e("""
