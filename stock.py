@@ -83,6 +83,19 @@ class Database:
         prices["_id"] = row["id"]
         return prices
 
+    def base_prices(self):
+        cursor = self.e('SELECT produce_code, base_price FROM products')
+        return todict(cursor)
+
+    def stock_left(self):
+        cursor = self.e("""
+            SELECT orders.product_code, products.quantity - COUNT(orders.id)
+            FROM orders
+            JOIN products ON orders.product_code = products.code
+            GROUP BY product_code
+        """)
+        return todict(cursor)
+
     def price_adjustments(self):
         # First fetch the prices:
         prices = torows(self.e('SELECT id, data FROM prices ORDER BY id'))
