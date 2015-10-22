@@ -82,7 +82,7 @@ tag price-table < table
 					<tr styles=[row-css(idx)]>
 						<td> product:code
 						<td> product:name
-						<td> "{product:price} NOK"
+						<td> "{product:absolute_cost} NOK"
 
 
 tag stats
