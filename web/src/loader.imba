@@ -12,7 +12,7 @@ export class ProductFetcher
 	prop priceId
 	prop failing
 
-	def initalize(options = {})
+	def initialize(options = {})
 		@updateDelay = options:updateDelay
 
 	def sync
@@ -35,12 +35,15 @@ export class ProductFetcher
 
 	def updateProductsNow data
 		products = data:products
-		priceId = data:priceId
+		priceId = data:price_id
 		sync
 
 	def updateProducts data
 		if !priceId or !@updateDelay
 			updateProductsNow(data)
+			return
+
+		if priceId == data:price_id
 			return
 
 		products = null

@@ -168,7 +168,7 @@ class Database:
                     "absolute_cost": product["base_price"] + rel_cost,
                     "tags": product["tags"].split("|")
                 })
-        return products
+        return products, prices["_id"]
 
     def prices_for_product(self, code):
         product = self.e('SELECT * FROM products WHERE code = ?', (code,)).fetchone()
