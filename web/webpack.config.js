@@ -17,6 +17,10 @@ module.exports = {
       {
         test: /plottable\/plottable\.js/,
         loader: 'imports?d3=d3/d3.js,_=plottable/plottable.css,require=>false'
+      },
+      {
+        test: /whatwg-fetch/,
+        loader: 'exports?self.fetch'
       }
   	]
   },

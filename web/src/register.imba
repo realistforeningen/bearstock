@@ -1,11 +1,11 @@
 require 'imba/src/imba/browser'
-require 'whatwg-fetch'
-extern fetch
+let fetch = require 'whatwg-fetch'
 Object:assign = require 'object-assign'
 
 let styles = require 'imba-styles'
 
 import ProductCollection from "./filters"
+import ProductFetcher from "./loader"
 import animate from "./animation"
 
 require "./normalize.css"
@@ -32,67 +32,44 @@ let tojson = do |res|
 	else
 		throw "Wrong status code: {res:status}"
 
+let eventually = do |duration, start, cb|
+	do |res|
+		let pending = duration - (Date.new - start)
+		if pending < 0
+			cb(res)
+		else
+			setTimeout(&, pending) do cb(res)
+
+
 let atleast = do |promise, duration|
 	let start = Date.new
-	Promise.new do |resolver|
-		promise.then do |res|
-			let pending = duration - (Date.new - start)
-			if pending < 0
-				resolver(res)
-			else
-				setTimeout(&, pending) do resolver(res)
+	Promise.new do |resolver, rejecter|
+		promise
+			.then(eventually(duration, start, resolver))
+			.catch(eventually(duration, start, rejecter))
 
 tag app
-	prop priceId
+	prop productFetcher
 	prop buyer
-	prop products
 	prop orders
 	prop orderState
-	prop failing default: no
 
-	def fetchProducts
-		fetch("/products")
-			.then(tojson)
-			.then do |data|
-				failing = no
-				updateProducts(data)
-			.catch do
-				failing = yes
-				render
+	def failing
+		productFetcher.failing
 
-	def updateProductsNow data
-		products = data:products
-		priceId = data:price_id
-		render
-
-	def updateProducts data
-		if !priceId
-			updateProductsNow data
-			return
-
-		if data:price_id === priceId
-		 	return
-
-		# Avoid updating the UI beneath the user's finger
-		products = null
-		render
-
-		setTimeout(&, 2000) do
-			updateProductsNow data
-
-	def fetchProductsLoop
-		setInterval(&, 10*1000) do
-			fetchProducts
+	def products
+		productFetcher.products
 
 	def renderContinously
 		setInterval(&, 500) do
 			render
 
 	def build
-		super
+		productFetcher = ProductFetcher.new(updateDelay: 500)
+		productFetcher:sync = do render
+		productFetcher.start
 		styles.freeze
-		fetchProducts
-		fetchProductsLoop
+		super
 		renderContinously
 		self
 
@@ -163,12 +140,11 @@ tag app
 			headers: {'Content-Type': 'application/json'}
 			body: JSON.stringify
 				buyer_id: buyer:id
-				price_id: priceId
 				orders: orders
 
 		let startTime = Date.new
 
-		atleast(req, 1000).then do |res|
+		atleast(req, 500).then do |res|
 			if res:status != 200
 				# TODO: Handle this better
 				window.alert("Payment failed!")
@@ -280,7 +256,7 @@ tag buy-view
 						<div@{idx} styles=boxStyle :tap=["buy", product]>
 							<div> product:name
 							<div styles=grow>
-							<div styles=bold> "{product:price} NOK"
+							<div styles=bold> "{product:absolute_cost} NOK"
 
 			<div styles=column>
 				<order-list@order-list>
@@ -334,7 +310,7 @@ tag login-view
 		render
 
 		let p = fetch("/buyer?id={number}")
-		atleast(p, 1000)
+		atleast(p, 500)
 			.then(tojson)
 			.then do |data|
 				@isLoading = no
@@ -342,6 +318,10 @@ tag login-view
 					mainApp.login(data:buyer)
 				else
 					@error = "Error: Unknown trader code"
+				render
+			.catch do |err|
+				@isLoading = no
+				@error = "Error: Server failed"
 				render
 
 	let error-css = styles
@@ -475,7 +455,7 @@ tag order-list
 	def total
 		var amount = 0
 		for order in orders
-			amount += order:price
+			amount += order:absolute_cost
 		amount
 
 	let main = styles.css
@@ -546,7 +526,7 @@ tag order-list
 					<div> "Order:"
 
 					for order, idx in orders
-						<div@{idx} styles=orderStyle :tap=["remove", idx]> "1 \u00d7 {order:name} @ {order:price} NOK"
+						<div@{idx} styles=orderStyle :tap=["remove", idx]> "1 \u00d7 {order:name} @ {order:absolute_cost} NOK"
 				else
 					<div styles=[button, neutral] :tap="logout"> "Log out"
 

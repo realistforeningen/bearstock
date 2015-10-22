@@ -1,6 +1,7 @@
 #!/usr/bin/env PYTHONPATH=. python 
 from web.app import app
 from stock import Exchange
+import subprocess
 
 Exchange.run_in_thread()
-app.run(use_reloader=False)
+subprocess.call(["uwsgi", "--http", "0.0.0.0:5000",  "--wsgi-file",  "web/app.py", "--callable", "app"])

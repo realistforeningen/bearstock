@@ -51,8 +51,14 @@ class Database:
             with self.conn:
                 self.e('DELETE FROM products WHERE code = ?', (product['code'],))
                 tags = "|".join(product["tags"])
-                values = (product["code"], product["name"], product["base_price"], tags)
-                self.e('INSERT INTO products (code, name, base_price, quantity, tags) VALUES (?, ?, ?, 0, ?)', values)
+                values = (
+                    product["code"],
+                    product["name"],
+                    product["base_price"],
+                    product.get("quantity", 0),
+                    tags
+                )
+                self.e('INSERT INTO products (code, name, base_price, quantity, tags) VALUES (?, ?, ?, ?, ?)', values)
 
     def ensure_prices(self):
         with self.conn:
@@ -153,13 +159,16 @@ class Database:
             prices = self.latest_prices()
             for product in self.e('SELECT * FROM products'):
                 code = product["code"]
+                rel_cost = prices.get(code, 0)
                 products.append({
                     "code": code,
                     "name": product["name"],
-                    "price": product["base_price"] + prices.get(code, 0),
+                    "price_id": prices["_id"],
+                    "relative_cost": rel_cost,
+                    "absolute_cost": product["base_price"] + rel_cost,
                     "tags": product["tags"].split("|")
                 })
-        return products, prices
+        return products
 
     def current_products_with_history(self):
         prices = self.latest_prices()
