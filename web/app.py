@@ -18,6 +18,10 @@ def teardown_request(exception):
 def index():
     return render_template('index.html')
 
+@app.route('/stats')
+def stats():
+    return render_template('stats.html')
+
 @app.route('/products')
 def products():
     products, prices = g.db.current_products_with_prices()
