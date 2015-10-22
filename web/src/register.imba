@@ -32,15 +32,21 @@ let tojson = do |res|
 	else
 		throw "Wrong status code: {res:status}"
 
+let eventually = do |duration, start, cb|
+	do |res|
+		let pending = duration - (Date.new - start)
+		if pending < 0
+			cb(res)
+		else
+			setTimeout(&, pending) do cb(res)
+
+
 let atleast = do |promise, duration|
 	let start = Date.new
-	Promise.new do |resolver|
-		promise.then do |res|
-			let pending = duration - (Date.new - start)
-			if pending < 0
-				resolver(res)
-			else
-				setTimeout(&, pending) do resolver(res)
+	Promise.new do |resolver, rejecter|
+		promise
+			.then(eventually(duration, start, resolver))
+			.catch(eventually(duration, start, rejecter))
 
 tag app
 	prop priceId
@@ -342,6 +348,10 @@ tag login-view
 					mainApp.login(data:buyer)
 				else
 					@error = "Error: Unknown trader code"
+				render
+			.catch do |err|
+				@isLoading = no
+				@error = "Error: Server failed"
 				render
 
 	let error-css = styles
