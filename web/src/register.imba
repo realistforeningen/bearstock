@@ -60,9 +60,6 @@ tag app
 	def products
 		productFetcher.products
 
-	def priceId
-		productFetcher.priceId
-
 	def renderContinously
 		setInterval(&, 500) do
 			render
@@ -143,7 +140,6 @@ tag app
 			headers: {'Content-Type': 'application/json'}
 			body: JSON.stringify
 				buyer_id: buyer:id
-				price_id: priceId
 				orders: orders
 
 		let startTime = Date.new
@@ -260,7 +256,7 @@ tag buy-view
 						<div@{idx} styles=boxStyle :tap=["buy", product]>
 							<div> product:name
 							<div styles=grow>
-							<div styles=bold> "{product:price} NOK"
+							<div styles=bold> "{product:absolute_cost} NOK"
 
 			<div styles=column>
 				<order-list@order-list>
@@ -459,7 +455,7 @@ tag order-list
 	def total
 		var amount = 0
 		for order in orders
-			amount += order:price
+			amount += order:absolute_cost
 		amount
 
 	let main = styles.css
@@ -530,7 +526,7 @@ tag order-list
 					<div> "Order:"
 
 					for order, idx in orders
-						<div@{idx} styles=orderStyle :tap=["remove", idx]> "1 \u00d7 {order:name} @ {order:price} NOK"
+						<div@{idx} styles=orderStyle :tap=["remove", idx]> "1 \u00d7 {order:name} @ {order:absolute_cost} NOK"
 				else
 					<div styles=[button, neutral] :tap="logout"> "Log out"
 
