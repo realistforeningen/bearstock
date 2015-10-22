@@ -168,24 +168,20 @@ class Database:
                     "absolute_cost": product["base_price"] + rel_cost,
                     "tags": product["tags"].split("|")
                 })
-        return products
+        return products, prices["_id"]
 
-    def current_products_with_history(self):
-        prices = self.latest_prices()
-        sold_products = self.sold_products()
+    def prices_for_product(self, code):
+        product = self.e('SELECT * FROM products WHERE code = ?', (code,)).fetchone()
 
-        products = {}
-
-        for product in self.e('SELECT * FROM products'):
-            code = product["code"]
-            products[code] = {
-                "base_price": product["base_price"],
-                "last_price": prices[code],
-                "quantity": product["quantity"] - sold_products[code],
-                "price_id": prices["_id"]
-            }
-
-        return products
+        price_list = []
+        cursor = self.e('SELECT * FROM prices ORDER BY id')
+        for row in cursor:
+            prices = pickle.loads(row["data"])
+            price_list.append({
+                "timestamp": row["created_at"],
+                "value": prices.get(code, 0) + product["base_price"]
+            })
+        return price_list
 
     def orders_before(self, ts):
         return torows(self.e('SELECT * FROM orders WHERE created_at <= ? ORDER BY created_at', (ts,)))
