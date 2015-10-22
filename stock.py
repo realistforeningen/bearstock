@@ -83,8 +83,11 @@ class Database:
         prices["_id"] = row["id"]
         return prices
 
+    def prices_count(self):
+        return self.e('SELECT COUNT(*) FROM prices').fetchone()[0]
+
     def base_prices(self):
-        cursor = self.e('SELECT produce_code, base_price FROM products')
+        cursor = self.e('SELECT code, base_price FROM products')
         return todict(cursor)
 
     def stock_left(self):
@@ -168,6 +171,11 @@ class Database:
         sdata = pickle.dumps(data)
         self.e('INSERT INTO prices (data) VALUES (?)', (sdata,))
 
+    def orders_before(self, ts):
+        return torows(self.e('SELECT * FROM orders WHERE created_at <= ? ORDER BY created_at', (ts,)))
+
+from price_logic import PriceLogic
+
 # Responsible for running the actual stock exchange
 class Exchange:
     @classmethod
@@ -180,6 +188,11 @@ class Exchange:
     def run_default(self):
         Exchange(Database.default()).run()
 
+    BUDGET = 2000
+    PERIOD_DURATION = 5*60  # [s]
+    EVENT_LENGTH = 6*60*60  # [s]
+    TOTAL_PERIOD_COUNT = EVENT_LENGTH / PERIOD_DURATION
+
     def __init__(self, db):
         self.db = db
 
@@ -189,11 +202,39 @@ class Exchange:
         while True:
             print " * Stock is ticking"
             self.tick()
-            time.sleep(5*60)
+            time.sleep(self.PERIOD_DURATION)
 
     def tick(self):
-        # self.db.fetchAllDataRequired()
-        # prices = self.runEivindMagic()
-        # self.db.insertPrices(prices)
-        pass
+        with self.db.conn:
+            surplus = self.BUDGET + self.db.stock_account()
+            period_count = self.db.prices_count()
+            period_id = period_count - 1
+            periods_left = self.TOTAL_PERIOD_COUNT - period_count
+
+            pl = PriceLogic(
+                current_surplus=surplus,
+                period_id=period_id,
+                period_duration=self.PERIOD_DURATION,
+                periods_left=periods_left
+            )
+
+            base_prices = self.db.base_prices()
+            stock_left = self.db.stock_left()
+            price_adjustments = self.db.price_adjustments()
+
+            for key in base_prices:
+                pl.add_product(
+                    code=key,
+                    base_price=base_prices[key],
+                    price_data=price_adjustments[key],
+                    products_left=stock_left[key]
+                )
+
+            new_adjustments = pl.finalize()
+            print new_adjustments
+
+            # self.db.fetchAllDataRequired()
+            # prices = self.runEivindMagic()
+            # self.db.insertPrices(prices)
+            pass
 
