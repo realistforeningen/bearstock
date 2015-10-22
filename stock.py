@@ -89,9 +89,9 @@ class Database:
 
     def stock_left(self):
         cursor = self.e("""
-            SELECT orders.product_code, products.quantity - COUNT(orders.id)
-            FROM orders
-            JOIN products ON orders.product_code = products.code
+            SELECT code, quantity - COUNT(orders.id)
+            FROM products
+            LEFT OUTER JOIN orders ON orders.product_code = products.code
             GROUP BY product_code
         """)
         return todict(cursor)
@@ -126,6 +126,10 @@ class Database:
             idx = price_id_to_idx[row['price_id']]
             product_code = row['product_code']
             products[product_code][idx]['sold_units'] = row['sold_units']
+
+        # Next make sure all products are included:
+        for row in self.e('SELECT code FROM products'):
+            products[row['code']]
 
         return dict(products)
 
