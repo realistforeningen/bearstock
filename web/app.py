@@ -25,7 +25,6 @@ def stats():
 @app.route('/products')
 def products():
     products, prices = g.db.current_products_with_prices()
-    print prices
     return jsonify(products=products, price_id=prices["_id"])
 
 @app.route('/orders', methods=['POST'])
