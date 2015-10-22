@@ -233,4 +233,6 @@ class Exchange:
                 )
 
             new_adjustments = pl.finalize()
+            for key in new_adjustments:
+                new_adjustments[key] = int(new_adjustments[key])
             self.db.insert_prices(new_adjustments)
