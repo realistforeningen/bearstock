@@ -19,7 +19,7 @@ class PriceLogic:
         period_id : int
             Id of the current period. Should start at zero.
         period_duration : float
-            Length of a period.
+            Length of a period. Unit is seconds.
         periods_left : int
             Number of periods left.
         """
@@ -81,7 +81,7 @@ class PriceLogic:
             max(0, self.pid-p['ex_lookback'])
         ##
         transactions = 0
-        for p, purchase in enumerate(self.products['price_data']):
-            if p >= lookback_to:
-                transactions += (purchase['sold_unis'] if purchase else 0)
+        for pid, purchase in enumerate(self.products[code]['price_data']):
+            if pid >= lookback_to:
+                transactions += (purchase['sold_units'] if purchase else 0)
         return transactions*p['ex_periods']/(self.pid-lookback_to)
