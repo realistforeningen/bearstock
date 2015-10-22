@@ -1,6 +1,5 @@
 require 'imba/src/imba/browser'
-require 'whatwg-fetch'
-extern fetch
+let fetch = require 'whatwg-fetch'
 Object:assign = require 'object-assign'
 
 let styles = require 'imba-styles'
