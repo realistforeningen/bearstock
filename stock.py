@@ -74,7 +74,7 @@ class Database:
 
     # How much money is on our own account?
     def stock_account(self):
-        return self.e('SELECT SUM(stock_cost) FROM orders').fetchone()[0]
+        return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0]
 
     def latest_prices(self):
         row = self.e('SELECT * FROM prices ORDER BY id DESC LIMIT 1').fetchone()
