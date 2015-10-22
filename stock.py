@@ -167,7 +167,7 @@ class Database:
 
         return products
 
-    def update_prices(data):
+    def update_prices(self, data):
         sdata = pickle.dumps(data)
         self.e('INSERT INTO prices (data) VALUES (?)', (sdata,))
 
@@ -231,10 +231,4 @@ class Exchange:
                 )
 
             new_adjustments = pl.finalize()
-            print new_adjustments
-
-            # self.db.fetchAllDataRequired()
-            # prices = self.runEivindMagic()
-            # self.db.insertPrices(prices)
-            pass
-
+            self.db.update_prices(new_adjustments)
