@@ -2,12 +2,22 @@ from threading import Thread
 import time
 import sqlite3
 import pickle
+from collections import defaultdict
 
 def todict(cursor, key_field=0, value_field=1):
     res = {}
     for row in cursor:
         res[row[key_field]] = row[value_field]
     return res
+
+def dictmapper(row):
+    data = {}
+    for key in row.keys():
+        data[key] = row[key]
+    return data
+
+def torows(cursor, mapper=dictmapper):
+    return [mapper(row) for row in cursor]
 
 class Database:
     @classmethod
@@ -66,15 +76,45 @@ class Database:
     def stock_account(self):
         return self.e('SELECT SUM(stock_cost) FROM orders').fetchone()[0]
 
-    def sold_products(self):
-        return todict(self.e('SELECT product_code, COUNT(*) FROM orders GROUP BY product_code'))
-
     def latest_prices(self):
         row = self.e('SELECT * FROM prices ORDER BY id DESC LIMIT 1').fetchone()
         assert row is not None
         prices = pickle.loads(row["data"])
         prices["_id"] = row["id"]
         return prices
+
+    def price_adjustments(self):
+        # First fetch the prices:
+        prices = torows(self.e('SELECT id, data FROM prices ORDER BY id'))
+
+        # Build a list of dict for each period
+        def defaultval():
+            return {"sold_units": 0, "adjustment": 0}
+        products = defaultdict(lambda: [defaultval() for _ in xrange(len(prices))])
+
+        price_id_to_idx = {}
+
+        for idx, row in enumerate(prices):
+            price_id_to_idx[row['id']] = idx
+            adjustments = pickle.loads(row['data'])
+
+            for product_code in adjustments:
+                products[product_code][idx]["adjustment"] = adjustments[key]
+
+        # Then find the number of products sold per period
+        cursor = self.e("""
+            SELECT price_id, product_code, COUNT(id) as sold_units
+            FROM orders
+            GROUP BY price_id, product_code
+            ORDER BY price_id
+        """)
+
+        for row in cursor:
+            idx = price_id_to_idx[row['price_id']]
+            product_code = row['product_code']
+            products[product_code][idx]['sold_units'] = row['sold_units']
+
+        return dict(products)
 
     def current_products_with_prices(self):
         products = []
