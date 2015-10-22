@@ -12,6 +12,9 @@ export class ProductFetcher
 	prop priceId
 	prop failing
 
+	def initalize(options = {})
+		@updateDelay = options:updateDelay
+
 	def sync
 		# Override
 
@@ -36,7 +39,7 @@ export class ProductFetcher
 		sync
 
 	def updateProducts data
-		if !priceId
+		if !priceId or !@updateDelay
 			updateProductsNow(data)
 			return
 
@@ -44,6 +47,6 @@ export class ProductFetcher
 		priceId = null
 		sync
 
-		setTimeout(&, 1000) do
+		setTimeout(&, @updateDelay) do
 			updateProductsNow(data)
 

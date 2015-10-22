@@ -68,7 +68,7 @@ tag app
 			render
 
 	def build
-		productFetcher = ProductFetcher.new
+		productFetcher = ProductFetcher.new(updateDelay: 500)
 		productFetcher:sync = do render
 		productFetcher.start
 		styles.freeze

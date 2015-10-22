@@ -1,12 +1,13 @@
 require 'imba/src/imba/browser'
-require 'whatwg-fetch'
-extern fetch
+let fetch = require 'whatwg-fetch'
 Object:assign = require 'object-assign'
 
 let styles = require 'imba-styles'
 
 require "./normalize.css"
 require "./default.css"
+
+import ProductFetcher from "./loader"
 
 let Plottable = require "plottable/plottable"
 
@@ -53,16 +54,61 @@ tag line-plot < svg
 		@yaxis.redraw
 		self
 
-tag stats
-	let main-css = styles
-		height: '100%'
+tag price-table < table
+	prop products
 
-	let plot-css = styles
-		padding: '50px'
+	let table-css = styles.css
+		width: '100%'
+
+	let row-even-css = styles.css
+
+	let row-odd-css = styles.css
+		background: '#eee'
+
+	let row-base-css = styles.css
+		"& td":
+			padding: '0.5em 1em'
+
+	def row-css(idx)
+		if idx % 2 == 0
+			[row-base-css, row-even-css]
+		else
+			[row-base-css, row-odd-css]
+
+	def render
+		<self styles=table-css>
+			<tbody>
+				for product, idx in products
+					<tr styles=[row-css(idx)]>
+						<td> product:code
+						<td> product:name
+						<td> "{product:price} NOK"
+
+
+tag stats
+	prop productFetcher
+
+	let main-css = styles
+		flex-direction: 'row'
 		height: '100%'
+		padding: '50px'
+
+	let left-css = styles
+		flex: 2
+
+	let right-css = styles
+		flex: 2
+
+	def build
+		productFetcher = ProductFetcher.new
+		productFetcher:sync = do render
+		productFetcher.start
+		self
 
 	def render
 		<self styles=main-css>
 			<style> styles.toString
-			<div styles=plot-css>
-				<line-plot>
+			if productFetcher.products
+				<div styles=left-css>
+					<price-table products=productFetcher.products>
+			<div styles=right-css>
