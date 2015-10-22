@@ -83,7 +83,7 @@ tag app
 		products = null
 		render
 
-		setTimeout(&, 2000) do
+		setTimeout(&, 1000) do
 			updateProductsNow data
 
 	def fetchProductsLoop
@@ -174,7 +174,7 @@ tag app
 
 		let startTime = Date.new
 
-		atleast(req, 1000).then do |res|
+		atleast(req, 500).then do |res|
 			if res:status != 200
 				# TODO: Handle this better
 				window.alert("Payment failed!")
@@ -340,7 +340,7 @@ tag login-view
 		render
 
 		let p = fetch("/buyer?id={number}")
-		atleast(p, 1000)
+		atleast(p, 500)
 			.then(tojson)
 			.then do |data|
 				@isLoading = no
