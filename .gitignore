@@ -1,7 +1,13 @@
-/env
-/node_modules
-*.pyc
-.webassets-cache
-assets
+# virtualenv in root
+/env/
+
+node_modules/
+bower_components/
+
+__pycache__/
+.cache/
+
+/web/static/assets
 /app.db
-/bower_components
+
+*.pyc
