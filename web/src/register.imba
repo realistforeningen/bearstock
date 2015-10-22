@@ -17,8 +17,6 @@ def window.startApp
 	mainApp = <app>
 	document:body.appendChild mainApp.dom
 
-let tojson = do |data| data.json
-
 let grow = styles.css flex: 1
 let bold = styles.css fontWeight: 'bold'
 let screen = styles.css height: '100%'
@@ -34,12 +32,21 @@ tag app
 	prop products
 	prop orders
 	prop orderState
+	prop failing default: no
 
 	def fetchProducts
 		fetch("/products")
-			.then(tojson)
+			.then do |res|
+				if res:status == 200
+					res.json
+				else
+					throw "Wrong status code: {res:status}"
 			.then do |data|
+				failing = no
 				updateProducts(data)
+			.catch do
+				failing = yes
+				render
 
 	def updateProductsNow data
 		products = data:products
@@ -81,6 +88,10 @@ tag app
 		height: '100%'
 		flexDirection: 'column'
 
+	let fail-css = styles
+		color: '#f00'
+		margin-left: '2em'
+
 	let header = styles.css
 		background: '#1E2022'
 		borderBottom: '3px solid #52616B'
@@ -99,6 +110,8 @@ tag app
 			<style> styles.toString
 			<div styles=header>
 				<div> "BearStock v1"
+				if failing
+					<div styles=fail-css> "Connection lost"
 				<div styles=grow>
 				<div> Date.new.toString
 			<div styles=content>
