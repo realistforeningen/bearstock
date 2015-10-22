@@ -5,6 +5,7 @@ Object:assign = require 'object-assign'
 let styles = require 'imba-styles'
 
 import ProductCollection from "./filters"
+import ProductFetcher from "./loader"
 import animate from "./animation"
 
 require "./normalize.css"
@@ -48,56 +49,30 @@ let atleast = do |promise, duration|
 			.catch(eventually(duration, start, rejecter))
 
 tag app
-	prop priceId
+	prop productFetcher
 	prop buyer
-	prop products
 	prop orders
 	prop orderState
-	prop failing default: no
 
-	def fetchProducts
-		fetch("/products")
-			.then(tojson)
-			.then do |data|
-				failing = no
-				updateProducts(data)
-			.catch do
-				failing = yes
-				render
+	def failing
+		productFetcher.failing
 
-	def updateProductsNow data
-		products = data:products
-		priceId = data:price_id
-		render
+	def products
+		productFetcher.products
 
-	def updateProducts data
-		if !priceId
-			updateProductsNow data
-			return
-
-		if data:price_id === priceId
-		 	return
-
-		# Avoid updating the UI beneath the user's finger
-		products = null
-		render
-
-		setTimeout(&, 1000) do
-			updateProductsNow data
-
-	def fetchProductsLoop
-		setInterval(&, 10*1000) do
-			fetchProducts
+	def priceId
+		productFetcher.priceId
 
 	def renderContinously
 		setInterval(&, 500) do
 			render
 
 	def build
-		super
+		productFetcher = ProductFetcher.new
+		productFetcher:sync = do render
+		productFetcher.start
 		styles.freeze
-		fetchProducts
-		fetchProductsLoop
+		super
 		renderContinously
 		self
 
