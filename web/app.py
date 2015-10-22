@@ -41,3 +41,9 @@ def orders_create():
             )
     return jsonify(ok=True)
 
+@app.route('/buyer')
+def buyer():
+    buyer_id = int(request.args.get('id', -1))
+    buyer = g.db.find_buyer(buyer_id)
+    return jsonify(buyer=buyer)
+

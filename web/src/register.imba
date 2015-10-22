@@ -26,6 +26,22 @@ let flash = styles.css
 	animationDuration: '300ms'
 	animationIterationCount: 1
 
+let tojson = do |res|
+	if res:status == 200
+		res.json
+	else
+		throw "Wrong status code: {res:status}"
+
+let atleast = do |promise, duration|
+	let start = Date.new
+	Promise.new do |resolver|
+		promise.then do |res|
+			let pending = duration - (Date.new - start)
+			if pending < 0
+				resolver(res)
+			else
+				setTimeout(&, pending) do resolver(res)
+
 tag app
 	prop priceId
 	prop buyer
@@ -36,11 +52,7 @@ tag app
 
 	def fetchProducts
 		fetch("/products")
-			.then do |res|
-				if res:status == 200
-					res.json
-				else
-					throw "Wrong status code: {res:status}"
+			.then(tojson)
 			.then do |data|
 				failing = no
 				updateProducts(data)
@@ -155,26 +167,15 @@ tag app
 
 		let startTime = Date.new
 
-		req.then do |res|
+		atleast(req, 1000).then do |res|
 			if res:status != 200
 				# TODO: Handle this better
 				window.alert("Payment failed!")
+			orderState = "paid"
+			render
 
-			# We want it to take some time
-			let pending = 1000 - (Date.new - startTime)
-			if pending < 0
-				orderState = "paid"
-				render
-			else
-				setTimeout(&, pending) do
-					orderState = "paid"
-					render
-
-	def login number
-		buyer = {
-			id: number
-			name: "Magnus"
-		}
+	def login newBuyer
+		buyer = newBuyer
 		render
 
 	def logout
@@ -326,12 +327,42 @@ tag login-view
 
 	def go number
 		@pad.clear
-		mainApp.login(number)
+		@error = null
+
+		@isLoading = yes
+		render
+
+		let p = fetch("/buyer?id={number}")
+		atleast(p, 1000)
+			.then(tojson)
+			.then do |data|
+				@isLoading = no
+				if data:buyer
+					mainApp.login(data:buyer)
+				else
+					@error = "Error: Unknown trader code"
+				render
+
+	let error-css = styles
+		color: 'red'
+		font-size: '0.5em'
+		font-weight: 'bold'
+		margin-top: '5px'
+
+	let pending-css = styles
+		margin-top: '15px'
+		font-size: '1.5em'
+		color: '#1E2022'
 
 	def render
 		<self styles=main>
 			<div styles=header> "Enter trader code"
-			<key-pad@pad :go="go">
+			if @isLoading
+				<div styles=pending-css> "Logging in..."
+			else
+				if @error
+					<div styles=error-css> @error
+				<key-pad@pad :go="go">
 
 
 tag scroll-hint

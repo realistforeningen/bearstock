@@ -136,6 +136,12 @@ class Database:
 
         return dict(products)
 
+    def find_buyer(self, buyer_id):
+        cursor = self.e('SELECT * FROM buyers WHERE id = ?', (buyer_id,))
+        row = cursor.fetchone()
+        if row:
+            return dictmapper(row)
+
     def current_products_with_prices(self):
         products = []
         with self.conn:
