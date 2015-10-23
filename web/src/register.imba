@@ -130,6 +130,7 @@ tag app
 	def clearOrder
 		orders = []
 		orderState = null
+		@buy.reset if @buy
 		render
 
 	def isLocked
@@ -165,7 +166,6 @@ tag app
 	def logout
 		clearOrder
 		buyer = null
-		@buy.reset if @buy
 		render
 
 tag loading-view
