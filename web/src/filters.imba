@@ -1,6 +1,8 @@
 export class ProductCollection
+	prop sourceProducts
+
 	def initialize(products, positiveFilters, negativeFilters)
-		@unfilteredCount = products:length
+		@sourceProducts = products
 		@products = []
 
 		@pendingFilters = []
@@ -75,5 +77,5 @@ export class ProductCollection
 		@products:length
 
 	def isFiltered
-		count < @unfilteredCount
+		count < sourceProducts:length
 		

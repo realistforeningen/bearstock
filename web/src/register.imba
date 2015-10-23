@@ -254,6 +254,9 @@ tag buy-view
 
 
 	def render
+		if products !== collection.sourceProducts
+			@collection = null
+
 		<self styles=main>
 			<div styles=column>
 				<scroll-hint>
