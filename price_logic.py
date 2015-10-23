@@ -8,10 +8,14 @@ BASE_PARAMETERS = {
     'ex_periods': 12,  # strictly positive number
     'ex_lookback': 12,  # strictly positive or None
     # adjustment parameters
-    'decrease_percentage': 0.50,
-    'ad_acqu_weight': 1,
-    'ad_prev_adjust_weight': 10,
-    'ad_past_sales_weight': 20,
+    # - decrease
+    'decrease_scaling': 0.50,
+    'acqu_weight': 0,
+    'prev_adjust_weight': 10,
+    'time_since_sale_weight': 20,
+    # - increase
+    'increase_scaling': 1,
+    'past_purchase_importance': 1,
 }
 
 ## logic
@@ -76,14 +80,16 @@ class PriceLogic:
     def _compute_adjustment(self, code):
         product = self.products[code]
         params = product['p']
-        p = params['decrease_percentage']
+        decrease_scaling = params['decrease_scaling']
         ## read parameters
         w = (
-            params['ad_acqu_weight'],
-            params['ad_prev_adjust_weight'],
-            params['ad_past_sales_weight'],
+            params['acqu_weight'],
+            params['prev_adjust_weight'],
+            params['time_since_sale_weight'],
         )
         weight_abs_sum = sum(map(abs, w))
+        increase_scaling = params['increase_scaling']
+        past_purchase_importance = params['past_purchase_importance']
         ## periods since last purchase
         delta_purchase = len(product['price_data'])
         for pid, data in enumerate(reversed(product['price_data'])):
@@ -91,16 +97,19 @@ class PriceLogic:
                 delta_purchase = pid
                 break
         ## compute decrease
-        decrease_by = p*(
+        decrease_by = decrease_scaling*(
             w[0]*product['base_price'] +
             -w[1]*product['prev_adj'] +
             w[2]*delta_purchase
         )/(weight_abs_sum if weight_abs_sum != 0 else 1)
         decrease_by *= product['fraction_left']/max(1, product['expected'])
         ## compute increase
-        a, b = 1, 1
-        increase_by = b*(4. - 2./(product['expected'] + 1))*(4. - 3.*product['fraction_left'])*sum(
-            data['sold_units']*exp(-(self.pid - pid)/a)
+        increase_by = increase_scaling*(
+            2. - 1./max(1, product['expected'])
+        )*(
+            2. - 1.*product['fraction_left']
+        )*sum(
+            data['sold_units']*exp(-(self.pid - pid)/past_purchase_importance)
             for pid, data in enumerate(product['price_data'])
         )
 
