@@ -260,7 +260,7 @@ tag buy-view
 					<div styles=vbox>
 						<div styles=hbox>
 							<div styles=empty-css>
-								if isTruncated
+								if isTruncated and !collection.spansAllProducts(pendingFilters)
 									<div styles=[boxStyle, next-css] :tap="next"> "Next"
 
 							<div styles=space-css>
