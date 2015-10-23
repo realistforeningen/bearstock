@@ -520,11 +520,13 @@ tag order-list
 	let buttons = styles.css
 		flexDirection: 'row'
 		justifyContent: 'space-between'
+		margin-bottom: '0.5em'
+		flex-wrap: 'wrap'
 
 	let button = styles.css
 		padding: '1em 1em'
+		margin: '0.5em 0'
 		borderRadius: '10px'
-		margin: '0.5em 0 1em'
 		alignSelf: 'flex-start'
 		
 	let positive = styles.css
