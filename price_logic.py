@@ -89,8 +89,11 @@ class PriceLogic:
         adjustments = {}
         for code in self.products:
             if 'adjustment' in self.products[code]:
-                adjustments[code] = round(self.products[code]['adjustment'])
-        return adjustments
+                adjustments[code] = self.products[code]['adjustment']
+        # correct for surplus
+        self._deficit_correction()
+
+        return {code: round(adjustments[code]) for code in adjustments}
 
     def _compute_adjustment(self, code):
         product = self.products[code]
@@ -129,6 +132,23 @@ class PriceLogic:
         )
 
         return -decrease_by + increase_by
+
+    def _deficit_correction(self):
+        periods_left = max(1, self.p_left)
+        correction = self.surplus
+        # surplus
+        surplus = {code: self.products[code]['expected']*(
+            self.products[code]['base_price'] + self.products[code]['prev_adj']
+        ) for code in self.products}
+        sum_surplus = sum((surplus[code] for code in surplus))
+        # weight
+        weights = {code: 1 - surplus[code]/sum_surplus for code in surplus}
+        sum_weights = sum(weights)
+        weights = {code: weights[code]/sum_weights for code in weights}
+        # adjust prices for surplus
+        for code in self.products:
+            self.products[code]['adjustment'] \
+                = (weights[code]*correction/self.products[code]['expected'])/periods_left
 
     def _expected_sales(self, code):
         """Compute expected sales for a product with code.
