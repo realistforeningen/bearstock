@@ -625,17 +625,22 @@ tag blinker < span
 tag key-pad
 	let main = styles.css
 		width: '6em'
-		flexWrap: 'wrap'
+		flex-direction: 'row'
+		flex-wrap: 'wrap'
 
 	let button = styles.css
-		width: '33%'
+		border: '1px solid rgb(175,175,175)'
+		background: 'linear-gradient(to bottom, rgb(228,228,228), rgb(247,247,247))'
 		height: '2em'
+		width: '33%'
+		justify-content: 'center'
+		align-items: 'center'
 
 	let pad = styles.css
-		flexWrap: 'wrap'
+		flex-wrap: 'wrap'
 
 	let go = styles.css
-		background: 'red'
+		background: 'red none'
 
 	def commit
 		self
@@ -647,11 +652,11 @@ tag key-pad
 				<blinker interval=0.5> "_"
 			<div styles=pad>
 				for i in [1 .. 9]
-					<button@{i} styles=button :tap=["press", i]> i.toString
-				<button styles=button :tap="clear"> "X"
-				<button styles=button :tap=["press", 0]> "0"
+					<div styles=button :tap=["press", i]> i.toString
+				<div styles=button :tap="clear"> "X"
+				<div styles=button :tap=["press", 0]> "0"
 				if @number
-					<button styles=[button, go] :tap="go"> "Go"
+					<div styles=[button, go] :tap="go"> "Go"
 
 	def press num, evt
 		evt.cancel
