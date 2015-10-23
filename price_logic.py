@@ -11,10 +11,10 @@ BASE_PARAMETERS = {
     # - decrease
     'decrease_scaling': 0.50,
     'acqu_weight': 0,
-    'prev_adjust_weight': 10,
-    'time_since_sale_weight': 20,
+    'prev_adjust_weight': 20,
+    'time_since_sale_weight': 25,
     # - increase
-    'increase_scaling': 1,
+    'increase_scaling': 0.50,
     'past_purchase_importance': 1,
 }
 
@@ -105,9 +105,9 @@ class PriceLogic:
         decrease_by *= product['fraction_left']/max(1, product['expected'])
         ## compute increase
         increase_by = increase_scaling*(
-            2. - 1./max(1, product['expected'])
+            4. - 2./max(1, product['expected'])
         )*(
-            2. - 1.*product['fraction_left']
+            4. - 2.*product['fraction_left']
         )*sum(
             data['sold_units']*exp(-(self.pid - pid)/past_purchase_importance)
             for pid, data in enumerate(product['price_data'])
