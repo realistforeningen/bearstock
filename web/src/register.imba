@@ -1,5 +1,6 @@
 require 'imba/src/imba/browser'
 let fetch = require 'whatwg-fetch'
+let Color = require 'color'
 Object:assign = require 'object-assign'
 
 let styles = require 'imba-styles'
@@ -20,7 +21,8 @@ def window.startApp
 let grow = styles.css flex: 1
 let bold = styles.css fontWeight: 'bold'
 let screen = styles.css height: '100%'
-let hbox = styles.css flexDirection: 'column'
+let vbox = styles.css flexDirection: 'column'
+let hbox = styles.css flexDirection: 'row'
 let flash = styles.css
 	animationName: 'flash'
 	animationDuration: '300ms'
@@ -47,6 +49,11 @@ let atleast = do |promise, duration|
 		promise
 			.then(eventually(duration, start, resolver))
 			.catch(eventually(duration, start, rejecter))
+
+
+
+let colors =
+	background: Color("#C9D6DF")
 
 tag app
 	prop productFetcher
@@ -123,6 +130,7 @@ tag app
 	def clearOrder
 		orders = []
 		orderState = null
+		@buy.reset if @buy
 		render
 
 	def isLocked
@@ -158,7 +166,6 @@ tag app
 	def logout
 		clearOrder
 		buyer = null
-		@buy.reset if @buy
 		render
 
 tag loading-view
@@ -175,16 +182,18 @@ tag loading-view
 
 tag buy-view
 	prop disabled
-	prop appliedFilters
 
-	def appliedFilters
-		@appliedFilters ?= []
+	def postiveFilters
+		@postiveFilters ?= []
+
+	def negativeFilters
+		@negativeFilters ?= []
 
 	def products
 		mainApp.products
 
 	def collection
-		@collection ?= ProductCollection.new(products, appliedFilters)
+		@collection ?= ProductCollection.new(products, postiveFilters, negativeFilters)
 
 	let main = styles.css
 		flexDirection: 'row'
@@ -221,11 +230,22 @@ tag buy-view
 		background: '#C9D6DF'
 		color: '#1E2022'
 		margin: "5px 0"
-		padding: "1em 0.5em 1em 1em"
+		padding: "1em 0.5em"
 		flex: '0 0 auto'
 
 		flexDirection: 'row'
 		alignItems: 'baseline'
+
+	let next-css = styles
+		background: colors:background.clone.darken(0.2).hexString
+		justify-content: 'center'
+		flex: "1 0 0"
+
+	let empty-css = styles
+		flex: "1 0 0"
+
+	let space-css = styles
+		width: '5px'
 
 	let mark = styles.css
 		fontWeight: 'bold'
@@ -237,16 +257,24 @@ tag buy-view
 		<self styles=main>
 			<div styles=column>
 				<scroll-hint>
-					# TODO: Can we refactor this into one thingie?
-					<div styles=hbox> for filter,idx in collection.appliedFilters
-						<div@{idx} styles=[boxStyle] :tap=["removeFilter", idx]>
-							<div styles=mark> "\u2612"
-							<div> filter
+					<div styles=vbox>
+						<div styles=hbox>
+							<div styles=empty-css>
+								if isTruncated and !collection.spansAllProducts(pendingFilters)
+									<div styles=[boxStyle, next-css] :tap="next"> "Next"
 
-					<div styles=hbox> for filter,idx in collection.pendingFilters
-						<div@{idx} styles=[boxStyle] :tap=["applyFilter", filter]>
-							<div styles=mark> "\u2610"
-							<div> filter
+							<div styles=space-css>
+
+							<div styles=empty-css>
+								if collection.isFiltered
+									<div styles=[boxStyle, next-css] :tap="clearFilters"> "Reset"
+
+						for filter,idx in pendingFilters
+							<div styles=[boxStyle] :tap=["applyFilter", filter]>
+								<div styles=mark> "\u2610"
+								<div> filter
+
+
 			<div styles=[column, mainColumn]>
 				if collection.isFiltered
 					<div styles=notice :tap="clearFilters"> "Only showing {collection.count} of {products:length} products. Tap here to clear filters."
@@ -261,19 +289,34 @@ tag buy-view
 			<div styles=column>
 				<order-list@order-list>
 
+	let MAX_FILTERS = 5
+
+	def pendingFilters
+		collection.pendingFilters.slice(0, MAX_FILTERS)
+
+	def isTruncated
+		collection.pendingFilters:length > MAX_FILTERS
+
 	def alert
 		@order-list.alert
 
 	def removeFilter idx
 		return alert if disabled
 
-		@appliedFilters.splice(idx, 1)
+		postiveFilters.splice(idx, 1)
 		@collection = null
 		render
 
 	def applyFilter name
 		return alert if disabled
-		@appliedFilters.push(name)
+		postiveFilters.push(name)
+		@collection = null
+		render
+
+	def next
+		return alert if disabled
+		for name in pendingFilters
+			negativeFilters.push(name)
 		@collection = null
 		render
 
@@ -283,7 +326,8 @@ tag buy-view
 		render
 
 	def reset
-		@appliedFilters = []
+		@postiveFilters = []
+		@negativeFilters = []
 		@collection = null
 
 	def buy product, evt
@@ -476,11 +520,13 @@ tag order-list
 	let buttons = styles.css
 		flexDirection: 'row'
 		justifyContent: 'space-between'
+		margin-bottom: '0.5em'
+		flex-wrap: 'wrap'
 
 	let button = styles.css
 		padding: '1em 1em'
+		margin: '0.5em 0'
 		borderRadius: '10px'
-		margin: '0.5em 0 1em'
 		alignSelf: 'flex-start'
 		
 	let positive = styles.css
@@ -500,7 +546,7 @@ tag order-list
 
 	def render
 		<self styles=main>
-			<div styles=hbox>
+			<div styles=vbox>
 				<div styles=name> "Welcome {buyer:name}"
 				<div styles=extra>
 					if orderState == "paid"
@@ -581,17 +627,22 @@ tag blinker < span
 tag key-pad
 	let main = styles.css
 		width: '6em'
-		flexWrap: 'wrap'
+		flex-direction: 'row'
+		flex-wrap: 'wrap'
 
 	let button = styles.css
-		width: '33%'
+		border: '1px solid rgb(175,175,175)'
+		background: 'linear-gradient(to bottom, rgb(228,228,228), rgb(247,247,247))'
 		height: '2em'
+		width: '33%'
+		justify-content: 'center'
+		align-items: 'center'
 
 	let pad = styles.css
-		flexWrap: 'wrap'
+		flex-wrap: 'wrap'
 
 	let go = styles.css
-		background: 'red'
+		background: 'red none'
 
 	def commit
 		self
@@ -603,11 +654,11 @@ tag key-pad
 				<blinker interval=0.5> "_"
 			<div styles=pad>
 				for i in [1 .. 9]
-					<button@{i} styles=button :tap=["press", i]> i.toString
-				<button styles=button :tap="clear"> "X"
-				<button styles=button :tap=["press", 0]> "0"
+					<div styles=button :tap=["press", i]> i.toString
+				<div styles=button :tap="clear"> "X"
+				<div styles=button :tap=["press", 0]> "0"
 				if @number
-					<button styles=[button, go] :tap="go"> "Go"
+					<div styles=[button, go] :tap="go"> "Go"
 
 	def press num, evt
 		evt.cancel

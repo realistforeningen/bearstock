@@ -1,11 +1,12 @@
 export class ProductCollection
-	def initialize(products, appliedFilters)
+	def initialize(products, positiveFilters, negativeFilters)
 		@unfilteredCount = products:length
 		@products = []
 
 		@pendingFilters = []
 		@pendingCounts = {}
-		@appliedFilters = appliedFilters
+		@positiveFilters = positiveFilters
+		@negativeFilters = negativeFilters
 
 		for product in products
 			if matches(product)
@@ -15,7 +16,11 @@ export class ProductCollection
 		sortData
 
 	def matches product
-		for filter in @appliedFilters
+		for filter in @negativeFilters
+			if filter in product:tags
+				return false
+
+		for filter in @positiveFilters
 			if !(filter in product:tags)
 				return false
 
@@ -44,13 +49,21 @@ export class ProductCollection
 
 	def sortData
 		@pendingFilters.sort do |a, b|
-			a.localeCompare(b)
+			@pendingCounts[b] - @pendingCounts[a]
 
 		@products.sort do |a, b|
 			a:name.localeCompare(b:name)
 
-	def appliedFilters
-		@appliedFilters
+	def spansAllProducts(filterList)
+		let matchingCount = 0
+
+		for product in @products
+			for t in product:tags
+				if t in filterList
+					matchingCount += 1
+					break
+
+		return matchingCount == count
 
 	def pendingFilters
 		@pendingFilters

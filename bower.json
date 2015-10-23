@@ -1,6 +1,6 @@
 {
   "name": "bearstock",
   "dependencies": {
-    "plottable": "~1.14.0"
+    "plottable": "~1.16.0"
   }
 }

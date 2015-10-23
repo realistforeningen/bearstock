@@ -1,5 +1,6 @@
 require 'imba/src/imba/browser'
 let fetch = require 'whatwg-fetch'
+let Random = require 'random-js'
 Object:assign = require 'object-assign'
 
 let styles = require 'imba-styles'
@@ -15,7 +16,6 @@ def window.startApp
 	styles.freeze
 	let app = <stats>
 	document:body.appendChild(app.dom)
-	setTimeout(&, 500) do app.render
 
 tag svg < htmlelement
 	prop width dom: yes
@@ -25,33 +25,55 @@ tag svg < htmlelement
 		document:createElementNS("http://www.w3.org/2000/svg", "svg")
 
 tag line-plot < svg
+	prop data
 
 	def build
-		let xscale = Plottable.Scales.Linear.new
+		let cs = @cs = Plottable.Scales.Color.new
+
+		let xscale = Plottable.Scales.Time.new
 		let yscale = Plottable.Scales.Linear.new
 
-		let xaxis = Plottable.Axes.Numeric.new(xscale, 'bottom')
+		let xaxis = @xaxis = Plottable.Axes.Time.new(xscale, 'bottom')
+		xaxis.axisConfigurations([
+			[
+				{ interval: Plottable.TimeInterval:minute, step: 30, formatter: Plottable.Formatters.time("%H:%M") },
+				{ interval: Plottable.TimeInterval:day, step: 1, formatter: Plottable.Formatters.time("%B %e") },
+			]
+		])
 		let yaxis = @yaxis = Plottable.Axes.Numeric.new(yscale, 'left')
 
-		let plot = Plottable.Plots.Line.new
+		let plot = @plot = Plottable.Plots.Line.new
 
-		let data = for i in [1 .. 100]
-			{x: i, y: i*i}
+		@ds1 = Plottable.Dataset.new([], idx: 0)
+		@ds2 = Plottable.Dataset.new([], idx: 1)
+		plot.addDataset(@ds1).addDataset(@ds2)
 
-		plot.addDataset(Plottable.Dataset.new(data))
+		plot.x(&, xscale) do |d| Date.new(d:timestamp*1000)
+		plot.y(&, yscale) do |d| d:value + d:jitter
+		plot.attr("stroke") do |_,_,ds|
+			cs.range[ds.metadata:idx]
 
-		plot.x(&, xscale) do |d| d:x
-		plot.y(&, yscale) do |d| d:y
+		let legend = Plottable.Components.Legend.new(cs)
 
 		let chart = @chart = Plottable.Components.Table.new([
+			[null, legend],
 			[yaxis, plot],
 			[null, xaxis]
 		])
 		chart.renderTo(dom)
+		super
 
 	def render
+		let keys = Object.keys(data)
+		setTimeout(&, 0) do
+			# Don't ask me why this is in a setTimeout
+			@cs.domain(keys)
+			@ds1.data(data[keys[0]])
+			@ds2.data(data[keys[1]])
 		@chart.redraw
 		@yaxis.redraw
+		@xaxis.redraw
+		@plot.redraw
 		self
 
 tag price-table < table
@@ -87,6 +109,29 @@ tag price-table < table
 
 tag stats
 	prop productFetcher
+	prop priceData
+
+	def addJitter(data)
+		for key of data
+			let seed = (char.charCodeAt(0) for char in key.split)
+			let r = Random.new(Random:engines.mt19937.seedWithArray(seed))
+			for entry in data[key]
+				# TODO: deterministic jitter?
+				entry:jitter = r.real(-0.5, 0.5)
+		return data
+
+	def build
+		productFetcher = ProductFetcher.new
+		productFetcher:sync = do render
+		productFetcher.start
+
+		fetch("/prices?code=FYPA&code=CRGI")
+			.then do |res|
+				res.json
+			.then do |data|
+				priceData = addJitter(data)
+				render
+		self
 
 	let main-css = styles
 		flex-direction: 'row'
@@ -98,17 +143,14 @@ tag stats
 
 	let right-css = styles
 		flex: 2
-
-	def build
-		productFetcher = ProductFetcher.new
-		productFetcher:sync = do render
-		productFetcher.start
-		self
+		height: '100%'
 
 	def render
 		<self styles=main-css>
 			<style> styles.toString
-			if productFetcher.products
-				<div styles=left-css>
+			<div styles=left-css>
+				if productFetcher.products
 					<price-table products=productFetcher.products>
 			<div styles=right-css>
+				if priceData
+					<line-plot data=priceData>
