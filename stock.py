@@ -170,18 +170,19 @@ class Database:
                 })
         return products, prices["_id"]
 
-    def prices_for_product(self, code):
-        product = self.e('SELECT * FROM products WHERE code = ?', (code,)).fetchone()
-
-        price_list = []
+    def prices_for_product(self, codes):
+        assert len(codes) == 2  # TODO: bother implementing this properly
+        base_prices = todict(self.e('SELECT code, base_price FROM products WHERE code IN (?, ?)', codes))
+        price_data = defaultdict(lambda: [])
         cursor = self.e('SELECT * FROM prices ORDER BY id')
         for row in cursor:
             prices = pickle.loads(row["data"])
-            price_list.append({
-                "timestamp": row["created_at"],
-                "value": prices.get(code, 0) + product["base_price"]
-            })
-        return price_list
+            for code in codes:
+                price_data[code].append({
+                    "timestamp": row["created_at"],
+                    "value": prices.get(code, 0) + base_prices[code]
+                })
+        return dict(price_data)
 
     def orders_before(self, ts):
         return torows(self.e('SELECT * FROM orders WHERE created_at <= ? ORDER BY created_at', (ts,)))
