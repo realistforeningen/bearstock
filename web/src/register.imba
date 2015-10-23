@@ -203,11 +203,11 @@ tag buy-view
 
 	let column = styles.css
 		padding: '0 2em'
-		flex: 1
+		flex: "1 0"
 		flexDirection: 'column'
 
 	let mainColumn = styles.css
-		flex: 2
+		flex: "0 0 40%"
 
 	let filterStyle = styles.css
 		color: 'red'
