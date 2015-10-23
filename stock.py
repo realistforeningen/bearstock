@@ -27,6 +27,7 @@ class Database:
     def __init__(self, filename):
         self.conn = sqlite3.connect(filename)
         self.conn.row_factory = sqlite3.Row
+        self.e('PRAGMA foreign_keys = ON')
 
     def close(self):
         self.conn.close()

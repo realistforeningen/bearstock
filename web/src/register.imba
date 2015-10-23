@@ -152,12 +152,13 @@ tag app
 
 		let startTime = Date.new
 
-		atleast(req, 500).then do |res|
-			if res:status != 200
+		atleast(req, 500)
+			.catch do
 				# TODO: Handle this better
 				window.alert("Payment failed!")
-			orderState = "paid"
-			render
+			.then do |res|
+				orderState = "paid"
+				render
 
 	def login newBuyer
 		buyer = newBuyer
@@ -201,12 +202,12 @@ tag buy-view
 		flex: 1
 
 	let column = styles.css
-		padding: '0 2em'
-		flex: 1
+		padding: '0 1em'
+		flex: "1 0"
 		flexDirection: 'column'
 
 	let mainColumn = styles.css
-		flex: 2
+		flex: "0 0 40%"
 
 	let filterStyle = styles.css
 		color: 'red'
@@ -254,6 +255,9 @@ tag buy-view
 
 
 	def render
+		if products !== collection.sourceProducts
+			@collection = null
+
 		<self styles=main>
 			<div styles=column>
 				<scroll-hint>
@@ -271,7 +275,6 @@ tag buy-view
 
 						for filter,idx in pendingFilters
 							<div styles=[boxStyle] :tap=["applyFilter", filter]>
-								<div styles=mark> "\u2610"
 								<div> filter
 
 
@@ -572,7 +575,7 @@ tag order-list
 					<div> "Order:"
 
 					for order, idx in orders
-						<div@{idx} styles=orderStyle :tap=["remove", idx]> "1 \u00d7 {order:name} @ {order:absolute_cost} NOK"
+						<div@{idx} styles=orderStyle> "1 \u00d7 {order:name} @ {order:absolute_cost} NOK"
 				else
 					<div styles=[button, neutral] :tap="logout"> "Log out"
 

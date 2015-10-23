@@ -4,7 +4,7 @@ body {
   cursor: default;
   background: #fff;
 
-  font-family: 'Karla', sans-serif;
+  font-family: system, -apple-system, ".SFNSText-Regular", "San Francisco", "Roboto", "Segoe UI", "Helvetica Neue", "Lucida Grande", sans-serif;
 
   font-size: 20px;
 }
@@ -18,8 +18,10 @@ div {
   display: flex;
 }
 
-html, body {
+body {
   height: 100%;
+  width: 100%;
+  position: fixed;
 }
 
 @-webkit-keyframes flash {
