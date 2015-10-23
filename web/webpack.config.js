@@ -14,6 +14,7 @@ module.exports = {
   	loaders: [
   	  { test: /\.imba$/, loader: 'imba-loader' },
       { test: /\.css$/, loader: 'style!raw' },
+      { test: /\.json$/, loader: 'json'},
       {
         test: /plottable\/plottable\.js/,
         loader: 'imports?d3=d3/d3.js,_=plottable/plottable.css,require=>false'
