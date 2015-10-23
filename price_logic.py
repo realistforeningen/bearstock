@@ -77,6 +77,21 @@ class PriceLogic:
             code, self.products[code]['adjustment'], self.products[code]['prev_adj']
         )
 
+    def finalize(self):
+        """Finalize the price calculations.
+
+        Returns
+        -------
+        adjustments : dict
+            Product code to adjustment dictionary.
+            Missing entries means the adjustment is zero.
+        """
+        adjustments = {}
+        for code in self.products:
+            if 'adjustment' in self.products[code]:
+                adjustments[code] = round(self.products[code]['adjustment'])
+        return adjustments
+
     def _compute_adjustment(self, code):
         product = self.products[code]
         params = product['p']
@@ -114,21 +129,6 @@ class PriceLogic:
         )
 
         return -decrease_by + increase_by
-
-    def finalize(self):
-        """Finalize the price calculations.
-
-        Returns
-        -------
-        adjustments : dict
-            Product code to adjustment dictionary.
-            Missing entries means the adjustment is zero.
-        """
-        adjustments = {}
-        for code in self.products:
-            if 'adjustment' in self.products[code]:
-                adjustments[code] = round(self.products[code]['adjustment'])
-        return adjustments
 
     def _expected_sales(self, code):
         """Compute expected sales for a product with code.
