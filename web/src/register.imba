@@ -202,7 +202,7 @@ tag buy-view
 		flex: 1
 
 	let column = styles.css
-		padding: '0 2em'
+		padding: '0 1em'
 		flex: "1 0"
 		flexDirection: 'column'
 
