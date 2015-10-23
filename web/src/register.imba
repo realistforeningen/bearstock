@@ -275,7 +275,6 @@ tag buy-view
 
 						for filter,idx in pendingFilters
 							<div styles=[boxStyle] :tap=["applyFilter", filter]>
-								<div styles=mark> "\u2610"
 								<div> filter
 
 
