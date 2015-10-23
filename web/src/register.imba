@@ -152,12 +152,13 @@ tag app
 
 		let startTime = Date.new
 
-		atleast(req, 500).then do |res|
-			if res:status != 200
+		atleast(req, 500)
+			.catch do
 				# TODO: Handle this better
 				window.alert("Payment failed!")
-			orderState = "paid"
-			render
+			.then do |res|
+				orderState = "paid"
+				render
 
 	def login newBuyer
 		buyer = newBuyer
