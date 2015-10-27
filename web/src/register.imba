@@ -285,7 +285,7 @@ tag buy-view
 				<scroll-hint>
 					for product,idx in collection.toArray
 						<div@{idx} styles=boxStyle :tap=["buy", product]>
-							<div> product:name
+							<div> "{product:brewery} {product:name}"
 							<div styles=grow>
 							<div styles=bold> "{product:absolute_cost} NOK"
 
