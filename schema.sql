@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS products (
   -- Name of the beer
   name TEXT NOT NULL,
 
+  brewery TEXT NOT NULL,
+
   -- "Innkjøpspris"
   base_price INTEGER NOT NULL,
 
