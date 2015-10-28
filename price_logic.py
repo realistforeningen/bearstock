@@ -45,19 +45,25 @@ class PriceLogic:
         # debug print
         print 'surplus: %.2f' % current_surplus
 
-    def add_product(self, code, base_price, price_data, products_left, params=BASE_PARAMETERS):
+    def add_product(self,
+                    code, brewery, base_price, products_left, prod_type,
+                    price_data, params=BASE_PARAMETERS):
         """
         Parameters
         ----------
         code : str
             Product code.
+        brewery : string
+            Name of the brewery.
         base_price : float
             Product base price.
+        products_left : int
+            Number of products left.
+        prod_type : string
+            Product type.
         price_data : list
             List of dictionaries each containing the keys 'sold_units' and 'adjustment'.
             One element per period.
-        products_left : int
-            Number of products left.
         params : dict, optional
             Parameters.
         """

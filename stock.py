@@ -104,6 +104,14 @@ class Database:
         cursor = self.e('SELECT code, base_price FROM products')
         return todict(cursor)
 
+    def breweries(self):
+        cursor = self.e('SELECT code, brewery FROM products')
+        return todict(cursor)
+
+    def types(self):
+        cursor = self.e('SELECT code, type FROM products')
+        return todict(cursor)
+
     def stock_left(self):
         cursor = self.e("""
             SELECT coalesce(orders.product_code, products.code) as code, quantity - COUNT(orders.id)
@@ -237,13 +245,17 @@ class Exchange:
             base_prices = self.db.base_prices()
             stock_left = self.db.stock_left()
             price_adjustments = self.db.price_adjustments()
+            breweries = self.db.breweries()
+            types = self.db.types()
 
             for key in base_prices:
                 pl.add_product(
                     code=key,
+                    brewery=breweries[key],
                     base_price=base_prices[key],
-                    price_data=price_adjustments[key],
-                    products_left=stock_left[key]
+                    products_left=stock_left[key],
+                    prod_type=types[key],
+                    price_data=price_adjustments[key]
                 )
 
             new_adjustments = pl.finalize()
