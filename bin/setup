@@ -1,19 +1,61 @@
-#!/usr/bin/env PYTHONPATH=. python 
+#!/usr/bin/env PYTHONPATH=. python
+# coding: utf-8
+
+import argparse as ap
+import csv
+
+# from pprint import pprint
+
 from stock import Database
 
-db = Database.default()
+if __name__ == '__main__':
+    # parse args
+    parser = ap.ArgumentParser()
+    parser.add_argument('csv', type=str, help='CSV file to read products from')
+    parsed = parser.parse_args()
 
-# Ensure schema exists
-for statement in open('schema.sql').read().split(';'):
-	db.e(statement)
+    # get products
+    products = []
+    with open(parsed.csv, 'r') as csvfile:
+        # detect dialect
+        dialect = csv.Sniffer().sniff(csvfile.readline().rstrip(',;\t'))
+        csvfile.seek(0)
+        # parse
+        for row in csv.DictReader(csvfile, restval='extratags', dialect=dialect):
+            product = {'code': '', 'tags': []}
+            for key, value in row.iteritems():
+                if key:
+                    # ensure unicode
+                    key = unicode(key.decode('utf-8').lower())
+                    value = unicode(value.decode('utf-8'))
+                    # handle special keys
+                    if key == 'brewery code':
+                        product['code'] = ''.join([value, product['code']])
+                    elif key == 'name code':
+                        product['code'] = ''.join([product['code'], value])
+                    elif key == 'tags':
+                        product['tags'].append(value)
+                    elif key in ['base price', 'quantity']:
+                        product[key.replace(' ', '_')] = int(value) if value else 0
+                    else:
+                        product[key.replace(' ', '_')] = value
+                else:  # extra values are stored under a None key
+                    # ensure unicode
+                    for i in xrange(len(value)):
+                        value[i] = unicode(value[i].decode('utf-8'))
+                    product['tags'].extend(value)
+            products.append(product)
 
-# Ensure the prices
-db.ensure_prices()
+    # setup DB
+    db = Database.default()
 
-# Ensure products are in
-from products import products
-db.import_products(products)
+    # ensure schema exists
+    for statement in open('schema.sql').read().split(';'):
+        db.e(statement)
+    # ensure the prices
+    db.ensure_prices()
+    # ensure a buyer
+    db.ensure_buyer()
 
-db.ensure_buyer()
-
-
+    # ensure products are in
+    db.import_products(products)

@@ -13,14 +13,19 @@ CREATE TABLE IF NOT EXISTS products (
   -- Name of the beer
   name TEXT NOT NULL,
 
+  -- Brewery
   brewery TEXT NOT NULL,
 
-  -- "Innkjøpspris"
+  -- Aquisition price
   base_price INTEGER NOT NULL,
 
   -- How many we have *before* any orders
   quantity INTEGER NOT NULL,
 
+  -- Beer type
+  type TEXT NOT NULL,
+
+  -- product tags
   tags TEXT NOT NULL
 );
 
@@ -51,4 +56,3 @@ CREATE TABLE IF NOT EXISTS orders (
 
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
-
