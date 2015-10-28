@@ -23,7 +23,7 @@ Set up the database:
 ```
 $ bin/setup <products-file>
 ```
-Substitute `<products-file>` for a valid csv products file, eq. [`bearstock-products.csv`](./blob/master/bearstock-products.csv).
+Substitute `<products-file>` for a valid csv products file, eq. [`bearstock-products.csv`](bearstock-products.csv).
 
 Build the JavaScript:
 
