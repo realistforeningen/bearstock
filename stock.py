@@ -51,15 +51,17 @@ class Database:
         for product in products:
             with self.conn:
                 self.e('DELETE FROM products WHERE code = ?', (product['code'],))
-                tags = "|".join(product["tags"])
+                tags = '|'.join([product['brewery']]+product['tags'])
                 values = (
                     product["code"],
                     product["name"],
+                    product["brewery"],
                     product["base_price"],
                     product.get("quantity", 0),
+                    product["type"],
                     tags
                 )
-                self.e('INSERT INTO products (code, name, base_price, quantity, tags) VALUES (?, ?, ?, ?, ?)', values)
+                self.e('INSERT INTO products (code, name, brewery, base_price, quantity, type, tags) VALUES (?, ?, ?, ?, ?, ?, ?)', values)
 
     def ensure_prices(self):
         with self.conn:
