@@ -21,8 +21,9 @@ $ npm install
 Set up the database:
 
 ```
-$ bin/setup
+$ bin/setup <products-file>
 ```
+Substitute `<products-file>` for a valid csv products file, eq. [`bearstock-products.csv`](./blob/master/bearstock-products.csv).
 
 Build the JavaScript:
 

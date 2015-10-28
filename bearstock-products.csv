@@ -1,0 +1,23 @@
+Brewery	Name	Brewery Code	Name Code	Base Price	Quantity	Type	Tags
+Frydenlund	Pale Ale Tapp	FY	PA	35		Pale Ale	Norsk	Tapp	Pale Ale
+Frydenlund	Bayer Tapp	FY	BY	35		Bayer	Norsk	Tapp	Bayer
+Frydenlund	Pils Tapp	FY	PL	35		Pils	Norsk	Tapp	Pils
+Paulaner	Hefe-Weissbier	PU	HW	45		Hveteøl	Import	Hveteøl
+Paulaner	Dunkel-Weissbier	PU	DW	45		Hveteøl	Import	Hveteøl
+Leffe	Blonde	LE	BL	43		Belgisk Ale	Import	Belgisk Blonde
+Leffe	Brune	LE	BR	43		Belgisk Ale	Import	Dubbel
+Franziskaner	Weissbier	FZ	WB	45		Hveteøl	Import	Hveteøl
+Rouge Ales	Mocha Porter	RA	MP	44		Porter	Import	Porter
+Founders	All Day IPA	FD	AD	40		India Pale Ale	Import	Pale Ale	Session IPA	India Pale Ale
+Founders	Dry Hopped Pale Ale	FD	DH	40		Pale Ale	Import	Pale Ale	Amerikansk Pale Ale
+Belhaven	Twisted Thistle IPA	BH	TT	37		India Pale Ale	Import	Pale Ale	India Pale Ale
+Samuel Smith	Taddy Porter	SS	TP	35		Porter	Import	Porter
+Austmann	Blåbærstout	AM	BS	56		Porter	Norsk	Stout
+Austmann	Utpå	AM	UP	38		Hveteøl	Norsk	Wit
+Austmann	Sjokolade & Kirsbærporter	AM	SK	55		Porter	Norsk	Imperial porter	Porter
+Austmann	Sea ESB	AM	SE	46		Pale Ale	Norsk	Bitter
+Austmann	Onkel i Amerika	AM	OA	38		India Pale Ale	Norsk	Pale Ale	Session IPA	India Pale Ale
+Austmann	Tre Gamle Damer	AM	GD	50		Belgisk Ale	Norsk	Pale Ale	Belgisk Pale Ale
+Newcastle	Brown Ale	NC	BA	31		Brown Ale	Import	Brown Ale
+Munkebo	Ragnarok	MB	RR	55		Porter	Import	Porter
+Munkebo	Folkevang	MB	FV	55		Hveteøl	Import	Hveteøl
