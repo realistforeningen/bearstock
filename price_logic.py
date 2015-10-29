@@ -14,8 +14,8 @@ BASE_PARAMETERS = {
     'prev_adjust_weight': 4,
     'time_since_sale_weight': 5,
     # - increase
-    'increase_scaling': 0.50,
-    'past_purchase_importance': 40.,
+    'increase_scaling': 0.25,
+    'past_purchase_importance': 50.,
 }
 
 ## logic
@@ -40,7 +40,10 @@ class PriceLogic:
         self.p_duration = period_duration
         self.p_left = periods_left
         # product data
+        self.total_products_sold = 0
         self.products = {}
+        self.brewery_data = {}
+        self.type_data = {}
 
         # debug print
         print 'surplus: %.2f' % current_surplus
@@ -67,9 +70,21 @@ class PriceLogic:
         params : dict, optional
             Parameters.
         """
-        total_products = products_left + sum(
-            tuple((data['sold_units'] for data in price_data))
+        # count products
+        sold_products = sum(
+            ((data['sold_units'] if 'sold_units' in data else 0) for data in price_data)
         )
+        self.total_products_sold += sold_products  # count total products sold
+        total_products = products_left + sold_products  # compute products left
+        # store products sold per brewery
+        if brewery.lower() not in self.brewery_data:
+            self.brewery_data[brewery.lower()] = 0
+        self.brewery_data[brewery.lower()] += sold_products
+        # store products sold per type
+        if prod_type.lower() not in self.type_data:
+            self.type_data[prod_type.lower()] = 0
+        self.type_data[prod_type.lower()] += sold_products
+        # add product
         self.products[code] = {
             'brewery': brewery,
             'type': prod_type,
@@ -80,6 +95,9 @@ class PriceLogic:
                 if total_products > 0 and products_left >= 0 else 1.0
             ),
             'price_data': price_data,
+            'popularity': (
+                sold_products/float(self.total_products_sold) if self.total_products_sold > 0 else 0
+            ),
             'p': params,
         }
         self.products[code]['expected'] = self._expected_sales(code)
