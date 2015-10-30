@@ -1,4 +1,4 @@
-require 'imba/src/imba/browser'
+require 'imba'
 let fetch = require 'whatwg-fetch'
 let Random = require 'random-js'
 Object:assign = require 'object-assign'

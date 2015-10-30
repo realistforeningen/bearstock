@@ -1,4 +1,4 @@
-require 'imba/src/imba/browser'
+require 'imba'
 let fetch = require 'whatwg-fetch'
 let Color = require 'color'
 Object:assign = require 'object-assign'
