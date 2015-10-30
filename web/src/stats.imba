@@ -107,6 +107,50 @@ tag price-table < table
 						<td> "{product:absolute_cost} NOK"
 
 
+tag ticker
+	prop products
+
+	let main-css = styles
+		flex-direction: 'row'
+
+	let wrapper-css = styles
+		flex: '0 0 auto'
+		flex-direction: 'row'
+		animation: 'ticker 50s linear 0s infinite'
+
+	let product-css = styles
+		margin-right: '50px'
+		flex: '0 0 auto'
+		align-items: 'baseline'
+
+	let code-css = styles.css
+		font-weight: 'bold'
+
+	let price-css = styles.css
+		margin-left: '5px'
+
+	let positive-css = styles.css
+		margin-left: '5px'
+		color: 'green'
+		font-size: '0.8em'
+
+	let negative-css = styles.css
+		margin-left: '5px'
+		color: 'red'
+		font-size: '0.8em'
+
+	def render
+		<self styles=main-css>
+			<div styles=wrapper-css>
+				for product in products
+					<div styles=product-css>
+						<div styles=code-css> product:code
+						<div styles=price-css> "{product:absolute_cost} NOK"
+						if product:delta_cost > 0
+							<div styles=positive-css> "▲"
+						else
+							<div styles=negative-css> "▼"
+
 tag stats
 	prop productFetcher
 	prop priceData
@@ -134,9 +178,9 @@ tag stats
 		self
 
 	let main-css = styles
-		flex-direction: 'row'
+		flex-direction: 'column'
 		height: '100%'
-		padding: '50px'
+		padding: '10px 30px'
 
 	let left-css = styles
 		flex: 2
@@ -148,9 +192,12 @@ tag stats
 	def render
 		<self styles=main-css>
 			<style> styles.toString
-			<div styles=left-css>
-				if productFetcher.products
-					<price-table products=productFetcher.products>
-			<div styles=right-css>
-				if priceData
-					<line-plot data=priceData>
+			<ticker products=productFetcher.products>
+
+			# <div styles=left-css>
+			#	if productFetcher.products
+			#		<price-table products=productFetcher.products>
+			# <div styles=right-css>
+			#	if priceData
+			#		<line-plot data=priceData>
+
