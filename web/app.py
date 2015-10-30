@@ -18,6 +18,18 @@ def teardown_request(exception):
 def index():
     return render_template('index.html')
 
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        name = request.form.get('name', '')
+        if len(name) > 0:
+            with g.db.conn:
+                buyer_id = g.db.insert_buyer(name)
+
+            return render_template('signup.html', buyer_id=buyer_id, name=name)
+
+    return render_template('signup.html')
+
 @app.route('/stats')
 def stats():
     return render_template('stats.html')

@@ -45,7 +45,8 @@ class Database:
             placeholders.append('?')
 
         sql = 'INSERT INTO %s (%s) VALUES (%s)' % (table, ', '.join(keys), ', '.join(placeholders))
-        return self.e(sql, values)
+        res = self.e(sql, values)
+        return res.lastrowid
 
     def import_products(self, products):
         for product in products:
@@ -82,6 +83,9 @@ class Database:
     def insert_prices(self, prices):
         data = pickle.dumps(prices)
         self.e('INSERT INTO prices (data) VALUES (?)', (data,))
+
+    def insert_buyer(self, name):
+        return self.insert("buyers", name=name)
 
     # How much money is on our own account?
     def stock_account(self):
