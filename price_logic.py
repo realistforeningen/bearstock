@@ -9,12 +9,12 @@ BASE_PARAMETERS = {
     'ex_lookback': 12,  # strictly positive or None
     # adjustment parameters
     # - decrease
-    'decrease_scaling': 0.75,
+    'decrease_scaling': 0.70,
     'acqu_weight': 0,
     'prev_adjust_weight': 4,
     'time_since_sale_weight': 5,
     # - increase
-    'increase_scaling': 0.25,
+    'increase_scaling': 0.20,
     'past_purchase_importance': 50.,
 }
 
@@ -46,6 +46,7 @@ class PriceLogic:
         self.type_data = {}
 
         # debug print
+        print 'periods left: %d' % periods_left
         print 'surplus: %.2f' % current_surplus
 
     def add_product(self,
@@ -86,8 +87,8 @@ class PriceLogic:
         self.type_data[prod_type.lower()] += sold_products
         # add product
         self.products[code] = {
-            'brewery': brewery,
-            'type': prod_type,
+            'brewery': brewery.lower(),
+            'type': prod_type.lower(),
             'base_price': base_price,
             'prev_adj': (price_data[-1]['adjustment'] if price_data else 0),
             'fraction_left': (
@@ -118,8 +119,20 @@ class PriceLogic:
         adjustments = {}
         for code in self.products:
             if 'adjustments' in self.products[code]:
+                # read popularities
+                popularity, type_popularity, brewery_popularity = (
+                    self.products[code]['popularity'],
+                    self.type_data[self.products[code]['type']]/max(
+                        1., float(self.total_products_sold)),
+                    self.brewery_data[self.products[code]['brewery']]/max(
+                        1., float(self.total_products_sold)),
+                )
+                avg_pop = (popularity + 3*type_popularity + 2*brewery_popularity)/6.
+                # compute final adjustment
                 increase, decrease, deficit_correction = self.products[code]['adjustments']
-                adjustments[code] = increase + decrease + deficit_correction
+                adjustments[code] = (
+                    (1 + avg_pop)*increase + (1 - avg_pop)*decrease + deficit_correction
+                )
 
         # debug print
         for code in adjustments:
@@ -128,7 +141,7 @@ class PriceLogic:
             )
 
         # return rounded adjustments
-        return {code: round(adjustments[code]) for code in adjustments}
+        return {code: (adjustments[code]) for code in adjustments}
 
     def _compute_adjustment(self, code):
         product = self.products[code]
@@ -153,9 +166,9 @@ class PriceLogic:
         decrease_by = decrease_scaling*(
             w[0]*product['base_price'] +
             -w[1]*product['prev_adj'] +
-            w[2]*delta_purchase
+            w[2]*delta_purchase**1.5
         )/(weight_abs_sum if weight_abs_sum != 0 else 1)
-        decrease_by *= product['fraction_left']/max(1, product['expected'])
+        decrease_by *= product['fraction_left']/(product['expected'] + 1)
         ## compute increase
         increase_by = increase_scaling*(
             4. - 2./max(1, product['expected'])
