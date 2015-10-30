@@ -82,7 +82,6 @@ tag app
 
 	let main = styles.css
 		height: '100%'
-		flexDirection: 'column'
 
 	let fail-css = styles
 		color: '#f00'
@@ -93,10 +92,10 @@ tag app
 		borderBottom: '3px solid #52616B'
 		color: '#fff'
 		padding: '0.5em 1em'
+		flex-direction: 'row'
 
 	let content = styles.css
 		flex: 1
-		justifyContent: 'center'
 
 	def render
 		if !buyer
@@ -442,6 +441,7 @@ tag scroll-hint
 		fontSize: '0.5em'
 		color: '#ccc'
 		textTransform: 'uppercase'
+		flex-direction: 'row'
 
 	let filler = styles.css
 		flex: '0 0 auto'
@@ -539,6 +539,7 @@ tag order-list
 		margin: '0.5em 0'
 		borderRadius: '10px'
 		alignSelf: 'flex-start'
+		flex-direction: 'row'
 		
 	let positive = styles.css
 		background: '#27ae60'
@@ -651,6 +652,10 @@ tag key-pad
 
 	let pad = styles.css
 		flex-wrap: 'wrap'
+		flex-direction: 'row'
+
+	let row-css = styles
+		flex-direction: 'row'
 
 	let go = styles.css
 		background: 'red none'
@@ -660,7 +665,7 @@ tag key-pad
 
 	def render
 		<self styles=main>
-			<div>
+			<div styles=row-css>
 				<span> (@number.toString if @number)
 				<blinker interval=0.5> "_"
 			<div styles=pad>
