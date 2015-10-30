@@ -202,8 +202,8 @@ class Database:
         return products, ultimate["_id"]
 
     def prices_for_product(self, codes, round_price=False):
-        assert len(codes) == 2  # TODO: bother implementing this properly
-        base_prices = todict(self.e('SELECT code, base_price FROM products WHERE code IN (?, ?)', codes))
+        arr = ", ".join(["?" for _ in codes])
+        base_prices = todict(self.e('SELECT code, base_price FROM products WHERE code IN (%s)' % arr, codes))
         price_data = defaultdict(lambda: [])
         cursor = self.e('SELECT * FROM prices ORDER BY id')
         for row in cursor:
