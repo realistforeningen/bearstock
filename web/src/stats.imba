@@ -27,6 +27,18 @@ tag svg < htmlelement
 tag line-plot < svg
 	prop data
 
+	let legend-css = styles
+		"&.legend text":
+			font-size: "32px"
+
+	def data=(newData)
+		if newData !== @data
+			@keys = Object.keys(newData)
+			@datasets = for key, idx in @keys
+				Plottable.Dataset.new(newData[key], idx: idx)
+			@data = newData
+		self
+
 	def build
 		let cs = @cs = Plottable.Scales.Color.new
 
@@ -44,16 +56,15 @@ tag line-plot < svg
 
 		let plot = @plot = Plottable.Plots.Line.new
 
-		@ds1 = Plottable.Dataset.new([], idx: 0)
-		@ds2 = Plottable.Dataset.new([], idx: 1)
-		plot.addDataset(@ds1).addDataset(@ds2)
-
 		plot.x(&, xscale) do |d| Date.new(d:timestamp*1000)
 		plot.y(&, yscale) do |d| d:value + d:jitter
 		plot.attr("stroke") do |_,_,ds|
 			cs.range[ds.metadata:idx]
 
 		let legend = Plottable.Components.Legend.new(cs)
+		legend.maxEntriesPerRow(5)
+
+		let title = Plottable.Components.TitleLabel.new("Highlights:")
 
 		let chart = @chart = Plottable.Components.Table.new([
 			[null, legend],
@@ -61,19 +72,21 @@ tag line-plot < svg
 			[null, xaxis]
 		])
 		chart.renderTo(dom)
+
+		let svg = tag(chart.@rootSVG[0][0])
+		svg.css height: 'auto', width: 'auto', flex: 1
 		super
 
 	def render
-		let keys = Object.keys(data)
 		setTimeout(&, 0) do
-			# Don't ask me why this is in a setTimeout
-			@cs.domain(keys)
-			@ds1.data(data[keys[0]])
-			@ds2.data(data[keys[1]])
+			@cs.domain(@keys)
+			@plot.datasets(@datasets)
+
 		@chart.redraw
 		@yaxis.redraw
 		@xaxis.redraw
 		@plot.redraw
+
 		self
 
 tag price-table < table
@@ -111,7 +124,10 @@ tag ticker
 	prop products
 
 	let main-css = styles
+		background: '#ddd'
+		padding: '5px 0'
 		flex-direction: 'row'
+		border-bottom: '2px solid #666'
 
 	let wrapper-css = styles
 		flex: '0 0 auto'
@@ -166,24 +182,39 @@ tag stats
 
 	def build
 		productFetcher = ProductFetcher.new
-		productFetcher:sync = do render
+		productFetcher:sync = do
+			if !priceData
+				updateHighlights
+			render
 		productFetcher.start
 
-		fetch("/prices?code=FYPA&code=CRGI")
+		setInterval(&, 30000) do
+			updateHighlights
+
+		self
+
+	def updateHighlights
+		let products = productFetcher.products
+		if !products
+			return
+
+		let highlights = Random.new.sample(products, 5)
+		let query = ("code={product:code}" for product in highlights).join("&")
+
+		fetch("/prices?{query}")
 			.then do |res|
 				res.json
 			.then do |data|
 				priceData = addJitter(data)
 				render
-		self
 
 	let main-css = styles
 		flex-direction: 'column'
 		height: '100%'
-		padding: '10px 30px'
 
 	let left-css = styles
 		flex: 2
+		overflow: 'hidden'
 
 	let right-css = styles
 		flex: 2
@@ -197,7 +228,7 @@ tag stats
 			# <div styles=left-css>
 			#	if productFetcher.products
 			#		<price-table products=productFetcher.products>
-			# <div styles=right-css>
-			#	if priceData
-			#		<line-plot data=priceData>
+			<div styles=right-css>
+				if priceData
+					<line-plot data=priceData>
 
