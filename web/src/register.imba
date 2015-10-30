@@ -254,6 +254,11 @@ tag buy-view
 		fontSize: '1em'
 		height: 0
 
+	let code-css = styles
+		font-weight: 'bold'
+
+	let name-css = styles.css
+		margin: '0 7px'
 
 	def render
 		if products !== collection.sourceProducts
@@ -287,7 +292,8 @@ tag buy-view
 				<scroll-hint>
 					for product,idx in collection.toArray
 						<div@{idx} styles=boxStyle :tap=["buy", product]>
-							<div> "{product:brewery} {product:name}"
+							<div styles=code-css> product:code
+							<div styles=name-css> "{product:brewery} {product:name}"
 							<div styles=grow>
 							<div styles=bold> "{product:absolute_cost} NOK"
 
