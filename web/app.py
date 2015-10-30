@@ -38,7 +38,6 @@ def orders_create():
     body = request.get_json()
     with g.db.conn:
         for order in body["orders"]:
-            print order['absolute_cost']
             g.db.insert(
                 "orders",
                 buyer_id=body["buyer_id"],
