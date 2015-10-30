@@ -14,8 +14,8 @@ BASE_PARAMETERS = {
     'prev_adjust_weight': 4,
     'time_since_sale_weight': 5,
     # - increase
-    'increase_scaling': 0.50,
-    'past_purchase_importance': 40.,
+    'increase_scaling': 0.25,
+    'past_purchase_importance': 50.,
 }
 
 ## logic
@@ -40,7 +40,10 @@ class PriceLogic:
         self.p_duration = period_duration
         self.p_left = periods_left
         # product data
+        self.total_products_sold = 0
         self.products = {}
+        self.brewery_data = {}
+        self.type_data = {}
 
         # debug print
         print 'surplus: %.2f' % current_surplus
@@ -67,10 +70,24 @@ class PriceLogic:
         params : dict, optional
             Parameters.
         """
-        total_products = products_left + sum(
-            tuple((data['sold_units'] for data in price_data))
+        # count products
+        sold_products = sum(
+            ((data['sold_units'] if 'sold_units' in data else 0) for data in price_data)
         )
+        self.total_products_sold += sold_products  # count total products sold
+        total_products = products_left + sold_products  # compute products left
+        # store products sold per brewery
+        if brewery.lower() not in self.brewery_data:
+            self.brewery_data[brewery.lower()] = 0
+        self.brewery_data[brewery.lower()] += sold_products
+        # store products sold per type
+        if prod_type.lower() not in self.type_data:
+            self.type_data[prod_type.lower()] = 0
+        self.type_data[prod_type.lower()] += sold_products
+        # add product
         self.products[code] = {
+            'brewery': brewery,
+            'type': prod_type,
             'base_price': base_price,
             'prev_adj': (price_data[-1]['adjustment'] if price_data else 0),
             'fraction_left': (
@@ -78,10 +95,13 @@ class PriceLogic:
                 if total_products > 0 and products_left >= 0 else 1.0
             ),
             'price_data': price_data,
+            'popularity': (
+                sold_products/float(self.total_products_sold) if self.total_products_sold > 0 else 0
+            ),
             'p': params,
         }
         self.products[code]['expected'] = self._expected_sales(code)
-        self.products[code]['adjustment'] = self._compute_adjustment(code)
+        self.products[code]['adjustments'] = list(self._compute_adjustment(code))
 
     def finalize(self):
         """Finalize the price calculations.
@@ -97,13 +117,14 @@ class PriceLogic:
         # collect adjustments
         adjustments = {}
         for code in self.products:
-            if 'adjustment' in self.products[code]:
-                adjustments[code] = self.products[code]['adjustment']
+            if 'adjustments' in self.products[code]:
+                increase, decrease, deficit_correction = self.products[code]['adjustments']
+                adjustments[code] = increase + decrease + deficit_correction
 
         # debug print
-        for code in self.products:
+        for code in adjustments:
             print 'Adjustment[%s] = %.2f (prev: %.2f)' % (
-                code, self.products[code]['adjustment'], self.products[code]['prev_adj']
+                code, adjustments[code], self.products[code]['prev_adj']
             )
 
         # return rounded adjustments
@@ -145,7 +166,7 @@ class PriceLogic:
             for pid, data in enumerate(product['price_data'])
         )
 
-        return -decrease_by + increase_by
+        return increase_by, -decrease_by
 
     def _deficit_correction(self):
         periods_left = max(1, self.p_left)
@@ -154,15 +175,16 @@ class PriceLogic:
         surplus = {code: self.products[code]['expected']*(
             self.products[code]['base_price'] + self.products[code]['prev_adj']
         ) for code in self.products}
-        sum_surplus = max(1, sum((surplus[code] for code in surplus)))
+        sum_surplus = float(max(1, sum((surplus[code] for code in surplus))))
         # weight
         weights = {code: 1 - surplus[code]/sum_surplus for code in surplus}
-        sum_weights = max(1, sum((weights[code] for code in weights)))
+        sum_weights = float(max(1, sum((weights[code] for code in weights))))
         weights = {code: weights[code]/sum_weights for code in weights}
         # adjust prices for surplus
         for code in self.products:
-            self.products[code]['adjustment'] \
-                -= (weights[code]*correction/max(1, self.products[code]['expected']))/periods_left
+            self.products[code]['adjustments'].append(
+                - (weights[code]*correction/max(1, self.products[code]['expected']))/periods_left
+            )
 
     def _expected_sales(self, code):
         """Compute expected sales for a product with code.
