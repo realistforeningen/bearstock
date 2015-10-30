@@ -166,7 +166,7 @@ class Database:
         if row:
             return dictmapper(row)
 
-    def current_products_with_prices(self):
+    def current_products_with_prices(self, round_price=False):
         products = []
         with self.conn:
             prices = self.latest_prices()
@@ -179,12 +179,15 @@ class Database:
                     "brewery": product["brewery"],
                     "price_id": prices["_id"],
                     "relative_cost": rel_cost,
-                    "absolute_cost": product["base_price"] + rel_cost,
+                    "absolute_cost": (
+                        product['base_price'] + rel_cost if not round_price else
+                        round(product['base_price'] + rel_cost)
+                    ),
                     "tags": product["tags"].split("|")
                 })
         return products, prices["_id"]
 
-    def prices_for_product(self, codes):
+    def prices_for_product(self, codes, round_price=False):
         assert len(codes) == 2  # TODO: bother implementing this properly
         base_prices = todict(self.e('SELECT code, base_price FROM products WHERE code IN (?, ?)', codes))
         price_data = defaultdict(lambda: [])
@@ -194,7 +197,10 @@ class Database:
             for code in codes:
                 price_data[code].append({
                     "timestamp": row["created_at"],
-                    "value": prices.get(code, 0) + base_prices[code]
+                    "value": (
+                        prices.get(code, 0) + base_prices[code] if not round_price else
+                        round(prices.get(code, 0) + base_prices[code])
+                    )
                 })
         return dict(price_data)
 
@@ -263,5 +269,5 @@ class Exchange:
 
             new_adjustments = pl.finalize()
             for key in new_adjustments:
-                new_adjustments[key] = int(new_adjustments[key])
+                new_adjustments[key] = new_adjustments[key]
             self.db.insert_prices(new_adjustments)
