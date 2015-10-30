@@ -54,7 +54,7 @@ export class ProductCollection
 			@pendingCounts[b] - @pendingCounts[a]
 
 		@products.sort do |a, b|
-			a:name.localeCompare(b:name)
+			a:code.localeCompare(b:code)
 
 	def spansAllProducts(filterList)
 		let matchingCount = 0
