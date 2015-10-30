@@ -247,6 +247,7 @@ tag buy-view
 
 	let space-css = styles
 		width: '5px'
+		visibility: 'hidden'
 
 	let mark = styles.css
 		fontWeight: 'bold'
@@ -268,6 +269,7 @@ tag buy-view
 									<div styles=[boxStyle, next-css] :tap="next"> "Next"
 
 							<div styles=space-css>
+								<div styles=[boxStyle, next-css]> "M" # force height
 
 							<div styles=empty-css>
 								if collection.isFiltered
