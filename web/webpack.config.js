@@ -3,7 +3,8 @@ var webpack = require('webpack');
 module.exports = {
   entry: {
     register: './src/register',
-    stats: './src/stats'
+    stats: './src/stats',
+    css: './src/css'
   },
 
   output: {

@@ -82,7 +82,6 @@ tag app
 
 	let main = styles.css
 		height: '100%'
-		flexDirection: 'column'
 
 	let fail-css = styles
 		color: '#f00'
@@ -93,10 +92,10 @@ tag app
 		borderBottom: '3px solid #52616B'
 		color: '#fff'
 		padding: '0.5em 1em'
+		flex-direction: 'row'
 
 	let content = styles.css
 		flex: 1
-		justifyContent: 'center'
 
 	def render
 		if !buyer
@@ -247,12 +246,18 @@ tag buy-view
 
 	let space-css = styles
 		width: '5px'
+		visibility: 'hidden'
 
 	let mark = styles.css
 		fontWeight: 'bold'
 		fontSize: '1em'
 		height: 0
 
+	let code-css = styles
+		font-weight: 'bold'
+
+	let name-css = styles.css
+		margin: '0 7px'
 
 	def render
 		if products !== collection.sourceProducts
@@ -268,6 +273,7 @@ tag buy-view
 									<div styles=[boxStyle, next-css] :tap="next"> "Next"
 
 							<div styles=space-css>
+								<div styles=[boxStyle, next-css]> "M" # force height
 
 							<div styles=empty-css>
 								if collection.isFiltered
@@ -285,7 +291,8 @@ tag buy-view
 				<scroll-hint>
 					for product,idx in collection.toArray
 						<div@{idx} styles=boxStyle :tap=["buy", product]>
-							<div> "{product:brewery} {product:name}"
+							<div styles=code-css> product:code
+							<div styles=name-css> "{product:brewery} {product:name}"
 							<div styles=grow>
 							<div styles=bold> "{product:absolute_cost} NOK"
 
@@ -434,6 +441,7 @@ tag scroll-hint
 		fontSize: '0.5em'
 		color: '#ccc'
 		textTransform: 'uppercase'
+		flex-direction: 'row'
 
 	let filler = styles.css
 		flex: '0 0 auto'
@@ -531,6 +539,7 @@ tag order-list
 		margin: '0.5em 0'
 		borderRadius: '10px'
 		alignSelf: 'flex-start'
+		flex-direction: 'row'
 		
 	let positive = styles.css
 		background: '#27ae60'
@@ -575,7 +584,7 @@ tag order-list
 					<div> "Order:"
 
 					for order, idx in orders
-						<div@{idx} styles=orderStyle> "1 \u00d7 {order:name} @ {order:absolute_cost} NOK"
+						<div@{idx} styles=orderStyle> "1 \u00d7 {order:brewery} {order:name} @ {order:absolute_cost} NOK"
 				else
 					<div styles=[button, neutral] :tap="logout"> "Log out"
 
@@ -643,6 +652,10 @@ tag key-pad
 
 	let pad = styles.css
 		flex-wrap: 'wrap'
+		flex-direction: 'row'
+
+	let row-css = styles
+		flex-direction: 'row'
 
 	let go = styles.css
 		background: 'red none'
@@ -652,7 +665,7 @@ tag key-pad
 
 	def render
 		<self styles=main>
-			<div>
+			<div styles=row-css>
 				<span> (@number.toString if @number)
 				<blinker interval=0.5> "_"
 			<div styles=pad>

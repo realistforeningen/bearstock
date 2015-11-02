@@ -16,6 +16,8 @@ body {
 div {
   display: -webkit-flex;
   display: flex;
+  flex-direction: column;
+  -webkit-flex-direction: column;
 }
 
 body {
@@ -33,6 +35,18 @@ body {
 @keyframes flash {
   from {
     background-color: rgba(0,0,0,0.7);
+  }
+}
+
+@-webkit-keyframes ticker {
+  from {
+    margin-left: 100%;
+    -webkit-transform: translateX(0%)
+  }
+
+  to {
+    margin-left: 0%;
+    -webkit-transform: translateX(-100%)
   }
 }
 

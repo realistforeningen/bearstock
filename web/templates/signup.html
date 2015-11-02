@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>  
+  <title>BearStock</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+  <script src="/static/assets/css.js"></script>
+</head>
+<body>
+  <form method="POST">
+    <div class="signup">
+      {% if buyer_id %}
+        <p>Welcome {{ name }}</p>
+        <p>Your <strong>trader code</strong> is <strong>{{ buyer_id }}</strong></p>
+        <a href="/signup" class="next">Next</a>
+      {% else %}
+        <label>Name:</label>
+        <input type="name" name="name" autofocus>
+        <button>Join</button>
+      {% endif %}
+    </div>
+  </form>
+</body>
+</html>
+

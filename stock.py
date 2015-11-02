@@ -45,7 +45,8 @@ class Database:
             placeholders.append('?')
 
         sql = 'INSERT INTO %s (%s) VALUES (%s)' % (table, ', '.join(keys), ', '.join(placeholders))
-        return self.e(sql, values)
+        res = self.e(sql, values)
+        return res.lastrowid
 
     def import_products(self, products):
         for product in products:
@@ -83,16 +84,26 @@ class Database:
         data = pickle.dumps(prices)
         self.e('INSERT INTO prices (data) VALUES (?)', (data,))
 
+    def insert_buyer(self, name):
+        return self.insert("buyers", name=name)
+
     # How much money is on our own account?
     def stock_account(self):
         return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0] or 0
 
-    def latest_prices(self):
-        row = self.e('SELECT * FROM prices ORDER BY id DESC LIMIT 1').fetchone()
-        assert row is not None
-        prices = pickle.loads(row["data"])
-        prices["_id"] = row["id"]
-        return prices
+    def latest_prices(self, count = 1):
+        cursor = self.e('SELECT * FROM prices ORDER BY id DESC LIMIT ?', (count,))
+
+        def mapper(row):
+            prices = pickle.loads(row["data"])
+            prices["_id"] = row["id"]
+            return prices
+
+        rows = torows(cursor, mapper)
+        if count == 1:
+            return rows[0]
+        else:
+            return rows
 
     def find_prices(self, id):
         row = self.e('SELECT data FROM prices WHERE id = ?', (id,)).fetchone()
@@ -169,27 +180,34 @@ class Database:
     def current_products_with_prices(self, round_price=False):
         products = []
         with self.conn:
-            prices = self.latest_prices()
+            ultimate, penultimate = self.latest_prices(2)
             for product in self.e('SELECT * FROM products'):
                 code = product["code"]
-                rel_cost = prices.get(code, 0)
+                rel_cost = ultimate.get(code, 0)
+
+                if penultimate:
+                    delta_cost = rel_cost - penultimate.get(code, rel_cost)
+                else:
+                    delta_cost = 0
+
                 products.append({
                     "code": code,
                     "name": product["name"],
                     "brewery": product["brewery"],
-                    "price_id": prices["_id"],
+                    "price_id": ultimate["_id"],
                     "relative_cost": rel_cost,
+                    "delta_cost": delta_cost,
                     "absolute_cost": (
                         product['base_price'] + rel_cost if not round_price else
                         round(product['base_price'] + rel_cost)
                     ),
                     "tags": product["tags"].split("|")
                 })
-        return products, prices["_id"]
+        return products, ultimate["_id"]
 
     def prices_for_product(self, codes, round_price=False):
-        assert len(codes) == 2  # TODO: bother implementing this properly
-        base_prices = todict(self.e('SELECT code, base_price FROM products WHERE code IN (?, ?)', codes))
+        arr = ", ".join(["?" for _ in codes])
+        base_prices = todict(self.e('SELECT code, base_price FROM products WHERE code IN (%s)' % arr, codes))
         price_data = defaultdict(lambda: [])
         cursor = self.e('SELECT * FROM prices ORDER BY id')
         for row in cursor:
