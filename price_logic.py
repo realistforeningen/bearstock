@@ -16,6 +16,8 @@ BASE_PARAMETERS = {
     # - increase
     'increase_scaling': 0.20,
     'past_purchase_importance': 50.,
+    # price parameters
+    'min_price': 5.,
 }
 
 ## logic
@@ -49,9 +51,10 @@ class PriceLogic:
         print 'periods left: %d' % periods_left
         print 'surplus: %.2f' % current_surplus
 
-    def add_product(self,
-                    code, brewery, base_price, products_left, prod_type,
-                    price_data, params=BASE_PARAMETERS):
+    def add_product(
+        self, code, brewery, base_price, products_left, prod_type,
+        price_data, params=BASE_PARAMETERS
+    ):
         """
         Parameters
         ----------
@@ -118,21 +121,25 @@ class PriceLogic:
         # collect adjustments
         adjustments = {}
         for code in self.products:
-            if 'adjustments' in self.products[code]:
+            prod = self.products[code]
+            if 'adjustments' in prod:
                 # read popularities
                 popularity, type_popularity, brewery_popularity = (
-                    self.products[code]['popularity'],
-                    self.type_data[self.products[code]['type']]/max(
-                        1., float(self.total_products_sold)),
-                    self.brewery_data[self.products[code]['brewery']]/max(
-                        1., float(self.total_products_sold)),
+                    prod['popularity'],
+                    self.type_data[prod['type']]/max(1., float(self.total_products_sold)),
+                    self.brewery_data[prod['brewery']]/max(1., float(self.total_products_sold)),
                 )
                 avg_pop = (popularity + 3*type_popularity + 2*brewery_popularity)/6.
                 # compute final adjustment
-                increase, decrease, deficit_correction = self.products[code]['adjustments']
-                adjustments[code] = (
-                    (1 + avg_pop)*increase + (1 - avg_pop)*decrease + deficit_correction
-                )
+                increase, decrease, deficit_correction = prod['adjustments']
+                adjustment = (1 + avg_pop)*increase + (1 - avg_pop)*decrease + deficit_correction
+                # make sure we don't sell lower than the min price
+                if prod['base_price']+adjustment > prod['p']['min_price']:
+                    adjustments[code] = adjustment
+                else:
+                    adjustments[code] = prod['prev_adj'] + (
+                        prod['p']['min_price']-(prod['base_price']+prod['prev_adj'])
+                    )
 
         # debug print
         for code in adjustments:
