@@ -138,6 +138,7 @@ tag ticker
 		margin-right: '50px'
 		flex: '0 0 auto'
 		align-items: 'baseline'
+		flex-direction: 'row'
 
 	let code-css = styles.css
 		font-weight: 'bold'
