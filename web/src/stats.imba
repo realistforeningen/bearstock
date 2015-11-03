@@ -174,7 +174,7 @@ tag stats
 
 	def addJitter(data)
 		for key of data
-			let seed = (char.charCodeAt(0) for char in key.split)
+			let seed = (char.charCodeAt(0) for char in key.split(""))
 			let r = Random.new(Random:engines.mt19937.seedWithArray(seed))
 			for entry in data[key]
 				# TODO: deterministic jitter?
