@@ -335,22 +335,22 @@ class Params(object):
 
     ## - decrease
 
-    _decrease_scaling = 0.10
+    _decrease_scaling = 0.05
     decrease_scaling = SingleParam(name='_decrease_scaling', pos=True, cast_to=float)
 
     _acqu_weight = 1
     acqu_weight = SingleParam(name='_acqu_weight', cast_to=int)
 
-    _prev_abs_adjust_weight = 4
+    _prev_abs_adjust_weight = 2
     prev_abs_adjust_weight = SingleParam(name='_prev_abs_adjust_weight', cast_to=int)
 
-    _prev_rel_adjust_weight = 2
+    _prev_rel_adjust_weight = 4
     prev_rel_adjust_weight = SingleParam(name='_prev_rel_adjust_weight', cast_to=int)
 
-    _time_since_sale_weight = 6
+    _time_since_sale_weight = 8
     time_since_sale_weight = SingleParam(name='_time_since_sale_weight', cast_to=int)
 
-    _time_since_sale_power = 1.10
+    _time_since_sale_power = 1.05
     time_since_sale_power = SingleParam(name='_time_since_sale_power', pos=True, cast_to=float)
 
     # - increase
