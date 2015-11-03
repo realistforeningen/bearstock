@@ -74,7 +74,12 @@ class PriceLogic:
             'brewery': brewery.lower(),
             'type': prod_type.lower(),
             'base_price': base_price,
-            'prev_adj': (price_data[-1]['adjustment'] if price_data else 0),
+            'prev_abs_adj': (price_data[-1]['adjustment'] if len(price_data) > 0 else 0),
+            'prev_rel_adj': (
+                (price_data[-1]['adjustment'] - price_data[-2]['adjustment'])
+                if len(price_data) > 1 else price_data[-1]['adjustment'] if len(price_data) > 0
+                else 0
+            ),
             'fraction_left': (
                 (float(products_left)/total_products)
                 if total_products > 0 and products_left >= 0 else 1.0
@@ -115,19 +120,20 @@ class PriceLogic:
                 avg_pop = (popularity + 3*type_popularity + 2*brewery_popularity)/6.
                 # compute final adjustment
                 increase, decrease, deficit_correction = prod['adjustments']
-                adjustment = (1 + avg_pop)*increase + (1 - avg_pop)*decrease + deficit_correction
+                adjustment = prod['prev_abs_adj'] + (1 + avg_pop)*increase \
+                    + (1 - avg_pop)*decrease + deficit_correction
                 # make sure we don't sell lower than the min price
                 if prod['base_price']+adjustment > prod['p'].min_price:
                     adjustments[code] = adjustment
                 else:
-                    adjustments[code] = prod['prev_adj'] + (
-                        prod['p'].min_price-(prod['base_price']+prod['prev_adj'])
+                    adjustments[code] = prod['prev_abs_adj'] + (
+                        prod['p'].min_price-(prod['base_price']+prod['prev_abs_adj'])
                     )
 
         # debug print
         for code in adjustments:
             print 'Adjustment[%s] = %.2f (prev: %.2f)' % (
-                code, adjustments[code], self.products[code]['prev_adj']
+                code, adjustments[code], self.products[code]['prev_abs_adj']
             )
 
         # return rounded adjustments
@@ -139,10 +145,11 @@ class PriceLogic:
         ## read parameters
         w = (
             params.acqu_weight,
-            params.prev_adjust_weight,
+            params.prev_abs_adjust_weight,
+            params.prev_rel_adjust_weight,
             params.time_since_sale_weight,
         )
-        weight_abs_sum = sum(map(abs, w))
+        weight_abs_sum = float(sum(map(abs, w)))
         past_purchase_importance = params.past_purchase_importance
         ## periods since last purchase
         delta_purchase = len(product['price_data'])
@@ -153,8 +160,9 @@ class PriceLogic:
         ## compute decrease
         decrease_by = params.decrease_scaling*(
             w[0]*product['base_price'] +
-            -w[1]*product['prev_adj'] +
-            w[2]*delta_purchase**1.5
+            -w[1]*product['prev_abs_adj'] +
+            -w[2]*product['prev_rel_adj'] +
+            w[3]*delta_purchase**params.time_since_sale_power
         )/(weight_abs_sum if weight_abs_sum != 0 else 1)
         decrease_by *= product['fraction_left']/(product['expected'] + 1)
         ## compute increase
@@ -167,6 +175,8 @@ class PriceLogic:
             for pid, data in enumerate(product['price_data'])
         )
 
+        print increase_by, -decrease_by
+
         return increase_by, -decrease_by
 
     def _deficit_correction(self):
@@ -174,7 +184,7 @@ class PriceLogic:
         correction = self.surplus
         # surplus
         surplus = {code: self.products[code]['expected']*(
-            self.products[code]['base_price'] + self.products[code]['prev_adj']
+            self.products[code]['base_price'] + self.products[code]['prev_abs_adj']
         ) for code in self.products}
         sum_surplus = float(max(1, sum((surplus[code] for code in surplus))))
         # weight
@@ -255,8 +265,10 @@ class Params(object):
              * 'decrease_scaling' - Scaling for price decrease. Should be a float.
              * 'acqu_weight' - Realtive weight for 'base price' or 'aquisition price') in price
                adjustments. Should be an int.
-             * 'prev_adjust_weight' - Realtive weight for 'previous price adjustment' in
-               price adjustments. Should be an int.
+             * 'prev_abs_adjust_weight' - Realtive weight for 'previous absolute price adjustment'
+               in price adjustments. Should be an int.
+             * 'prev_rel_adjust_weight' - Realtive weight for 'previous relative price adjustment'
+               in price adjustments. Should be an int.
              * 'time_since_sale_weight' - Relative weight of 'time since last sale' in price
                calculations. Should be an int.
              * 'increase_scaling' - Scaling for price increase. Should be a float.
@@ -268,12 +280,23 @@ class Params(object):
             if hasattr(cls, key):
                 setattr(cls, key, defaults[key])
 
-    def set_from_dict(self, defaults):
+    def __init__(self, params=None):
+        """Initialize a new parameter object.
+
+        Parameters
+        ----------
+        params : dict or None
+            Dictionary with parameters. Passed along to `set_from_dict`.
+        """
+        if params is not None and isinstance(params, (dict, )):
+            self.set_from_dict(params)
+
+    def set_from_dict(self, params):
         """Set values from a dictionary.
 
         Parameters
         ----------
-        defaults : dict
+        params : dict
             A dictionary with parameter names to default value. Valid keys are:
 
              * 'ex_periods' - Number of periods to project forward when computing expected sale.
@@ -283,8 +306,10 @@ class Params(object):
              * 'decrease_scaling' - Scaling for price decrease. Should be a float.
              * 'acqu_weight' - Realtive weight for 'base price' or 'aquisition price') in price
                adjustments. Should be an int.
-             * 'prev_adjust_weight' - Realtive weight for 'previous price adjustment' in
-               price adjustments. Should be an int.
+             * 'prev_abs_adjust_weight' - Realtive weight for 'previous absolute price adjustment'
+               in price adjustments. Should be an int.
+             * 'prev_rel_adjust_weight' - Realtive weight for 'previous relative price adjustment'
+               in price adjustments. Should be an int.
              * 'time_since_sale_weight' - Relative weight of 'time since last sale' in price
                calculations. Should be an int.
              * 'increase_scaling' - Scaling for price increase. Should be a float.
@@ -292,9 +317,9 @@ class Params(object):
                past sales count more/longer. Must be non-zero.
              * 'min_price' - Minimum price. Sould be positive.
         """
-        for key in defaults:
+        for key in params:
             if hasattr(self, key):
-                setattr(self, key, defaults[key])
+                setattr(self, key, params[key])
 
     ## expected sales parameters
     ## -------------------------
@@ -310,29 +335,35 @@ class Params(object):
 
     ## - decrease
 
-    _decrease_scaling = 0.70
+    _decrease_scaling = 0.10
     decrease_scaling = SingleParam(name='_decrease_scaling', pos=True, cast_to=float)
 
-    _acqu_weight = 0.
+    _acqu_weight = 1
     acqu_weight = SingleParam(name='_acqu_weight', cast_to=int)
 
-    _prev_adjust_weight = 4.
-    prev_adjust_weight = SingleParam(name='_prev_adjust_weight', cast_to=int)
+    _prev_abs_adjust_weight = 4
+    prev_abs_adjust_weight = SingleParam(name='_prev_abs_adjust_weight', cast_to=int)
 
-    _time_since_sale_weight = 5.
+    _prev_rel_adjust_weight = 2
+    prev_rel_adjust_weight = SingleParam(name='_prev_rel_adjust_weight', cast_to=int)
+
+    _time_since_sale_weight = 6
     time_since_sale_weight = SingleParam(name='_time_since_sale_weight', cast_to=int)
+
+    _time_since_sale_power = 1.10
+    time_since_sale_power = SingleParam(name='_time_since_sale_power', pos=True, cast_to=float)
 
     # - increase
 
-    _increase_scaling = 0.20
+    _increase_scaling = 0.40
     increase_scaling = SingleParam(name='_increase_scaling', pos=True, cast_to=float)
 
-    _past_purchase_importance = 100.
+    _past_purchase_importance = 0.25
     past_purchase_importance = SingleParam(
-        name='_past_purchase_importance', non_zero=True, pos=True)
+        name='_past_purchase_importance', non_zero=True, pos=True, cast_to=float)
 
     ## price parameters
     ## ----------------
 
     _min_price = 5.
-    min_price = SingleParam(name='_min_price', pos=True)
+    min_price = SingleParam(name='_min_price', pos=True, cast_to=float)
