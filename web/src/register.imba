@@ -239,7 +239,7 @@ tag buy-view
 	let next-css = styles
 		background: colors:background.clone.darken(0.2).hexString
 		justify-content: 'center'
-		flex: "1 0 0"
+		flex: "1 0 auto"
 
 	let empty-css = styles
 		flex: "1 0 0"
