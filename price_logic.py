@@ -120,7 +120,8 @@ class PriceLogic:
                 avg_pop = (popularity + 3*type_popularity + 2*brewery_popularity)/6.
                 # compute final adjustment
                 increase, decrease, deficit_correction = prod['adjustments']
-                adjustment = (1 + avg_pop)*increase + (1 - avg_pop)*decrease + deficit_correction
+                adjustment = prod['prev_abs_adj'] + (1 + avg_pop)*increase \
+                    + (1 - avg_pop)*decrease + deficit_correction
                 # make sure we don't sell lower than the min price
                 if prod['base_price']+adjustment > prod['p'].min_price:
                     adjustments[code] = adjustment
@@ -158,7 +159,7 @@ class PriceLogic:
         ## compute decrease
         decrease_by = params.decrease_scaling*(
             w[0]*product['base_price'] +
-            -w[1]*product['prev_abs_adj'] +
+            -w[1]*product['prev_rel_adj'] +
             w[2]*delta_purchase**1.5
         )/(weight_abs_sum if weight_abs_sum != 0 else 1)
         decrease_by *= product['fraction_left']/(product['expected'] + 1)
@@ -326,7 +327,7 @@ class Params(object):
 
     ## - decrease
 
-    _decrease_scaling = 0.70
+    _decrease_scaling = 0.05
     decrease_scaling = SingleParam(name='_decrease_scaling', pos=True, cast_to=float)
 
     _acqu_weight = 0.
@@ -343,7 +344,7 @@ class Params(object):
     _increase_scaling = 0.20
     increase_scaling = SingleParam(name='_increase_scaling', pos=True, cast_to=float)
 
-    _past_purchase_importance = 100.
+    _past_purchase_importance = 30.
     past_purchase_importance = SingleParam(
         name='_past_purchase_importance', non_zero=True, pos=True)
 
