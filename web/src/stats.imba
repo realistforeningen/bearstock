@@ -37,6 +37,7 @@ tag line-plot < svg
 			@datasets = for key, idx in @keys
 				Plottable.Dataset.new(newData[key], idx: idx)
 			@data = newData
+			@didChange = yes
 		self
 
 	def build
@@ -78,6 +79,9 @@ tag line-plot < svg
 		super
 
 	def render
+		return if !@didChange
+		@didChange = no
+
 		setTimeout(&, 0) do
 			@cs.domain(@keys)
 			@plot.datasets(@datasets)
@@ -194,6 +198,9 @@ tag stats
 				updateHighlights
 			render
 		productFetcher.start
+
+		setInterval(&, 1000) do
+			render
 
 		setInterval(&, 30000) do
 			updateHighlights
