@@ -1,5 +1,6 @@
 from threading import Thread
 import time
+from datetime import datetime
 import sqlite3
 import pickle
 from collections import defaultdict
@@ -90,6 +91,11 @@ class Database:
     # How much money is on our own account?
     def stock_account(self):
         return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0] or 0
+
+    def last_price_time(self):
+        row = self.e('SELECT created_at FROM prices ORDER BY id DESC LIMIT 1').fetchone()
+        if row:
+            return datetime.fromtimestamp(row['created_at'])
 
     def latest_prices(self, count = 1):
         cursor = self.e('SELECT * FROM prices ORDER BY id DESC LIMIT ?', (count,))
@@ -252,8 +258,13 @@ class Exchange:
 
         while True:
             print " * Stock is ticking"
+            ts = self.db.last_price_time()
+            now = datetime.now()
+            elapsed = (now - ts).total_seconds()
+            pending = self.PERIOD_DURATION - elapsed
+            if pending > 0:
+                time.sleep(pending)
             self.tick()
-            time.sleep(self.PERIOD_DURATION)
 
     def tick(self):
         with self.db.conn:
