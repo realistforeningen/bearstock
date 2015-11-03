@@ -1,23 +1,6 @@
 
 from math import exp
 
-## params
-
-BASE_PARAMETERS = {
-    # expected sales parameters
-    'ex_periods': 12,  # strictly positive number
-    'ex_lookback': 12,  # strictly positive or None
-    # adjustment parameters
-    # - decrease
-    'decrease_scaling': 0.75,
-    'acqu_weight': 0,
-    'prev_adjust_weight': 4,
-    'time_since_sale_weight': 5,
-    # - increase
-    'increase_scaling': 0.25,
-    'past_purchase_importance': 50.,
-}
-
 ## logic
 
 class PriceLogic:
@@ -46,11 +29,13 @@ class PriceLogic:
         self.type_data = {}
 
         # debug print
+        print 'periods left: %d' % periods_left
         print 'surplus: %.2f' % current_surplus
 
-    def add_product(self,
-                    code, brewery, base_price, products_left, prod_type,
-                    price_data, params=BASE_PARAMETERS):
+    def add_product(
+        self, code, brewery, base_price, products_left, prod_type,
+        price_data, params=None
+    ):
         """
         Parameters
         ----------
@@ -67,7 +52,7 @@ class PriceLogic:
         price_data : list
             List of dictionaries each containing the keys 'sold_units' and 'adjustment'.
             One element per period.
-        params : dict, optional
+        params : Params, optional
             Parameters.
         """
         # count products
@@ -86,8 +71,8 @@ class PriceLogic:
         self.type_data[prod_type.lower()] += sold_products
         # add product
         self.products[code] = {
-            'brewery': brewery,
-            'type': prod_type,
+            'brewery': brewery.lower(),
+            'type': prod_type.lower(),
             'base_price': base_price,
             'prev_adj': (price_data[-1]['adjustment'] if price_data else 0),
             'fraction_left': (
@@ -98,7 +83,9 @@ class PriceLogic:
             'popularity': (
                 sold_products/float(self.total_products_sold) if self.total_products_sold > 0 else 0
             ),
-            'p': params,
+            'p': (
+                params if params is not None else Params()
+            ),
         }
         self.products[code]['expected'] = self._expected_sales(code)
         self.products[code]['adjustments'] = list(self._compute_adjustment(code))
@@ -117,9 +104,25 @@ class PriceLogic:
         # collect adjustments
         adjustments = {}
         for code in self.products:
-            if 'adjustments' in self.products[code]:
-                increase, decrease, deficit_correction = self.products[code]['adjustments']
-                adjustments[code] = increase + decrease + deficit_correction
+            prod = self.products[code]
+            if 'adjustments' in prod:
+                # read popularities
+                popularity, type_popularity, brewery_popularity = (
+                    prod['popularity'],
+                    self.type_data[prod['type']]/max(1., float(self.total_products_sold)),
+                    self.brewery_data[prod['brewery']]/max(1., float(self.total_products_sold)),
+                )
+                avg_pop = (popularity + 3*type_popularity + 2*brewery_popularity)/6.
+                # compute final adjustment
+                increase, decrease, deficit_correction = prod['adjustments']
+                adjustment = (1 + avg_pop)*increase + (1 - avg_pop)*decrease + deficit_correction
+                # make sure we don't sell lower than the min price
+                if prod['base_price']+adjustment > prod['p'].min_price:
+                    adjustments[code] = adjustment
+                else:
+                    adjustments[code] = prod['prev_adj'] + (
+                        prod['p'].min_price-(prod['base_price']+prod['prev_adj'])
+                    )
 
         # debug print
         for code in adjustments:
@@ -128,21 +131,19 @@ class PriceLogic:
             )
 
         # return rounded adjustments
-        return {code: round(adjustments[code]) for code in adjustments}
+        return {code: (adjustments[code]) for code in adjustments}
 
     def _compute_adjustment(self, code):
         product = self.products[code]
         params = product['p']
-        decrease_scaling = params['decrease_scaling']
         ## read parameters
         w = (
-            params['acqu_weight'],
-            params['prev_adjust_weight'],
-            params['time_since_sale_weight'],
+            params.acqu_weight,
+            params.prev_adjust_weight,
+            params.time_since_sale_weight,
         )
         weight_abs_sum = sum(map(abs, w))
-        increase_scaling = params['increase_scaling']
-        past_purchase_importance = params['past_purchase_importance']
+        past_purchase_importance = params.past_purchase_importance
         ## periods since last purchase
         delta_purchase = len(product['price_data'])
         for pid, data in enumerate(reversed(product['price_data'])):
@@ -150,14 +151,14 @@ class PriceLogic:
                 delta_purchase = pid
                 break
         ## compute decrease
-        decrease_by = decrease_scaling*(
+        decrease_by = params.decrease_scaling*(
             w[0]*product['base_price'] +
             -w[1]*product['prev_adj'] +
-            w[2]*delta_purchase
+            w[2]*delta_purchase**1.5
         )/(weight_abs_sum if weight_abs_sum != 0 else 1)
-        decrease_by *= product['fraction_left']/max(1, product['expected'])
+        decrease_by *= product['fraction_left']/(product['expected'] + 1)
         ## compute increase
-        increase_by = increase_scaling*(
+        increase_by = params.increase_scaling*(
             4. - 2./max(1, product['expected'])
         )*(
             4. - 2.*product['fraction_left']
@@ -189,12 +190,91 @@ class PriceLogic:
     def _expected_sales(self, code):
         """Compute expected sales for a product with code.
         """
-        p = self.products[code]['p']
-        lookback_to = 0 if 'ex_lookback' not in p or p['ex_lookback'] is None else \
-            max(0, self.pid-p['ex_lookback'])
+        params = self.products[code]['p']
+        lookback_to = 0 if params.ex_lookback < 0 else \
+            max(0, self.pid - params.ex_lookback)
         ##
         transactions = 0
         for pid, purchase in enumerate(self.products[code]['price_data']):
             if pid >= lookback_to:
                 transactions += (purchase['sold_units'] if purchase else 0)
-        return transactions*p['ex_periods']/max(1, self.pid-lookback_to)
+        return transactions*params.ex_periods/max(1, self.pid-lookback_to)
+
+class Params(object):
+    class SingleParam(object):
+        def __init__(
+            self, name=None,
+            valid_types=None, cast_to=None,
+            pos=False, neg=False, non_zero=False
+        ):
+            self.name = name
+            # checks
+            self.valid_types, self.cast_to = valid_types, cast_to
+            self.pos, self.neg, self.non_zero = pos, neg, non_zero
+
+        def __get__(self, instance, owner):
+            if instance is not None and hasattr(instance, self.name):
+                return getattr(instance, self.name, getattr(owner, self.name, None))
+            return getattr(owner, self.name, None)
+
+        def __set__(self, instance, value):
+            # type check
+            if self.valid_types is not None and isinstance(self.valid_types, (list, tuple)) \
+                    and not isinstance(value, self.valid_types):
+                raise ValueError("Value is not of a valid type.")
+            # number checks
+            if self.non_zero and value == 0:
+                raise ValueError("Value is not non-zero.")
+            if self.pos and value < 0:
+                raise ValueError("Value is not positive.")
+            if self.neg and value > 0:
+                raise ValueError("Value is not negative.")
+            # assign
+            if self.cast_to is not None:
+                setattr(instance, self.name, self.cast_to(value))
+            else:
+                setattr(instance, self.name, value)
+
+        def __delete__(self, instance):
+            if instance is not Params and hasattr(instance, self.name):
+                delattr(instance, self.name)
+
+    ## expected sales parameters
+    ## -------------------------
+
+    _ex_periods = 12  # strictly positive number
+    ex_periods = SingleParam(name='_ex_periods', non_zero=True, pos=True)
+
+    _ex_lookback = 12  # if negative looks back to start
+    ex_lookback = SingleParam(name='_ex_lookback')
+
+    ## adjustment parameters
+    ## ---------------------
+
+    ## - decrease
+
+    _decrease_scaling = 0.70
+    decrease_scaling = SingleParam(name='_decrease_scaling', pos=True)
+
+    _acqu_weight = 0.
+    acqu_weight = SingleParam(name='_acqu_weight')
+
+    _prev_adjust_weight = 4.
+    prev_adjust_weight = SingleParam(name='_prev_adjust_weight')
+
+    _time_since_sale_weight = 5.
+    time_since_sale_weight = SingleParam(name='_time_since_sale_weight')
+
+    # - increase
+
+    _increase_scaling = 0.20
+    increase_scaling = SingleParam(name='_increase_scaling', pos=True)
+
+    _past_purchase_importance = 50.
+    past_purchase_importance = SingleParam(name='_past_purchase_importance', pos=True)
+
+    ## price parameters
+    ## ----------------
+
+    _min_price = 5.
+    min_price = SingleParam(name='_min_price', pos=True)
