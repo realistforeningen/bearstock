@@ -1,25 +1,6 @@
 
 from math import exp
 
-## params
-
-# BASE_PARAMETERS = {
-#     # expected sales parameters
-#     'ex_periods': 12,  # strictly positive number
-#     'ex_lookback': 12,  # if negative looks back to start
-#     # adjustment parameters
-#     # - decrease
-#     'decrease_scaling': 0.70,
-#     'acqu_weight': 0,
-#     'prev_adjust_weight': 4,
-#     'time_since_sale_weight': 5,
-#     # - increase
-#     'increase_scaling': 0.20,
-#     'past_purchase_importance': 50.,
-#     # price parameters
-#     'min_price': 5.,
-# }
-
 ## logic
 
 class PriceLogic:
@@ -71,7 +52,7 @@ class PriceLogic:
         price_data : list
             List of dictionaries each containing the keys 'sold_units' and 'adjustment'.
             One element per period.
-        params : dict, optional
+        params : Params, optional
             Parameters.
         """
         # count products
@@ -227,15 +208,14 @@ class Params(object):
             pos=False, neg=False, non_zero=False
         ):
             self.name = name
-            self.val = None
             # checks
             self.valid_types, self.cast_to = valid_types, cast_to
             self.pos, self.neg, self.non_zero = pos, neg, non_zero
 
         def __get__(self, instance, owner):
-            if self.val is None:
-                return Params.__getattribute__(owner, self.name)
-            return self.val
+            if instance is not None and hasattr(instance, self.name):
+                return getattr(instance, self.name, getattr(owner, self.name, None))
+            return getattr(owner, self.name, None)
 
         def __set__(self, instance, value):
             # type check
@@ -243,20 +223,21 @@ class Params(object):
                     and not isinstance(value, self.valid_types):
                 raise ValueError("Value is not of a valid type.")
             # number checks
-            if self.non_zero is not None and value == 0:
+            if self.non_zero and value == 0:
                 raise ValueError("Value is not non-zero.")
-            if self.pos is not None and value < 0:
+            if self.pos and value < 0:
                 raise ValueError("Value is not positive.")
-            if self.neg is not None and value > 0:
+            if self.neg and value > 0:
                 raise ValueError("Value is not negative.")
             # assign
             if self.cast_to is not None:
-                self.val = self.cast_to(value)
+                setattr(instance, self.name, self.cast_to(value))
             else:
-                self.val
+                setattr(instance, self.name, value)
 
         def __delete__(self, instance):
-            self.val = Params.__getattribute__(Params, self.name)
+            if instance is not Params and hasattr(instance, self.name):
+                delattr(instance, self.name)
 
     ## expected sales parameters
     ## -------------------------
