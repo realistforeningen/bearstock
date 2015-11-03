@@ -42,7 +42,7 @@ tag line-plot < svg
 	def build
 		let cs = @cs = Plottable.Scales.Color.new
 
-		let xscale = Plottable.Scales.Time.new
+		let xscale = @xscale = Plottable.Scales.Time.new
 		let yscale = Plottable.Scales.Linear.new
 
 		let xaxis = @xaxis = Plottable.Axes.Time.new(xscale, 'bottom')
@@ -81,6 +81,12 @@ tag line-plot < svg
 		setTimeout(&, 0) do
 			@cs.domain(@keys)
 			@plot.datasets(@datasets)
+
+			@xscale.autoDomain
+			var [start, end] = @xscale.domain
+			if end - start < 1000*60*60*1
+				end.setHours(end.getHours + 1)
+				@xscale.domain([start, end])
 
 		@chart.redraw
 		@yaxis.redraw
