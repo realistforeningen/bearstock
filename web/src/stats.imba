@@ -26,6 +26,7 @@ tag svg < htmlelement
 
 tag line-plot < svg
 	prop data
+	prop codes
 
 	let legend-css = styles
 		"&.legend text":
@@ -35,7 +36,7 @@ tag line-plot < svg
 		if newData !== @data
 			@keys = Object.keys(newData)
 			@datasets = for key, idx in @keys
-				Plottable.Dataset.new(newData[key], idx: idx)
+				Plottable.Dataset.new(newData[key], code: key)
 			@data = newData
 			@didChange = yes
 		self
@@ -59,11 +60,20 @@ tag line-plot < svg
 
 		plot.x(&, xscale) do |d| Date.new(d:timestamp*1000)
 		plot.y(&, yscale) do |d| d:value + d:jitter
-		plot.attr("stroke") do |_,_,ds|
-			cs.range[ds.metadata:idx]
 
-		let legend = Plottable.Components.Legend.new(cs)
+		plot.attr("stroke") do |_,_,ds|
+			cs.scale(ds.metadata:code)
+
+		plot.attr("stroke-width") do |_,_,ds|
+			2
+
+		let legend = @legend = Plottable.Components.Legend.new(cs)
 		legend.maxEntriesPerRow(5)
+		legend.symbolOpacity do |code|
+			if code in @keys
+				1
+			else
+				0
 
 		let title = Plottable.Components.TitleLabel.new("Highlights:")
 
@@ -83,7 +93,7 @@ tag line-plot < svg
 		@didChange = no
 
 		setTimeout(&, 0) do
-			@cs.domain(@keys)
+			@cs.domain(codes)
 			@plot.datasets(@datasets)
 
 			@xscale.autoDomain
@@ -235,14 +245,16 @@ tag stats
 		height: '100%'
 
 	def render
+		let products = productFetcher.products
+
 		<self styles=main-css>
 			<style> styles.toString
-			<ticker products=productFetcher.products>
+			<ticker products=products>
 
 			# <div styles=left-css>
 			#	if productFetcher.products
 			#		<price-table products=productFetcher.products>
 			<div styles=right-css>
 				if priceData
-					<line-plot data=priceData>
+					<line-plot data=priceData codes=(product:code for product in products)>
 
