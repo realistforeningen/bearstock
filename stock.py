@@ -109,7 +109,7 @@ class Database:
         if count == 1:
             return rows[0]
         else:
-            return rows
+            return rows + [None]*(count - len(rows))
 
     def find_prices(self, id):
         row = self.e('SELECT data FROM prices WHERE id = ?', (id,)).fetchone()
