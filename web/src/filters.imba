@@ -49,12 +49,23 @@ export class ProductCollection
 			else
 				idx++
 
+
 	def sortData
 		@pendingFilters.sort do |a, b|
 			@pendingCounts[b] - @pendingCounts[a]
 
 		@products.sort do |a, b|
 			a:code.localeCompare(b:code)
+
+		if @positiveFilters:length == 0 and @negativeFilters:length == 0
+			let defaultBeers = ["FYPA", "FYBY", "FYPL"] # reverse order
+			for code in defaultBeers
+				for idx in [0 ... @products:length]
+					let product = @products[idx]
+					if product:code == code
+						@products.splice(idx, 1)
+						@products.unshift(product)
+						break
 
 	def spansAllProducts(filterList)
 		let matchingCount = 0
