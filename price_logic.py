@@ -239,14 +239,71 @@ class Params(object):
             if instance is not Params and hasattr(instance, self.name):
                 delattr(instance, self.name)
 
+    @classmethod
+    def set_default_from_dict(cls, defaults):
+        """Set default values from a dictionary.
+
+        Parameters
+        ----------
+        defaults : dict
+            A dictionary with parameter names to default value. Valid keys are:
+
+             * 'ex_periods' - Number of periods to project forward when computing expected sale.
+               Must be a strictly positive integer.
+             * 'ex_lookback' - Number of periods to look back when computing expected sale.
+               A negative number is lookback to start.
+             * 'decrease_scaling' - Scaling for price decrease. Should be a float.
+             * 'acqu_weight' - Realtive weight for 'base price' or 'aquisition price') in price
+               adjustments. Should be an int.
+             * 'prev_adjust_weight' - Realtive weight for 'previous price adjustment' in
+               price adjustments. Should be an int.
+             * 'time_since_sale_weight' - Relative weight of 'time since last sale' in price
+               calculations. Should be an int.
+             * 'increase_scaling' - Scaling for price increase. Should be a float.
+             * 'past_purchase_importance' - Importance of past orders. A higher value makes
+               past sales count more/longer. Must be non-zero.
+             * 'min_price' - Minimum price. Sould be positive.
+        """
+        for key in defaults:
+            if hasattr(cls, key):
+                setattr(cls, key, defaults[key])
+
+    def set_from_dict(self, defaults):
+        """Set values from a dictionary.
+
+        Parameters
+        ----------
+        defaults : dict
+            A dictionary with parameter names to default value. Valid keys are:
+
+             * 'ex_periods' - Number of periods to project forward when computing expected sale.
+               Must be a strictly positive integer.
+             * 'ex_lookback' - Number of periods to look back when computing expected sale.
+               A negative number is lookback to start.
+             * 'decrease_scaling' - Scaling for price decrease. Should be a float.
+             * 'acqu_weight' - Realtive weight for 'base price' or 'aquisition price') in price
+               adjustments. Should be an int.
+             * 'prev_adjust_weight' - Realtive weight for 'previous price adjustment' in
+               price adjustments. Should be an int.
+             * 'time_since_sale_weight' - Relative weight of 'time since last sale' in price
+               calculations. Should be an int.
+             * 'increase_scaling' - Scaling for price increase. Should be a float.
+             * 'past_purchase_importance' - Importance of past orders. A higher value makes
+               past sales count more/longer. Must be non-zero.
+             * 'min_price' - Minimum price. Sould be positive.
+        """
+        for key in defaults:
+            if hasattr(self, key):
+                setattr(self, key, defaults[key])
+
     ## expected sales parameters
     ## -------------------------
 
     _ex_periods = 12  # strictly positive number
-    ex_periods = SingleParam(name='_ex_periods', non_zero=True, pos=True)
+    ex_periods = SingleParam(name='_ex_periods', non_zero=True, pos=True, cast_to=int)
 
     _ex_lookback = 12  # if negative looks back to start
-    ex_lookback = SingleParam(name='_ex_lookback')
+    ex_lookback = SingleParam(name='_ex_lookback', cast_to=int)
 
     ## adjustment parameters
     ## ---------------------
@@ -254,24 +311,25 @@ class Params(object):
     ## - decrease
 
     _decrease_scaling = 0.70
-    decrease_scaling = SingleParam(name='_decrease_scaling', pos=True)
+    decrease_scaling = SingleParam(name='_decrease_scaling', pos=True, cast_to=float)
 
     _acqu_weight = 0.
-    acqu_weight = SingleParam(name='_acqu_weight')
+    acqu_weight = SingleParam(name='_acqu_weight', cast_to=int)
 
     _prev_adjust_weight = 4.
-    prev_adjust_weight = SingleParam(name='_prev_adjust_weight')
+    prev_adjust_weight = SingleParam(name='_prev_adjust_weight', cast_to=int)
 
     _time_since_sale_weight = 5.
-    time_since_sale_weight = SingleParam(name='_time_since_sale_weight')
+    time_since_sale_weight = SingleParam(name='_time_since_sale_weight', cast_to=int)
 
     # - increase
 
     _increase_scaling = 0.20
-    increase_scaling = SingleParam(name='_increase_scaling', pos=True)
+    increase_scaling = SingleParam(name='_increase_scaling', pos=True, cast_to=float)
 
-    _past_purchase_importance = 50.
-    past_purchase_importance = SingleParam(name='_past_purchase_importance', pos=True)
+    _past_purchase_importance = 100.
+    past_purchase_importance = SingleParam(
+        name='_past_purchase_importance', non_zero=True, pos=True)
 
     ## price parameters
     ## ----------------
