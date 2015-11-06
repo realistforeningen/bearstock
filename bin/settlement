@@ -1,0 +1,37 @@
+#!/bin/sh
+# coding: utf-8
+
+# shell block for setting the pythonpath
+''':'
+PYTHONPATH=. exec python2 "$0" "$@"
+'''
+
+# python script starts here
+
+from stock import Database
+
+if __name__ == '__main__':
+    # parse DB
+    db = Database.default()
+    orders = db.read_all_orders()
+
+    products = {}  # product to list(# sold, turnover)
+
+    # count sales
+    for order in orders:
+        # Order fields
+        #   oid       : order id
+        #   bid       : buyer id
+        #   code      : product code
+        #   pid       : price id
+        #   rel_cost  : relative cost from product base price
+        #   abs_cost  : absolut cost the buyer paid
+        #   timestamp : order timestamp
+        oid, bid, code, pid, rel_cost, abs_cost, timestamp = order
+        if code not in products:
+            products[code] = [0, 0]
+        products[code][0] += 1
+        products[code][1] += abs_cost
+
+    import pprint as pp
+    pp.pprint(products)
