@@ -88,6 +88,12 @@ class Database:
     def insert_buyer(self, name):
         return self.insert("buyers", name=name)
 
+    def read_all_orders(self):
+        return self.e('SELECT * FROM orders')
+
+    def read_products(self):
+        return self.e('SELECT * FROM products')
+
     # How much money is on our own account?
     def stock_account(self):
         return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0] or 0
