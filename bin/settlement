@@ -8,16 +8,73 @@ PYTHONPATH=. exec python2 "$0" "$@"
 
 # python script starts here
 
+import argparse as ap
+import csv
 from stock import Database
+from pprint import pprint as pp
+
+def single_char(text):
+    text = str(text)
+    if len(text) != 1:
+        raise TypeError("char string not of length 1")
+    return text
 
 if __name__ == '__main__':
+    # setup arguments
+    parser = ap.ArgumentParser(
+        description='Generate a settlement report from database.'
+    )
+    parser.add_argument(
+        '--csv', action='store_true',
+        help='Write the results as csv, otherwise print the raw dict data.')
+    parser.add_argument(
+        '-of', '--outfile', type=str, default=None,
+        help='File to write report to. Default is to write to standard output.')
+    # CSV options
+    csv_opt = parser.add_argument_group(
+        title='CSV options',
+        description='Only active is the \'--csv\' argument is passed.'
+    )
+    # csv field options
+    csv_opt.add_argument(
+        '-pt', '--product_title', type=str, default='name',
+        help='Title of the \'product title\' column. (Default: %(default)s)')
+    csv_opt.add_argument(
+        '-pc', '--product_count', type=str, default='count',
+        help='Title of the \'product count\' column. (Default: %(default)s)')
+    csv_opt.add_argument(
+        '-ps', '--product_sales', type=str, default='sales',
+        help='Title of the \'product sales total\' column. (Default: %(default)s)')
+    # csv file options
+    csv_opt.add_argument(
+        '--delimiter', type=single_char, default=';',
+        help='CSV delimiter character. (Default: %(default)s)')
+    csv_opt.add_argument(
+        '--quote', type=single_char, default='"',
+        help='CSV quote character. (Default: %(default)s)')
+    csv_opt.add_argument(
+        '--escape', type=single_char, default='\\',
+        help='CSV escape character. (Default: %(default)s)')
+    # parse
+    args = parser.parse_args()
+
     # parse DB
     db = Database.default()
     orders = db.read_all_orders()
+    # read products
+    db_products = db.read_products()
 
-    products = {}  # product to list(# sold, turnover)
+    # get product data
+    products = {}
+    for product in db_products:
+        code, name, brewery, bp, qnty, type_, tags = product
+        products[code] = {
+            'name': name,
+            'brewery': brewery
+        }
 
     # count sales
+    sales = {}  # product to list(# sold, turnover)
     for order in orders:
         # Order fields
         #   oid       : order id
@@ -28,10 +85,12 @@ if __name__ == '__main__':
         #   abs_cost  : absolut cost the buyer paid
         #   timestamp : order timestamp
         oid, bid, code, pid, rel_cost, abs_cost, timestamp = order
-        if code not in products:
-            products[code] = [0, 0]
-        products[code][0] += 1
-        products[code][1] += abs_cost
+        if code not in sales:
+            sales[code] = {
+                'count': 0,
+                'turnover': 0
+            }
+        sales[code]['count'] += 1
+        sales[code]['turnover'] += abs_cost
 
-    import pprint as pp
-    pp.pprint(products)
+    pp(sales)
