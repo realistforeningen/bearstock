@@ -2,3 +2,8 @@ Brewery	Name	Brewery Code	Name Code	Base Price	Quantity	Type	Tags
 Frydenlund	Pils	FY	PL	35		Pils	Norsk	Pils
 Frydenlund	Bayer	FY	BY	35		Bayer	Norsk	Bayer
 Frydenlund	Pale Ale	FY	PA	35		Pale Ale	Norsk	Pale Ale
+Austmann	Tre Gamle Damer	AM	GD	50		Belgisk Ale	Norsk	Pale Ale	Belgisk Pale Ale
+Frydenlund	Bokkøl	FY	BO	30		Bokk	Norsk	Bokk
+Paulaner	Dunkel-Weissbier	PU	DW	45		Hveteøl	Import	Hveteøl
+Lervig	Johnny Low	LV	JL	25		India Pale Ale	Norsk	Pale Ale	India Pale Ale
+Samuel Smith	Taddy Porter	SS	TP	35		Porter	Import	Porter
