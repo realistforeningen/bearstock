@@ -126,7 +126,7 @@ tag app
 		if orders:length == 3
 			window.alert("Woah! That's a lot of beers.")
 			return
-			
+
 		orders.push product
 		render
 
@@ -264,6 +264,10 @@ tag buy-view
 	let name-css = styles.css
 		margin: '0 7px'
 
+	let cost-css = styles
+		font-weight: 'bold'
+		flex: '0 0 auto'
+
 	def render
 		if products !== collection.sourceProducts
 			@collection = null
@@ -299,7 +303,7 @@ tag buy-view
 							<div styles=code-css> product:code
 							<div styles=name-css> "{product:brewery} {product:name}"
 							<div styles=grow>
-							<div styles=bold> "{product:absolute_cost} NOK"
+							<div styles=cost-css> "{product:absolute_cost} NOK"
 
 			<div styles=column>
 				<order-list@order-list>
