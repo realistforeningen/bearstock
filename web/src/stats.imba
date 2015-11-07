@@ -30,7 +30,7 @@ tag line-plot < svg
 
 	let legend-css = styles
 		"&.legend text":
-			font-size: "32px"
+			font-family: 'monospace'
 
 	def data=(newData)
 		if newData !== @data
@@ -74,6 +74,7 @@ tag line-plot < svg
 				1
 			else
 				0
+		legend.addClass(legend-css.className)
 
 		let title = Plottable.Components.TitleLabel.new("Highlights:")
 
