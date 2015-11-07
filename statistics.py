@@ -50,7 +50,7 @@ def get_top_bot(count, db=None):
                 'profit': 0,
             }
         traders[bid]['turnover'] += abs_cost
-        traders[bid]['profit'] += rel_cost
+        traders[bid]['profit'] += -rel_cost
     # construct the list
     traders = sorted(traders.values(), key=(lambda trader: trader['profit']))
     # data!
