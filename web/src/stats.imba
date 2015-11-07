@@ -189,9 +189,46 @@ tag ticker
 						else
 							<div styles=negative-css> "▼"
 
+
+tag buyer-table < table
+	prop title
+	prop rows
+
+	let row-base-css = styles
+		flex-direction: 'row'
+
+		'& td':
+			vertical-align: 'top'
+			padding: '3px 5px'
+
+	let row-even-css = styles
+		background: '#eee'
+
+	let name-css = styles.css
+
+	let profit-css = styles
+		text-align: 'right'
+		width: '40px'
+		white-space: 'nowrap'
+
+	def row-css(idx)
+		if idx % 2 == 0
+			[row-base-css, row-even-css]
+		else
+			[row-base-css]
+
+	def render
+		<self>
+			for buyer, idx in rows
+				<tr styles=row-css(idx)>
+					<td> "{idx+1}. "
+					<td styles=name-css> buyer:name
+					<td styles=profit-css> "{buyer:profit} points"
+
 tag stats
 	prop productFetcher
 	prop priceData
+	prop buyerData
 
 	def addJitter(data)
 		for key of data
@@ -205,8 +242,8 @@ tag stats
 	def build
 		productFetcher = ProductFetcher.new
 		productFetcher:sync = do
-			if !priceData
-				updateHighlights
+			updateHighlights if !priceData
+			updateBuyers if !buyerData
 			render
 		productFetcher.start
 
@@ -215,6 +252,7 @@ tag stats
 
 		setInterval(&, 30000) do
 			updateHighlights
+			updateBuyers
 
 		self
 
@@ -233,6 +271,14 @@ tag stats
 				priceData = addJitter(data)
 				render
 
+	def updateBuyers
+		fetch("/stats/buyers")
+			.then do |res|
+				res.json
+			.then do |data|
+				buyerData = data
+				render
+
 	let main-css = styles.css
 		height: '100%'
 
@@ -241,6 +287,25 @@ tag stats
 
 	let right-css = styles
 		flex: 2
+		flex-direction: 'row'
+
+	let price-css = styles
+		flex: 3
+
+	let buyer-css = styles
+		flex: 1
+		font-size: '0.8em'
+		padding: '1em 2em'
+
+		'& table':
+			width: '100%'
+			margin-bottom: '1em'
+
+	let buyer-header-css = styles
+		font-weight: 'bold'
+
+	let buyer-profit-css = styles
+		text-align: 'right'
 
 	def render
 		let products = productFetcher.products
@@ -254,5 +319,15 @@ tag stats
 			#		<price-table products=productFetcher.products>
 			<div styles=right-css>
 				if priceData
-					<line-plot data=priceData codes=(product:code for product in products)>
+					<div styles=price-css>
+						<line-plot data=priceData codes=(product:code for product in products)>
+
+				if buyerData and buyerData:buyers:count > 0
+					<div styles=buyer-css>
+						<div styles=buyer-header-css> "Top traders"
+						<buyer-table rows=buyerData:buyers:top>
+
+						<div styles=buyer-header-css> "Bad traders"
+						<buyer-table rows=buyerData:buyers:bottom>
+
 
