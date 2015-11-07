@@ -20,7 +20,7 @@ default_params = {
     'time_since_sale_power': 1.025,
     # increase
     'increase_scaling': 0.20,
-    'past_purchase_importance': 0.75,
+    'past_purchase_importance': 1.0,
     # min price
     'min_price': 5.,
 }
@@ -28,15 +28,15 @@ default_params = {
 product_parameters = {
     'FYPL': {
         'decrease_scaling': 0.001,
-        'increase_scaling': 0.05,
+        'increase_scaling': 0.10,
     },
     'FYPA': {
         'decrease_scaling': 0.001,
-        'increase_scaling': 0.05,
+        'increase_scaling': 0.10,
     },
     'FYBY': {
         'decrease_scaling': 0.001,
-        'increase_scaling': 0.05,
+        'increase_scaling': 0.10,
     },
     'NØIS': {
         'decrease_scaling': 0.001,
