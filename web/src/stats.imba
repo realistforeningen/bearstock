@@ -232,17 +232,14 @@ tag stats
 				priceData = addJitter(data)
 				render
 
-	let main-css = styles
-		flex-direction: 'column'
+	let main-css = styles.css
 		height: '100%'
 
 	let left-css = styles
 		flex: 2
-		overflow: 'hidden'
 
 	let right-css = styles
 		flex: 2
-		height: '100%'
 
 	def render
 		let products = productFetcher.products
