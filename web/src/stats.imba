@@ -341,7 +341,7 @@ tag stats
 	def cheap-products
 		let products = productFetcher.products.slice
 		products.sort do |a, b|
-			a:relative_cost - b:relative_cost
+			a:relative_cost/a:base_price - b:relative_cost/b:base_price
 
 		products.slice(0, 3)
 
