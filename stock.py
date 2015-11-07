@@ -302,7 +302,7 @@ class Exchange:
         Exchange(Database.default()).run()
 
     BUDGET = 2000 - 856
-    PERIOD_DURATION = 1*60  # [s]
+    PERIOD_DURATION = 5*60  # [s]
     EVENT_LENGTH = 6*60*60  # [s]
     TOTAL_PERIOD_COUNT = EVENT_LENGTH / PERIOD_DURATION
 
