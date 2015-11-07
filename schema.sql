@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS products (
 -- Note that it's an *adjustment* from the base price.
 CREATE TABLE IF NOT EXISTS prices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  data TEXT NOT NULL,
+  data BLOB NOT NULL,
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 
