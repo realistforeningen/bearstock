@@ -205,6 +205,9 @@ class Database:
                 else:
                     delta_cost = 0
 
+                if round_price:
+                    rel_cost = int(round(rel_cost))
+
                 products.append({
                     "code": code,
                     "name": product["name"],
@@ -212,10 +215,7 @@ class Database:
                     "price_id": ultimate["_id"],
                     "relative_cost": rel_cost,
                     "delta_cost": delta_cost,
-                    "absolute_cost": (
-                        product['base_price'] + rel_cost if not round_price else
-                        round(product['base_price'] + rel_cost)
-                    ),
+                    "absolute_cost": product['base_price'] + rel_cost,
                     "tags": product["tags"].split("|")
                 })
         return products, ultimate["_id"]
