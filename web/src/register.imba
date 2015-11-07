@@ -123,10 +123,6 @@ tag app
 					<buy-view@buy disabled=isLocked>
 
 	def addProductToOrder product
-		if orders:length == 3
-			window.alert("Woah! That's a lot of beers.")
-			return
-
 		orders.push product
 		render
 
@@ -206,11 +202,13 @@ tag buy-view
 		flexDirection: 'row'
 		alignItems: 'stretch'
 		flex: 1
+		position: 'relative'
 
 	let column = styles.css
 		padding: '0 1em'
 		flex: "1 0"
 		flexDirection: 'column'
+		z-index: 50
 
 	let mainColumn = styles.css
 		flex: "0 0 40%"
@@ -271,11 +269,31 @@ tag buy-view
 		font-weight: 'bold'
 		flex: '0 0 auto'
 
+	let overlay-css = styles
+		position: 'absolute'
+		top: 0
+		width: '70%'
+		height: '100%'
+		background: 'rgba(255,255,255,0.9)'
+		align-items: 'center'
+		justify-content: 'center'
+		z-index: 100
+
+		"& div":
+			font-weight: 'bold'
+			font-size: '32px'
+			padding-bottom: '2em'
+			max-width: '10em'
+
 	def render
 		if products !== collection.sourceProducts
 			@collection = null
 
 		<self styles=main>
+			if mainApp.orders:length == 4
+				<div styles=overlay-css>
+					<div> "You have reached your buy limit for this transaction"
+
 			<div styles=column>
 				<scroll-hint>
 					<div styles=vbox>
