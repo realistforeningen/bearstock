@@ -271,6 +271,7 @@ class Database:
                     "price_id": ultimate["_id"],
                     "relative_cost": rel_cost,
                     "delta_cost": delta_cost,
+                    "base_price": product['base_price'],
                     "absolute_cost": product['base_price'] + rel_cost,
                     "tags": product["tags"].split("|")
                 })
