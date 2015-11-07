@@ -12,15 +12,15 @@ default_params = {
     'ex_periods': 12,
     'ex_lookback': 12,
     # decrease
-    'decrease_scaling': 0.03,
+    'decrease_scaling': 0.01,
     'acqu_weight': 3,
     'prev_abs_adjust_weight': 2,
     'prev_rel_adjust_weight': 4,
     'time_since_sale_weight': 9,
     'time_since_sale_power': 1.02,
     # increase
-    'increase_scaling': 0.35,
-    'past_purchase_importance': 7.0,
+    'increase_scaling': 0.5,
+    'past_purchase_importance': 12.0,
     # min price
     'min_price': 5.,
 }
@@ -29,7 +29,7 @@ product_parameters = {
     'NØIS': {
         'decrease_scaling': 0.025,
         'increase_scaling': 0.35,
-        'past_purchase_importance': 8.0,
+        'past_purchase_importance': 18.0,
     },
     'SODP': {
         'decrease_scaling': 0.15,
