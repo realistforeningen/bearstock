@@ -31,6 +31,13 @@ tag line-plot < svg
 	let legend-css = styles
 		"&.legend text":
 			font-family: 'monospace'
+			fill: '#eee'
+
+	let axis-css = styles
+		"& .tick-label.tick-label.tick-label.tick-label":
+			fill: '#eee'
+		"& .tick-label text":
+			fill: '#eee'
 
 	def data=(newData)
 		if newData !== @data
@@ -55,6 +62,9 @@ tag line-plot < svg
 			]
 		])
 		let yaxis = @yaxis = Plottable.Axes.Numeric.new(yscale, 'left')
+
+		yaxis.addClass(axis-css.className)
+		xaxis.addClass(axis-css.className)
 
 		let plot = @plot = Plottable.Plots.Line.new
 
@@ -145,7 +155,8 @@ tag ticker
 	prop products
 
 	let main-css = styles
-		background: '#ddd'
+		background: '#333'
+		color: '#eee'
 		padding: '5px 0'
 		flex-direction: 'row'
 		border-bottom: '2px solid #666'
@@ -202,7 +213,7 @@ tag buyer-table < table
 			padding: '3px 5px'
 
 	let row-even-css = styles
-		background: '#eee'
+		background: '#333'
 
 	let name-css = styles.css
 
@@ -281,6 +292,8 @@ tag stats
 
 	let main-css = styles.css
 		height: '100%'
+		background: 'black'
+		color: '#eee'
 
 	let left-css = styles
 		flex: 2
