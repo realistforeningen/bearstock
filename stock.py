@@ -12,15 +12,15 @@ default_params = {
     'ex_periods': 12,
     'ex_lookback': 12,
     # decrease
-    'decrease_scaling': 0.002,
+    'decrease_scaling': 0.001,
     'acqu_weight': 1,
     'prev_abs_adjust_weight': 2,
     'prev_rel_adjust_weight': 4,
     'time_since_sale_weight': 5,
     'time_since_sale_power': 1.025,
     # increase
-    'increase_scaling': 0.15,
-    'past_purchase_importance': 0.40,
+    'increase_scaling': 0.20,
+    'past_purchase_importance': 0.75,
     # min price
     'min_price': 5.,
 }
