@@ -70,7 +70,7 @@ if __name__ == '__main__':
     # get product data
     products = {}
     for product in db_products:
-        code, name, brewery, bp, qnty, type_, tags = product
+        code, name, brewery, bp, qnty, type_, tags, hidden = product
         products[code] = {
             'name': name,
             'brewery': brewery
