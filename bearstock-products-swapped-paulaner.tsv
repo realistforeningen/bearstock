@@ -1,0 +1,18 @@
+Brewery	Name	Brewery Code	Name Code	Base Price	Quantity	Type	Tags
+Austmann	Tre Gamle Damer	AM	GD	50		Belgisk Ale	Norsk	Pale Ale	Belgisk Pale Ale
+Leffe	Blonde	LE	BL	43		Belgisk Ale	Import	Belgisk Blonde
+Leffe	Brune	LE	BR	43		Belgisk Ale	Import	Dubbel
+Frydenlund	Bokkøl	FY	BO	30		Bokk	Norsk	Bokk
+Austmann	Utpå	AM	UP	38		Hveteøl	Norsk	Wit
+Franziskaner	Weissbier	FZ	WB	45		Hveteøl	Import	Hveteøl
+Paulaner	Hefe-Weissbier	PU	HW	45		Hveteøl	Import	Hveteøl
+Austmann	Onkel i Amerika	AM	OA	38		India Pale Ale	Norsk	Pale Ale	Session IPA	India Pale Ale
+Belhaven	Twisted Thistle	BE	TT	37		India Pale Ale	Import	Pale Ale	India Pale Ale
+Kinn	Don't Mention the Hops	KN	MH	39		India Pale Ale	Norsk	Pale Ale	India Pale Ale
+Lervig	Johnny Low	LV	JL	25		India Pale Ale	Norsk	Pale Ale	India Pale Ale
+Austmann	Blåbærstout	AM	BS	56		Porter	Norsk	Stout
+Austmann	Sjokolade & Kirsbærporter	AM	SK	55		Porter	Norsk	Imperial porter	Porter
+Nøgne Ø	Imperial Stout	NØ	IS	82		Porter	Norsk	Stout
+Samuel Smith	Taddy Porter	SS	TP	35		Porter	Import	Porter
+Boon	Kriek	BO	KR	55		Sur	Import	Surøl	Fruktøl
+Oude Beersel	Geuze	OB	GZ	54		Sur	Import	Surøl
