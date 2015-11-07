@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS products (
   type TEXT NOT NULL,
 
   -- product tags
-  tags TEXT NOT NULL
+  tags TEXT NOT NULL,
+
+  is_hidden BOOLEAN NOT NULL DEFAULT 0
 );
 
 -- This contains the full prices at a single point in time.

@@ -228,7 +228,7 @@ class Database:
             if ultimate is None:
                 return products, None
 
-            for product in self.e('SELECT * FROM products'):
+            for product in self.e('SELECT * FROM products WHERE is_hidden = 0'):
                 code = product["code"]
                 rel_cost = ultimate.get(code, 0)
 
