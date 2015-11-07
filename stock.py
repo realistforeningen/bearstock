@@ -1,3 +1,5 @@
+# coding: utf-8
+
 from threading import Thread
 import time
 from datetime import datetime
@@ -10,32 +12,41 @@ default_params = {
     'ex_periods': 12,
     'ex_lookback': 12,
     # decrease
-    'decrease_scaling': 0.005,
-    'acqu_weight': 1,
+    'decrease_scaling': 0.02,
+    'acqu_weight': 3,
     'prev_abs_adjust_weight': 2,
     'prev_rel_adjust_weight': 4,
-    'time_since_sale_weight': 5,
+    'time_since_sale_weight': 9,
     'time_since_sale_power': 1.02,
     # increase
-    'increase_scaling': 0.10,
-    'past_purchase_importance': 0.25,
+    'increase_scaling': 0.20,
+    'past_purchase_importance': 4.0,
     # min price
     'min_price': 5.,
 }
 # product code to parameters, parameter keys are given above
 product_parameters = {
     'FYPL': {
-        'decrease_scaling': 0.003,
-        'increase_scaling': 0.05,
+        'decrease_scaling': 0.009,
+        'increase_scaling': 0.25,
     },
     'FYPA': {
-        'decrease_scaling': 0.003,
-        'increase_scaling': 0.05,
+        'decrease_scaling': 0.009,
+        'increase_scaling': 0.25,
     },
     'FYBY': {
-        'decrease_scaling': 0.003,
-        'increase_scaling': 0.05,
+        'decrease_scaling': 0.009,
+        'increase_scaling': 0.25,
     },
+    'NØIS': {
+        'decrease_scaling': 0.005,
+        'increase_scaling': 0.30,
+        'past_purchase_importance': 12.0,
+    },
+    'SSTP': {
+        'past_purchase_importance': 3.0,
+        'decrease_scaling': 0.01,
+    }
 }
 
 def todict(cursor, key_field=0, value_field=1):
@@ -301,8 +312,8 @@ class Exchange:
     def run_default(self):
         Exchange(Database.default()).run()
 
-    BUDGET = 2000 - 856
-    PERIOD_DURATION = 1*60  # [s]
+    BUDGET = 5000 - 856
+    PERIOD_DURATION = 5*60  # [s]
     EVENT_LENGTH = 6*60*60  # [s]
     TOTAL_PERIOD_COUNT = EVENT_LENGTH / PERIOD_DURATION
 
