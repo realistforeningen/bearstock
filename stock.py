@@ -16,11 +16,11 @@ default_params = {
     'acqu_weight': 1,
     'prev_abs_adjust_weight': 2,
     'prev_rel_adjust_weight': 4,
-    'time_since_sale_weight': 5,
+    'time_since_sale_weight': 6,
     'time_since_sale_power': 1.03,
     # increase
     'increase_scaling': 0.3,
-    'past_purchase_importance': 8.0,
+    'past_purchase_importance': 10.0,
     # min price
     'min_price': 5.,
 }
@@ -41,7 +41,7 @@ product_parameters = {
     'NØIS': {
         'decrease_scaling': 0.001,
         'increase_scaling': 0.40,
-        'past_purchase_importance': 12.0,
+        'past_purchase_importance': 14.0,
     },
 }
 
