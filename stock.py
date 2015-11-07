@@ -43,6 +43,10 @@ product_parameters = {
         'increase_scaling': 0.30,
         'past_purchase_importance': 12.0,
     },
+    'SSTP': {
+        'past_purchase_importance': 3.0,
+        'decrease_scaling': 0.01,
+    }
 }
 
 def todict(cursor, key_field=0, value_field=1):
