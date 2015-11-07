@@ -29,6 +29,8 @@ def get_top_bot(count, db=None):
     if db is None:
         db = Database.default()
 
+    buyers = db.buyer_dict()
+
     orders = db.read_all_orders()
     # parse orders
     traders = {}  # list of traders
@@ -46,6 +48,7 @@ def get_top_bot(count, db=None):
         if bid not in traders:
             traders[bid] = {
                 'id': bid,
+                'name': buyers[bid],
                 'turnover': 0,
                 'profit': 0,
             }

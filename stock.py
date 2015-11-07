@@ -189,6 +189,10 @@ class Database:
         if row:
             return dictmapper(row)
 
+    def buyer_dict(self):
+        cursor = self.e('SELECT id, name FROM buyers')
+        return todict(cursor)
+
     def current_products_with_prices(self, round_price=False):
         products = []
         with self.conn:
