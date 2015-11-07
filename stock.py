@@ -12,7 +12,7 @@ default_params = {
     'ex_periods': 12,
     'ex_lookback': 12,
     # decrease
-    'decrease_scaling': 0.02,
+    'decrease_scaling': 0.025,
     'acqu_weight': 3,
     'prev_abs_adjust_weight': 2,
     'prev_rel_adjust_weight': 4,
@@ -27,25 +27,25 @@ default_params = {
 # product code to parameters, parameter keys are given above
 product_parameters = {
     'FYPL': {
-        'decrease_scaling': 0.009,
+        'decrease_scaling': 0.015,
         'increase_scaling': 0.25,
     },
     'FYPA': {
-        'decrease_scaling': 0.009,
+        'decrease_scaling': 0.015,
         'increase_scaling': 0.25,
     },
     'FYBY': {
-        'decrease_scaling': 0.009,
+        'decrease_scaling': 0.015,
         'increase_scaling': 0.25,
     },
     'NØIS': {
-        'decrease_scaling': 0.005,
+        'decrease_scaling': 0.010,
         'increase_scaling': 0.30,
         'past_purchase_importance': 12.0,
     },
     'SSTP': {
         'past_purchase_importance': 3.0,
-        'decrease_scaling': 0.01,
+        'decrease_scaling': 0.015,
     }
 }
 
