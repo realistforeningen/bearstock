@@ -290,7 +290,7 @@ class Exchange:
     def run_default(self):
         Exchange(Database.default()).run()
 
-    BUDGET = 2000
+    BUDGET = 2000 - 856
     PERIOD_DURATION = 5*60  # [s]
     EVENT_LENGTH = 6*60*60  # [s]
     TOTAL_PERIOD_COUNT = EVENT_LENGTH / PERIOD_DURATION
