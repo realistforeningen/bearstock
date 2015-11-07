@@ -74,6 +74,7 @@ class Database:
     def import_products(self, products):
         for product in products:
             with self.conn:
+                self.e('PRAGMA defer_foreign_keys = ON')
                 self.e('DELETE FROM products WHERE code = ?', (product['code'],))
                 taglist = product.get("tags", [])
                 taglist.append(product["brewery"])
@@ -227,7 +228,7 @@ class Database:
             if ultimate is None:
                 return products, None
 
-            for product in self.e('SELECT * FROM products'):
+            for product in self.e('SELECT * FROM products WHERE is_hidden = 0'):
                 code = product["code"]
                 rel_cost = ultimate.get(code, 0)
 
