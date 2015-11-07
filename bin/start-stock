@@ -1,0 +1,13 @@
+#!/bin/sh
+# coding: utf-8
+
+# shell block for setting the pythonpath
+''':'
+PYTHONPATH=. exec python2 "$0" "$@"
+'''
+
+# python script starts here
+
+from stock import Database
+db = Database.default()
+db.ensure_prices()

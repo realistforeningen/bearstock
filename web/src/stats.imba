@@ -30,7 +30,7 @@ tag line-plot < svg
 
 	let legend-css = styles
 		"&.legend text":
-			font-size: "32px"
+			font-family: 'monospace'
 
 	def data=(newData)
 		if newData !== @data
@@ -74,6 +74,7 @@ tag line-plot < svg
 				1
 			else
 				0
+		legend.addClass(legend-css.className)
 
 		let title = Plottable.Components.TitleLabel.new("Highlights:")
 
@@ -232,17 +233,14 @@ tag stats
 				priceData = addJitter(data)
 				render
 
-	let main-css = styles
-		flex-direction: 'column'
+	let main-css = styles.css
 		height: '100%'
 
 	let left-css = styles
 		flex: 2
-		overflow: 'hidden'
 
 	let right-css = styles
 		flex: 2
-		height: '100%'
 
 	def render
 		let products = productFetcher.products

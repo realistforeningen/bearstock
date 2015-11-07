@@ -67,6 +67,9 @@ tag app
 	def products
 		productFetcher.products
 
+	def isClosed
+		productFetcher.isClosed
+
 	def renderContinously
 		setInterval(&, 500) do
 			render
@@ -110,15 +113,20 @@ tag app
 				<div styles=grow>
 				<div> Date.new.toString
 			<div styles=content>
-				if buyer
-					if products
-						<buy-view@buy disabled=isLocked>
-					else
-						<loading-view>
-				else
+				if isClosed
+					<big-message-view> "The stock is closed."
+				elif !buyer
 					<login-view>
+				elif !products
+					<big-message-view> "Loading..."
+				else
+					<buy-view@buy disabled=isLocked>
 
 	def addProductToOrder product
+		if orders:length == 3
+			window.alert("Woah! That's a lot of beers.")
+			return
+
 		orders.push product
 		render
 
@@ -168,17 +176,14 @@ tag app
 		buyer = null
 		render
 
-tag loading-view
-	let main = styles.css
-		fontSize: '3em'
-		fontWeight: 'bold'
-
-		flexDirection: 'column'
-		justifyContent: 'center'
+tag big-message-view
+	let main-css = styles.css
+		font-size: '3em'
+		font-weight: 'bold'
+		margin: 'auto'
 
 	def render
-		<self styles=main>
-			<div> "Loading prices…"
+		self.styles = main-css
 
 tag buy-view
 	prop disabled
@@ -259,6 +264,10 @@ tag buy-view
 	let name-css = styles.css
 		margin: '0 7px'
 
+	let cost-css = styles
+		font-weight: 'bold'
+		flex: '0 0 auto'
+
 	def render
 		if products !== collection.sourceProducts
 			@collection = null
@@ -294,7 +303,7 @@ tag buy-view
 							<div styles=code-css> product:code
 							<div styles=name-css> "{product:brewery} {product:name}"
 							<div styles=grow>
-							<div styles=bold> "{product:absolute_cost} NOK"
+							<div styles=cost-css> "{product:absolute_cost} NOK"
 
 			<div styles=column>
 				<order-list@order-list>

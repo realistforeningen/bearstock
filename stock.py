@@ -193,6 +193,9 @@ class Database:
         products = []
         with self.conn:
             ultimate, penultimate = self.latest_prices(2)
+            if ultimate is None:
+                return products, None
+                
             for product in self.e('SELECT * FROM products'):
                 code = product["code"]
                 rel_cost = ultimate.get(code, 0)
@@ -263,8 +266,14 @@ class Exchange:
         print " * Running stock in the background"
 
         while True:
-            print " * Stock is ticking"
             ts = self.db.last_price_time()
+            
+            if ts is None:
+                print "* Stock is closed"
+                time.sleep(10)
+                continue
+
+            print " * Stock is ticking"
             now = datetime.now()
             elapsed = (now - ts).total_seconds()
             pending = self.PERIOD_DURATION - elapsed
