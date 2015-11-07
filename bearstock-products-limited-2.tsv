@@ -1,4 +1,4 @@
 Brewery	Name	Brewery Code	Name Code	Base Price	Quantity	Type	Tags
-Frydenlund	Pils	FY	AL	35		Pils	Norsk	Pils
+Frydenlund	Pils	FY	PL	35		Pils	Norsk	Pils
 Frydenlund	Bayer	FY	BY	35		Bayer	Norsk	Bayer
-Frydenlund	Pale Ale	FY	PL	35		Pale Ale	Norsk	Pale Ale
+Frydenlund	Pale Ale	FY	PA	35		Pale Ale	Norsk	Pale Ale
