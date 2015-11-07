@@ -16,11 +16,11 @@ default_params = {
     'acqu_weight': 3,
     'prev_abs_adjust_weight': 2,
     'prev_rel_adjust_weight': 4,
-    'time_since_sale_weight': 8,
+    'time_since_sale_weight': 9,
     'time_since_sale_power': 1.02,
     # increase
-    'increase_scaling': 0.25,
-    'past_purchase_importance': 3.0,
+    'increase_scaling': 0.35,
+    'past_purchase_importance': 7.0,
     # min price
     'min_price': 5.,
 }
