@@ -1,5 +1,6 @@
 from flask import Flask, render_template, g, jsonify, request
 from stock import Database
+from statistics import get_top_bot
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
@@ -44,6 +45,11 @@ def prices():
     codes = request.args.getlist('code')
     prices = g.db.prices_for_product(codes, round_price=True)
     return jsonify(prices)
+
+@app.route('/stats/buyers')
+def stats_buyers():
+    stats = get_top_bot(5, g.db)
+    return jsonify(buyers=stats)
 
 @app.route('/orders', methods=['POST'])
 def orders_create():
