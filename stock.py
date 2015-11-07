@@ -5,6 +5,28 @@ import sqlite3
 import pickle
 from collections import defaultdict
 
+default_params = {
+    # lookback
+    'ex_periods': 12,
+    'ex_lookback': 12,
+    # decrease
+    'decrease_scaling': 0.01,
+    'acqu_weight': 1,
+    'prev_abs_adjust_weight': 2,
+    'prev_rel_adjust_weight': 4,
+    'time_since_sale_weight': 5,
+    'time_since_sale_power': 1.02,
+    # increase
+    'increase_scaling': 0.20,
+    'past_purchase_importance': 0.25,
+    # min price
+    'min_price': 5.,
+}
+# product code to parameters, parameter keys are given above
+product_parameters = {
+
+}
+
 def todict(cursor, key_field=0, value_field=1):
     res = {}
     for row in cursor:
@@ -247,7 +269,7 @@ class Database:
         return torows(
             self.e('SELECT * FROM orders WHERE created_at <= ? ORDER BY created_at', (ts,)))
 
-from price_logic import PriceLogic
+from price_logic import PriceLogic, Params
 
 # Responsible for running the actual stock exchange
 class Exchange:
@@ -262,7 +284,7 @@ class Exchange:
         Exchange(Database.default()).run()
 
     BUDGET = 2000
-    PERIOD_DURATION = 5*60  # [s]
+    PERIOD_DURATION = 10  # [s]
     EVENT_LENGTH = 6*60*60  # [s]
     TOTAL_PERIOD_COUNT = EVENT_LENGTH / PERIOD_DURATION
 
@@ -271,6 +293,9 @@ class Exchange:
 
     def run(self):
         print " * Running stock in the background"
+
+        # set default parameters
+        Params.set_default_from_dict(default_params)
 
         while True:
             ts = self.db.last_price_time()
@@ -289,6 +314,7 @@ class Exchange:
             self.tick()
 
     def tick(self):
+        # database transaction
         with self.db.conn:
             surplus = self.BUDGET + self.db.stock_account()
             period_count = self.db.prices_count()
@@ -309,13 +335,19 @@ class Exchange:
             types = self.db.types()
 
             for key in base_prices:
+                # update params
+                params = None
+                if key in product_parameters:
+                    params = Params(params=product_parameters[key])
+                # add product
                 pl.add_product(
                     code=key,
                     brewery=breweries[key],
                     base_price=base_prices[key],
                     products_left=stock_left[key],
                     prod_type=types[key],
-                    price_data=price_adjustments[key]
+                    price_data=price_adjustments[key],
+                    params=params
                 )
 
             new_adjustments = pl.finalize()
