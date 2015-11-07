@@ -55,12 +55,12 @@ def get_top_bot(count, db=None):
         traders[bid]['turnover'] += abs_cost
         traders[bid]['profit'] += -rel_cost
     # construct the list
-    traders = sorted(traders.values(), key=(lambda trader: trader['profit']))
+    traders = sorted(traders.values(), key=(lambda trader: trader['profit']), reverse=True)
     # data!
     return {
         'count': min(count, len(traders)),
         'top': tuple(traders[0:count]),
-        'bottom': tuple(traders[-count:]),
+        'bottom': tuple(traders[-count:][::-1]),
     }
 
 if __name__ == '__main__':
