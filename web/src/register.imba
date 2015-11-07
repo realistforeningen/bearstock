@@ -67,6 +67,9 @@ tag app
 	def products
 		productFetcher.products
 
+	def isClosed
+		productFetcher.isClosed
+
 	def renderContinously
 		setInterval(&, 500) do
 			render
@@ -110,13 +113,14 @@ tag app
 				<div styles=grow>
 				<div> Date.new.toString
 			<div styles=content>
-				if buyer
-					if products
-						<buy-view@buy disabled=isLocked>
-					else
-						<loading-view>
-				else
+				if isClosed
+					<big-message-view> "The stock is closed."
+				elif !buyer
 					<login-view>
+				elif !products
+					<big-message-view> "Loading..."
+				else
+					<buy-view@buy disabled=isLocked>
 
 	def addProductToOrder product
 		orders.push product
@@ -168,17 +172,14 @@ tag app
 		buyer = null
 		render
 
-tag loading-view
-	let main = styles.css
-		fontSize: '3em'
-		fontWeight: 'bold'
-
-		flexDirection: 'column'
-		justifyContent: 'center'
+tag big-message-view
+	let main-css = styles.css
+		font-size: '3em'
+		font-weight: 'bold'
+		margin: 'auto'
 
 	def render
-		<self styles=main>
-			<div> "Loading prices…"
+		self.styles = main-css
 
 tag buy-view
 	prop disabled

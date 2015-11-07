@@ -21,6 +21,9 @@ export class ProductFetcher
 	def start
 		fetchProducts
 
+	def isClosed
+		products && !priceId
+
 	def fetchProducts
 		fetch("/products")
 			.then(tojson)

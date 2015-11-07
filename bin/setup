@@ -61,8 +61,6 @@ if __name__ == '__main__':
     # ensure schema exists
     for statement in open('schema.sql').read().split(';'):
         db.e(statement)
-    # ensure the prices
-    db.ensure_prices()
     # ensure a buyer
     db.ensure_buyer()
 
