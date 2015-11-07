@@ -123,6 +123,10 @@ tag app
 					<buy-view@buy disabled=isLocked>
 
 	def addProductToOrder product
+		if orders:length == 3
+			window.alert("Woah! That's a lot of beers.")
+			return
+			
 		orders.push product
 		render
 
