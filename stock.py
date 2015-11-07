@@ -10,21 +10,32 @@ default_params = {
     'ex_periods': 12,
     'ex_lookback': 12,
     # decrease
-    'decrease_scaling': 0.01,
+    'decrease_scaling': 0.005,
     'acqu_weight': 1,
     'prev_abs_adjust_weight': 2,
     'prev_rel_adjust_weight': 4,
     'time_since_sale_weight': 5,
     'time_since_sale_power': 1.02,
     # increase
-    'increase_scaling': 0.20,
+    'increase_scaling': 0.10,
     'past_purchase_importance': 0.25,
     # min price
     'min_price': 5.,
 }
 # product code to parameters, parameter keys are given above
 product_parameters = {
-
+    'FYPL': {
+        'decrease_scaling': 0.003,
+        'increase_scaling': 0.05,
+    },
+    'FYPA': {
+        'decrease_scaling': 0.003,
+        'increase_scaling': 0.05,
+    },
+    'FYBY': {
+        'decrease_scaling': 0.003,
+        'increase_scaling': 0.05,
+    },
 }
 
 def todict(cursor, key_field=0, value_field=1):
@@ -291,7 +302,7 @@ class Exchange:
         Exchange(Database.default()).run()
 
     BUDGET = 2000 - 856
-    PERIOD_DURATION = 5*60  # [s]
+    PERIOD_DURATION = 1*60  # [s]
     EVENT_LENGTH = 6*60*60  # [s]
     TOTAL_PERIOD_COUNT = EVENT_LENGTH / PERIOD_DURATION
 
