@@ -2,7 +2,7 @@
 
 from stock import Database
 
-def get_top_bot(count):
+def get_top_bot(count, db=None):
     """Get ``count`` top and bottom traders.
 
     Parameters
@@ -26,7 +26,9 @@ def get_top_bot(count):
         ``count``.
     """
     # get data from DB
-    db = Database.default()
+    if db is None:
+        db = Database.default()
+
     orders = db.read_all_orders()
     # parse orders
     traders = {}  # list of traders
