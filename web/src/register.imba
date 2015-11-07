@@ -261,6 +261,7 @@ tag buy-view
 		height: 0
 
 	let code-css = styles
+		flex: '0 0 auto'
 		font-weight: 'bold'
 
 	let name-css = styles.css
