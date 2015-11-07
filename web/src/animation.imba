@@ -1,4 +1,4 @@
-export def animate t, styles, maxAmount 
+export def animate t, styles 
 	if t.hasFlag(styles.className)
 		# Already applied
 		return false
@@ -10,6 +10,8 @@ export def animate t, styles, maxAmount
 		t.dom.removeEventListener(name, remover) for name in names
 
 	t.dom.addEventListener(name, remover, false) for name in names
+
+	setTimeout(remover, 500)
 
 	t.flag(styles.className)
 
