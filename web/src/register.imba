@@ -181,6 +181,8 @@ tag big-message-view
 		font-size: '3em'
 		font-weight: 'bold'
 		margin: 'auto'
+		align-self: 'center'
+		padding-bottom: '2em'
 
 	def render
 		self.styles = main-css
