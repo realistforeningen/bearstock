@@ -12,7 +12,7 @@ default_params = {
     'ex_periods': 12,
     'ex_lookback': 12,
     # decrease
-    'decrease_scaling': 0.025,
+    'decrease_scaling': 0.08,  # 0.025
     'acqu_weight': 3,
     'prev_abs_adjust_weight': 2,
     'prev_rel_adjust_weight': 4,
@@ -20,7 +20,7 @@ default_params = {
     'time_since_sale_power': 1.02,
     # increase
     'increase_scaling': 0.20,
-    'past_purchase_importance': 4.0,
+    'past_purchase_importance': 2.0,  # 4.0
     # min price
     'min_price': 5.,
 }
