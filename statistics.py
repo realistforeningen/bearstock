@@ -2,7 +2,7 @@
 
 from stock import Database
 
-def get_top_bot(count):
+def get_top_bot(count, db=None):
     """Get ``count`` top and bottom traders.
 
     Parameters
@@ -26,7 +26,11 @@ def get_top_bot(count):
         ``count``.
     """
     # get data from DB
-    db = Database.default()
+    if db is None:
+        db = Database.default()
+
+    buyers = db.buyer_dict()
+
     orders = db.read_all_orders()
     # parse orders
     traders = {}  # list of traders
@@ -44,11 +48,12 @@ def get_top_bot(count):
         if bid not in traders:
             traders[bid] = {
                 'id': bid,
+                'name': buyers[bid],
                 'turnover': 0,
                 'profit': 0,
             }
         traders[bid]['turnover'] += abs_cost
-        traders[bid]['profit'] += rel_cost
+        traders[bid]['profit'] += -rel_cost
     # construct the list
     traders = sorted(traders.values(), key=(lambda trader: trader['profit']))
     # data!
