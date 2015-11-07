@@ -120,8 +120,9 @@ class PriceLogic:
                 avg_pop = (popularity + 3*type_popularity + 2*brewery_popularity)/6.
                 # compute final adjustment
                 increase, decrease, deficit_correction = prod['adjustments']
-                adjustment = prod['prev_abs_adj'] + (1 + avg_pop)*increase \
-                    + (1 - avg_pop)*decrease + deficit_correction
+                # adjustment = prod['prev_abs_adj'] + (1 + avg_pop)*increase \
+                #     + (1 - avg_pop)*decrease + deficit_correction
+                adjustment = prod['prev_abs_adj'] + increase + decrease + deficit_correction
                 # make sure we don't sell lower than the min price
                 if prod['base_price']+adjustment > prod['p'].min_price:
                     adjustments[code] = adjustment
