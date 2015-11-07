@@ -65,7 +65,12 @@ class Database:
                     product["type"],
                     tags
                 )
-                self.e('INSERT INTO products (code, name, brewery, base_price, quantity, type, tags) VALUES (?, ?, ?, ?, ?, ?, ?)', values)
+                self.e('''
+                    INSERT INTO
+                    products (
+                        code, name, brewery, base_price, quantity, type, tags
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', values)
 
     def ensure_prices(self):
         with self.conn:
@@ -103,7 +108,7 @@ class Database:
         if row:
             return datetime.fromtimestamp(row['created_at'])
 
-    def latest_prices(self, count = 1):
+    def latest_prices(self, count=1):
         cursor = self.e('SELECT * FROM prices ORDER BY id DESC LIMIT ?', (count,))
 
         def mapper(row):
@@ -195,7 +200,7 @@ class Database:
             ultimate, penultimate = self.latest_prices(2)
             if ultimate is None:
                 return products, None
-                
+
             for product in self.e('SELECT * FROM products'):
                 code = product["code"]
                 rel_cost = ultimate.get(code, 0)
@@ -222,7 +227,8 @@ class Database:
 
     def prices_for_product(self, codes, round_price=False):
         arr = ", ".join(["?" for _ in codes])
-        base_prices = todict(self.e('SELECT code, base_price FROM products WHERE code IN (%s)' % arr, codes))
+        base_prices = todict(
+            self.e('SELECT code, base_price FROM products WHERE code IN (%s)' % arr, codes))
         price_data = defaultdict(lambda: [])
         cursor = self.e('SELECT * FROM prices ORDER BY id')
         for row in cursor:
@@ -238,7 +244,8 @@ class Database:
         return dict(price_data)
 
     def orders_before(self, ts):
-        return torows(self.e('SELECT * FROM orders WHERE created_at <= ? ORDER BY created_at', (ts,)))
+        return torows(
+            self.e('SELECT * FROM orders WHERE created_at <= ? ORDER BY created_at', (ts,)))
 
 from price_logic import PriceLogic
 
@@ -267,7 +274,7 @@ class Exchange:
 
         while True:
             ts = self.db.last_price_time()
-            
+
             if ts is None:
                 print "* Stock is closed"
                 time.sleep(10)
