@@ -74,6 +74,7 @@ class Database:
     def import_products(self, products):
         for product in products:
             with self.conn:
+                self.e('PRAGMA defer_foreign_keys = ON')
                 self.e('DELETE FROM products WHERE code = ?', (product['code'],))
                 taglist = product.get("tags", [])
                 taglist.append(product["brewery"])
