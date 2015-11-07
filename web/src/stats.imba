@@ -99,6 +99,10 @@ tag line-plot < svg
 		svg.css height: 'auto', width: 'auto', flex: 1
 		super
 
+	def forceRender
+		@didChange = yes
+		render
+
 	def render
 		return if !@didChange
 		@didChange = no
@@ -320,6 +324,10 @@ tag stats
 	let buyer-profit-css = styles
 		text-align: 'right'
 
+	def onclick evt
+		@line.forceRender if @line
+		render
+
 	def render
 		let products = productFetcher.products.slice
 
@@ -336,7 +344,7 @@ tag stats
 			<div styles=right-css>
 				if priceData
 					<div styles=price-css>
-						<line-plot data=priceData codes=(product:code for product in products)>
+						<line-plot@line data=priceData codes=(product:code for product in products)>
 
 				if buyerData and buyerData:buyers:count > 0
 					<div styles=buyer-css>
