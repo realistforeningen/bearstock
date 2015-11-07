@@ -308,7 +308,10 @@ tag stats
 		text-align: 'right'
 
 	def render
-		let products = productFetcher.products
+		let products = productFetcher.products.slice
+
+		products.sort do |a, b|
+			a:code.localeCompare(b:code)
 
 		<self styles=main-css>
 			<style> styles.toString
