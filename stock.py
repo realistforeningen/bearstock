@@ -12,30 +12,30 @@ default_params = {
     'ex_periods': 12,
     'ex_lookback': 12,
     # decrease
-    'decrease_scaling': 0.0045,
+    'decrease_scaling': 0.005,
     'acqu_weight': 1,
     'prev_abs_adjust_weight': 2,
     'prev_rel_adjust_weight': 4,
-    'time_since_sale_weight': 8,
-    'time_since_sale_power': 1.03,
+    'time_since_sale_weight': 9,
+    'time_since_sale_power': 1.035,
     # increase
     'increase_scaling': 0.25,
-    'past_purchase_importance': 8.0,
+    'past_purchase_importance': 6.0,
     # min price
     'min_price': 5.,
 }
 # product code to parameters, parameter keys are given above
 product_parameters = {
     'FYPL': {
-        'decrease_scaling': 0.002,
+        'decrease_scaling': 0.003,
         'increase_scaling': 0.25,
     },
     'FYPA': {
-        'decrease_scaling': 0.002,
+        'decrease_scaling': 0.003,
         'increase_scaling': 0.25,
     },
     'FYBY': {
-        'decrease_scaling': 0.002,
+        'decrease_scaling': 0.003,
         'increase_scaling': 0.25,
     },
     'NØIS': {
