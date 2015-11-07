@@ -205,8 +205,7 @@ tag ticker
 							<div styles=negative-css> "▼"
 
 
-tag buyer-table < table
-	prop title
+tag sidebar-table < table
 	prop rows
 
 	let row-base-css = styles
@@ -234,11 +233,26 @@ tag buyer-table < table
 
 	def render
 		<self>
-			for buyer, idx in rows
+			for obj, idx in rows
 				<tr styles=row-css(idx)>
 					<td> "{idx+1}. "
-					<td styles=name-css> buyer:name
-					<td styles=profit-css> "{buyer:profit} points"
+					<td styles=name-css> key(obj)
+					<td styles=profit-css> value(obj)
+
+tag buyer-table < sidebar-table
+	def key(obj)
+		obj:name
+
+	def value(obj)
+		"{obj:profit} points"
+
+tag stocks-table < sidebar-table
+	def key(obj)
+		obj:code
+
+	def value(obj)
+		""
+
 
 tag stats
 	prop productFetcher
@@ -324,6 +338,13 @@ tag stats
 	let buyer-profit-css = styles
 		text-align: 'right'
 
+	def cheap-products
+		let products = productFetcher.products.slice
+		products.sort do |a, b|
+			a:relative_cost - b:relative_cost
+
+		products.slice(0, 3)
+
 	def onclick evt
 		@line.forceRender if @line
 		render
@@ -348,6 +369,9 @@ tag stats
 
 				if buyerData and buyerData:buyers:count > 0
 					<div styles=buyer-css>
+						<div styles=buyer-header-css> "Good deals"
+						<stocks-table rows=cheap-products>
+
 						<div styles=buyer-header-css> "Top traders"
 						<buyer-table rows=buyerData:buyers:top>
 
