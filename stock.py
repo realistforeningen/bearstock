@@ -36,6 +36,9 @@ product_parameters = {
         'decrease_scaling': 0.003,
         'increase_scaling': 0.05,
     },
+    'NØIS': {
+        'decrease_scaling': 0.003,
+    },
 }
 
 def todict(cursor, key_field=0, value_field=1):
