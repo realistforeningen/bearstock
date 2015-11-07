@@ -290,7 +290,7 @@ tag buy-view
 			@collection = null
 
 		<self styles=main>
-			if mainApp.orders:length == 4
+			if mainApp.orders:length == 1
 				<div styles=overlay-css>
 					<div> "You have reached your buy limit for this transaction"
 
