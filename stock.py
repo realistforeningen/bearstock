@@ -75,7 +75,7 @@ class Database:
         with self.conn:
             self.e('PRAGMA defer_foreign_keys = ON')
             self.e('UPDATE products SET is_hidden = 1')
-            
+
             for product in products:
                 self.e('DELETE FROM products WHERE code = ?', (product['code'],))
                 taglist = product.get("tags", [])
@@ -113,7 +113,7 @@ class Database:
 
     def insert_prices(self, prices):
         data = pickle.dumps(prices)
-        self.e('INSERT INTO prices (data) VALUES (?)', (data,))
+        self.e('INSERT INTO prices (data) VALUES (?)', (sqlite3.Binary(data),))
 
     def insert_buyer(self, name):
         return self.insert("buyers", name=name)
