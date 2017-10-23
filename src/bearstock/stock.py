@@ -1,4 +1,3 @@
-# coding: utf-8
 
 from threading import Thread
 import time
@@ -6,6 +5,8 @@ from datetime import datetime
 import sqlite3
 import pickle
 from collections import defaultdict
+
+from bearstock.price_logic import PriceLogic, Params
 
 default_params = {
     # lookback
@@ -278,8 +279,6 @@ class Database:
     def orders_before(self, ts):
         return torows(
             self.e('SELECT * FROM orders WHERE created_at <= ? ORDER BY created_at', (ts,)))
-
-from price_logic import PriceLogic, Params
 
 # Responsible for running the actual stock exchange
 class Exchange:

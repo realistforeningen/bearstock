@@ -1,6 +1,5 @@
-# coding: utf-8
 
-from stock import Database
+from .stock import Database
 
 def get_top_bot(count, db=None):
     """Get ``count`` top and bottom traders.

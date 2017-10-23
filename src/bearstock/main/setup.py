@@ -1,17 +1,8 @@
-#!/bin/sh
-# coding: utf-8
-
-# shell block for setting the pythonpath
-''':'
-PYTHONPATH=. exec python2 "$0" "$@"
-'''
-
-# python script starts here
 
 import argparse as ap
 import csv
 
-from stock import Database
+from bearstock.stock import Database
 
 def parse_products_csv(filename):
     products = []
@@ -46,7 +37,8 @@ def parse_products_csv(filename):
             products.append(product)
     return products
 
-if __name__ == '__main__':
+def main(argv=none):
+
     # parse args
     parser = ap.ArgumentParser()
     parser.add_argument('csv', type=str, help='CSV file to read products from')

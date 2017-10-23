@@ -1,3 +1,4 @@
+
 # BearStock
 
 Everything related to the BearStock. Work very much in progress.
@@ -7,9 +8,10 @@ Everything related to the BearStock. Work very much in progress.
 Set up an virtualenv and install dependencies:
 
 ```
-$ virtualenv env
+$ virtualenv env -p python3.6
+
 $ source env/bin/activate
-$ pip install -r requirements.txt
+$ python setup.py develop  # to symlink sources
 ```
 
 JavaScript libraries (used on the client-side) is installed through NPM:

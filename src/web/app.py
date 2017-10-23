@@ -1,6 +1,6 @@
 from flask import Flask, render_template, g, jsonify, request
-from stock import Database
-from statistics import get_top_bot
+from bearstock.stock import Database
+from bearstock.statistics import get_top_bot
 
 app = Flask(__name__)
 app.config['DEBUG'] = True

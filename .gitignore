@@ -1,13 +1,19 @@
-# virtualenv in root
-/env/
+
+env/
 
 node_modules/
 bower_components/
 
 __pycache__/
 .cache/
+.eggs/
+*.egg-info/
 
-/web/static/assets
-/app.db
+src/web/static/assets
+src/app.db
 
 *.pyc
+
+# application database
+app.db
+

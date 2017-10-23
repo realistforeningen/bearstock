@@ -1,19 +1,10 @@
-#!/bin/sh
-# coding: utf-8
-
-# shell block for setting the pythonpath
-''':'
-PYTHONPATH=. exec python2 "$0" "$@"
-'''
-
-# python script starts here
 
 import argparse as ap
 import csv
 import cStringIO
 import codecs
 from pprint import pprint as pp
-from stock import Database
+from bearstock.stock import Database
 from sys import stdout
 
 def single_char(text):
@@ -22,7 +13,8 @@ def single_char(text):
         raise TypeError("char string not of length 1")
     return text
 
-if __name__ == '__main__':
+def main(argv=None):
+
     # setup arguments
     parser = ap.ArgumentParser(
         description='Generate a settlement report from database.'
@@ -135,3 +127,4 @@ if __name__ == '__main__':
             pp(sales, stream=stream)  # format
             print >> o, stream.getvalue().strip().decode('utf-8')  # fetch utf-8 data
             stream.truncate(0)  # empty stream
+
