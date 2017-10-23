@@ -302,7 +302,7 @@ class Exchange:
         self.db = db
 
     def run(self):
-        print " * Running stock in the background"
+        print(" * Running stock in the background")
 
         # set default parameters
         Params.set_default_from_dict(default_params)
@@ -311,11 +311,11 @@ class Exchange:
             ts = self.db.last_price_time()
 
             if ts is None:
-                print "* Stock is closed"
+                print("* Stock is closed")
                 time.sleep(10)
                 continue
 
-            print " * Stock is ticking"
+            print(" * Stock is ticking")
             now = datetime.now()
             elapsed = (now - ts).total_seconds()
             pending = self.PERIOD_DURATION - elapsed

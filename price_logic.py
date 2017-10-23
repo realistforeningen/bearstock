@@ -29,10 +29,6 @@ class PriceLogic:
         self.brewery_data = {}
         self.type_data = {}
 
-        # debug print
-        print 'periods left: %d' % periods_left
-        print 'surplus: %.2f' % current_surplus
-
     def add_product(
         self, code, brewery, base_price, products_left, prod_type,
         price_data, params=None
@@ -132,12 +128,6 @@ class PriceLogic:
                         prod['p'].min_price-(prod['base_price']+prod['prev_abs_adj'])
                     )
 
-        # debug print
-        for code in adjustments:
-            print 'Adjustment[%s] = %.2f (prev: %.2f)' % (
-                code, adjustments[code], self.products[code]['prev_abs_adj']
-            )
-
         # return rounded adjustments
         return {code: (adjustments[code]) for code in adjustments}
 
@@ -176,8 +166,6 @@ class PriceLogic:
             data['sold_units']*exp(-(self.pid - pid)/past_purchase_importance)
             for pid, data in enumerate(product['price_data'])
         )
-
-        print increase_by, -decrease_by
 
         return increase_by, -decrease_by
 
