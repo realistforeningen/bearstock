@@ -15,10 +15,11 @@ import ProductFetcher from "./loader"
 let colors =
 	background: Color("#C9D6DF")
 
+var h100 = styles.create height: '100%'
+
 tag Window
 	styles.insert self,
 		main-css:
-			height: '100%'
 			background: '#bfbfbf'
 			padding: '5px'
 			border: '1px solid'
@@ -27,36 +28,18 @@ tag Window
 			border-right-color: '#808080'
 			border-bottom-color: '#808080'
 
-		header-css:
-			background: 'linear-gradient(to right, #000080, #1084d0)'
-			color: '#fff'
-			padding: '0.5em 1em'
-			flex-direction: 'row'
+			"& > .header":
+				background: 'linear-gradient(to right, #000080, #1084d0)'
+				color: '#fff'
+				padding: '0.5em 1em'
+				flex-direction: 'row'
 
-		content-css:
-			flex: 1
+			"& > .content":
+				flex: 1
+	def render
+		<self.{@main-css}>
 			
 tag App
-	styles.insert self,
-		main-css:
-			height: '100%'
-			background: '#bfbfbf'
-			padding: '5px'
-			border: '1px solid'
-			border-top-color: '#dfdfdf'
-			border-left-color: '#dfdfdf'
-			border-right-color: '#808080'
-			border-bottom-color: '#808080'
-
-		header-css:
-			background: 'linear-gradient(to right, #000080, #1084d0)'
-			color: '#fff'
-			padding: '0.5em 1em'
-			flex-direction: 'row'
-
-		content-css:
-			flex: 1
-
 	prop productFetcher
 	prop orders
 
@@ -80,12 +63,13 @@ tag App
 		orders.push(product)
 
 	def render
-		<self .{@main-css}>
+		<self .{h100}>
 			<style> styles.toString
-			<div .{@header-css}>
-				<div> "BearStock v2"
-			<div .{@content-css}>
-				<BuyView>
+			<Window .{h100}>
+				<.header>
+					<p> "BearStock v2"
+				<.content>
+					<BuyView>
 
 tag BuyView
 	styles.insert self,
