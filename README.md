@@ -17,37 +17,27 @@ $ python setup.py develop  # to symlink sources
 JavaScript libraries (used on the client-side) is installed through NPM:
 
 ```
-$ npm install
+$ yarn
 ```
 
 Set up the database:
 
 ```
-$ bin/setup <products-file>
+$ bear_setup bearstock-products-initial.tsv
 ```
 Substitute `<products-file>` for a valid csv products file, eq. [`bearstock-products.csv`](bearstock-products.csv).
 
 Build the JavaScript:
 
 ```
-$ (cd web; webpack)
+$ npm run build
 ```
 
-Run the server:
+Run the web server + exchange:
 
 ```
-$ bin/server
+$ uwsgi -H env --http 0.0.0.0:5000 --module web.app:app --mule=bearstock.stock
 ```
 
 Visit <http://localhost:5000/>.
 
-## Structure
-
-```
-stock.py          -  Database and stock logic
-web/app.py        -  Flask app responsible for the web front end
-web/js/main.imba  -  User interface for buying beers
-
-schema.sql        -  Schema for the database
-products.py       -  Products for sale. Used by bin/setup.
-```

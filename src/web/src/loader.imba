@@ -1,4 +1,4 @@
-let fetch = require 'whatwg-fetch'
+extern fetch
 
 let tojson = do |res|
 	if res:status == 200
@@ -14,6 +14,7 @@ export class ProductFetcher
 
 	def initialize(options = {})
 		@updateDelay = options:updateDelay
+		@products = []
 
 	def sync
 		# Override

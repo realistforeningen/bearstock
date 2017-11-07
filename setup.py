@@ -5,7 +5,7 @@ setup(
     name='Bearstock',
 
     package_dir={'': 'src'},
-    packages=find_packages(),
+    packages=find_packages('src'),
 
     entry_points={
         'console_scripts': [

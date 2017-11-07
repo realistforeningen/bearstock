@@ -301,7 +301,7 @@ class Exchange:
         self.db = db
 
     def run(self):
-        print(" * Running stock in the background")
+        print("* Running stock in the background")
 
         # set default parameters
         Params.set_default_from_dict(default_params)
@@ -363,3 +363,6 @@ class Exchange:
             for key in new_adjustments:
                 new_adjustments[key] = new_adjustments[key]
             self.db.insert_prices(new_adjustments)
+
+if __name__ == '__main__':
+    Exchange.run_default()
