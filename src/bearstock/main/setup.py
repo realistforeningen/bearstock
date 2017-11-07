@@ -6,19 +6,17 @@ from bearstock.stock import Database
 
 def parse_products_csv(filename):
     products = []
-    with open(parsed.csv, 'r') as csvfile:
+    with open(filename, 'r') as csvfile:
         # detect dialect
         dialect = csv.Sniffer().sniff(csvfile.readline().rstrip(',;\t'))
         csvfile.seek(0)
         # parse
         for row in csv.DictReader(csvfile, restval='extratags', dialect=dialect):
             product = {'code': '', 'tags': []}
-            for key, value in row.iteritems():
+            for key, value in row.items():
                 if key:
                     # ensure unicode
-                    key = unicode(key.decode('utf-8').lower())
-                    value = unicode(value.decode('utf-8'))
-                    # handle special keys
+                    key = key.lower()
                     if key == 'brewery code':
                         product['code'] = ''.join([value, product['code']])
                     elif key == 'name code':
@@ -30,14 +28,11 @@ def parse_products_csv(filename):
                     else:
                         product[key.replace(' ', '_')] = value
                 else:  # extra values are stored under a None key
-                    # ensure unicode
-                    for i in xrange(len(value)):
-                        value[i] = unicode(value[i].decode('utf-8'))
                     product['tags'].extend(value)
             products.append(product)
     return products
 
-def main(argv=none):
+def main(argv=None):
 
     # parse args
     parser = ap.ArgumentParser()
