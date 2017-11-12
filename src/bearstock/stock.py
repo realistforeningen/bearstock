@@ -150,6 +150,10 @@ class Database:
         else:
             return rows + [None]*(count - len(rows))
 
+    def latest_orders(self, count=10):
+        cursor = self.e('SELECT * FROM orders ORDER BY id DESC LIMIT ?', (count,))
+        return torows(cursor)
+
     def find_prices(self, id):
         row = self.e('SELECT data FROM prices WHERE id = ?', (id,)).fetchone()
         if row:
@@ -225,6 +229,10 @@ class Database:
     def buyer_dict(self):
         cursor = self.e('SELECT id, name FROM buyers')
         return todict(cursor)
+
+    def buyers(self):
+        cursor = self.e('SELECT id, name, icon FROM buyers')
+        return torows(cursor)
 
     def current_products_with_prices(self, round_price=False):
         products = []

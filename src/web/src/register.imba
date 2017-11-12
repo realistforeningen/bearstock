@@ -10,12 +10,13 @@ require "./normalize.css"
 require "./default.css"
 
 import ProductCollection from "./filters"
-import ProductFetcher from "./loader"
+import DB from "./db"
 
 let colors =
 	background: Color("#C9D6DF")
 
 var h100 = styles.create height: '100%'
+var grow = styles.create flex: 1
 
 tag Window
 	styles.insert self,
@@ -38,29 +39,80 @@ tag Window
 				flex: 1
 	def render
 		<self.{@main-css}>
-			
+
+tag Button < button
+	styles.insert self,
+		main-css:
+			color: '#1E2022'
+			margin: "5px 0"
+			padding: "0.5em"
+
+			background: "inherit"
+			border-radius: 0
+
+			border: '1px solid'
+			border-top-color: '#dfdfdf'
+			border-left-color: '#dfdfdf'
+			border-right-color: '#808080'
+			border-bottom-color: '#808080'
+
+			font-weight: "bold"
+
+			"&.cancel":
+				font-weight: "normal"
+
+	def render
+		<self.{@main-css}>
+
 tag App
-	prop productFetcher
-	prop orders
+	prop db
+	prop modal
+
+	styles.insert self,
+		modal-css:
+			position: "absolute"
+			height: "100%"
+			width: "100%"
+			display: "flex"
+			align-items: "center"
+			justify-content: "center"
+
+			"& > .backdrop":
+				background: "black"
+				z-index: 2000
+				opacity: 0.3
+				position: "absolute"
+				top: 0
+				right: 0
+				bottom: 0
+				left: 0
+
+			"& > *":
+				z-index: 3000
 
 	def setup
 		APP = self
-		productFetcher = ProductFetcher.new(updateDelay: 500)
-		productFetcher:sync = do render
-		productFetcher.start
-		orders = []
+		db = DB.new(updateDelay: 500)
+		db:sync = do render
+		db.start
 
 	def mount
 		schedule
 
 	def products
-		productFetcher.products
+		db.products
 
 	def isClosed
-		productFetcher.isClosed
+		db.isClosed
 
-	def addProductToOrder product
-		orders.push(product)
+	def cancelModal
+		if modal?.keepModalOpen
+			# do nothing
+		else
+			modal = null
+
+	def buyers
+		db.buyers
 
 	def render
 		<self .{h100}>
@@ -69,7 +121,12 @@ tag App
 				<.header>
 					<p> "BearStock v2"
 				<.content>
-					<BuyView>
+					<BuyView.{grow}>
+
+			if modal
+				<.{@modal-css}>
+					modal.end
+					<.backdrop :tap="cancelModal">
 
 tag BuyView
 	styles.insert self,
@@ -84,6 +141,10 @@ tag BuyView
 
 			"&.sidebar":
 				flex: "0 0 200px"
+
+			"&.list":
+				flex: "0 0 auto"
+				max-width: "300px"
 
 		box-css:
 			color: '#1E2022'
@@ -156,7 +217,7 @@ tag BuyView
 		@collection = null
 
 	def buy product
-		APP.addProductToOrder(product)
+		APP.modal = <BuyerSelection product=product>
 
 	def render
 		if products !== collection.sourceProducts
@@ -174,7 +235,7 @@ tag BuyView
 				if isTruncated and !collection.spansAllProducts(pendingFilters)
 					<div .{@box-css}.next :tap="next"> "Next"
 
-			<div .{@column-css}> <ScrollHint> <.{@products-css}>
+			<div .{@column-css}> <ScrollHint.{grow}> <.{@products-css}>
 				for product in collection.toArray
 					<div.{@box-css} :tap=["buy", product]>
 						<div.header>
@@ -183,13 +244,131 @@ tag BuyView
 							<div> "{product:absolute_cost} NOK"
 						<div> "{product:brewery} {product:name}"
 
+			<div .{@column-css}.list> <OrderList[APP.db.orders]>
+
+tag BuyProduct
+	styles.insert self,
+		grid-css:
+			display: "grid"
+			grid-template-columns: "100px 1fr"
+			grid-row-gap: "5px"
+			font-size: "14px"
+			padding: "10px 5px 5px"
+			min-width: "400px"
+
+			"& > .right":
+				grid-column: 2
+
+			"& > .buttons":
+				flex-direction: "row"
+				font-size: "18px"
+
+		accept-css:
+			margin-right: "14px"
+
+	prop buyer
+	prop product
+	prop isBuying
+
+	def keepModalOpen
+		isBuying
+
+	def accept
+		if isBuying
+			return
+
+		isBuying = yes
+
+		await APP.db.order(product, buyer)
+			.catch(do APP.superfail)
+
+		isBuying = no
+		cancel
+		APP.render
+
+	def cancel
+		APP.cancelModal
+
+	def render
+		<self> <Window>
+			<.header> product:name
+			<.content.{@grid-css}>
+				<p> "Code"
+				<p> <strong> product:code
+				<p> "Brewery"
+				<p> product:brewery
+				<p> "Name"
+				<p> product:name
+				<p> "Price"
+				<p> "{product:absolute_cost} NOK"
+				<p> "Buyer"
+				<p.right>
+					buyer:name
+					" "
+					buyer:icon
+
+				if isBuying
+					<div.right> "Buying…"
+				else
+					<div.right.buttons>
+						<Button .{@accept-css} :tap="accept"> "Accept"
+						<Button.cancel :tap="cancel"> "Cancel"
+
+tag BuyerSelection
+	prop product
+
+	styles.insert self,
+		buyers-css:
+			margin: "14px 0"
+			flex-direction: "row"
+			flex-wrap: "wrap"
+			font-size: "30px"
+			max-width: "400px"
+
+			"& > p":
+				padding: "0 5px"
+
+	def selectBuyer buyer
+		APP.modal = <BuyProduct product=product buyer=buyer>
+
+	def render
+		<self> <Window>
+			<.header> "Buyer Identification"
+			<.content>
+				<.{@buyers-css}>
+					for buyer in APP.buyers
+						<p :tap=["selectBuyer", buyer]> buyer:icon
+
 tag OrderList
-	prop orders
+	def orders
+		data
+
+	styles.insert self,
+		header-css:
+			margin-top: "18px"
+			font-weight: "bold" 
+
+		order-css:
+			flex-direction: "row"
+			font-size: "14px"
+			align-items: "baseline"
+
+			"& > .left":
+				margin-right: "18px"
 
 	def render
 		<self>
-			for product in orders
-				<div> product:name
+			<div .{@header-css}> "Latest orders"
+			if !orders
+				<div> "Loading…"
+				
+			for order in orders
+				var buyer = APP.db.findBuyer(order:buyer_id)
+				<div .{@order-css}>
+					<div.left> "{buyer:name} {buyer:icon}"
+					<div .{grow}>
+					<div> "{order:product_code} — {order:absolute_cost} NOK"
+
 
 tag ScrollHint
 	prop content
@@ -255,8 +434,6 @@ tag ScrollHint
 		filler-css:
 			flex: '0 0 auto'
 			height: spacing
-
-	def scroller
 
 	def render
 		<self.{@main-css}>
