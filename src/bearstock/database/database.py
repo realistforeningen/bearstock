@@ -1,16 +1,18 @@
 
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
-DbArgs = Union[Tuple[Any], Dict[str, Any]]
-T = TypeVar('T')
-
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 import sqlite3
 
-__all__ = ['Database', 'BearDatabaseError']
+from .errors import BearDatabaseError
+from .buyer import Buyer
 
+__all__ = [
+    'Database'
+]
 
-class BearDatabaseError(RuntimeError):
-    pass
+# custom type descriptions
+DbArgs = Union[Tuple[Any], Dict[str, Any]]
+T = TypeVar('T')
 
 
 class Database:
@@ -47,8 +49,6 @@ class Database:
         self._connection.row_factory = sqlite3.Row
         self._connection.execute('PRAGMA foreign_keys = ON')
 
-        return DatabaseAccessor(self._database)
-
     def close(self) -> None:
         """Close to the database connection."""
         if not self.is_connected():
@@ -74,7 +74,11 @@ class Database:
         result: Optional[T] = None
         with self.connection:
             cursor = self.connection.cursor()
-            cursor.execute(sql=sql, parmeters=args)
+
+            if args is None:
+                cursor.execute(sql)
+            else:
+                cursor.execute(sql, args)
 
             # do something with the query result
             if callable is not None:

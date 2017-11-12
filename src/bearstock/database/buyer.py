@@ -1,7 +1,7 @@
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-from .database import Database, BearDatabaseError
+from .errors import BearDatabaseError
 
 class Buyer:
 
@@ -11,13 +11,13 @@ class Buyer:
                  icon: Optional[str] = None,
                  scaling: Optional[int] = None,
                  created_at: Optional[int] = None,
-                 database: Optional[Database] = None) -> None:
+                 database: Optional['Database'] = None) -> None:
         self._uid = uid
         self._name = name
         self._icon = icon
         self._scaling = scaling
         self._created_at = created_at
-        self._database: Optional[Database] = database
+        self._database: Optional['Database'] = database
 
     @property
     def uid(self) -> Optional[int]:
@@ -63,7 +63,7 @@ class Buyer:
             created_at=self._created_at,
         )
 
-    def insert_into(self, db: Database, *, rebind: bool = False) -> None:
+    def insert_into(self, db: 'Database', *, rebind: bool = False) -> None:
         """Insert the buyer into a database.
 
         Args:
@@ -95,7 +95,7 @@ class Buyer:
         self._database.update_user(self)
 
     @staticmethod
-    def load_from_db(db: Database, uid: int) -> Buyer:
+    def load_from_db(db: 'Database', uid: int) -> 'Buyer':
         if not db.is_connected():
             raise ValueError('database not connected')
 
@@ -104,5 +104,4 @@ class Buyer:
             raise ValueError(f'no buyer with id: {uid}')
 
         return buyer
-
 

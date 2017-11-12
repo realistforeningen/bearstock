@@ -15,5 +15,5 @@ src/app.db
 *.pyc
 
 # application database
-app.db
+*app.db
 

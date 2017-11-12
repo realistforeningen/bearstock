@@ -2,7 +2,8 @@
 import argparse as ap
 import csv
 
-from bearstock.stock import Database
+from bearstock.stock import DATABASE_FILE
+from bearstock.database import Database
 
 def parse_products_csv(filename):
     products = []
@@ -43,13 +44,15 @@ def main(argv=None):
     products = parse_products_csv(parsed.csv)
 
     # setup DB
-    db = Database.default()
+    db = Database(DATABASE_FILE)
+    db.connect()
 
     # ensure schema exists
     for statement in open('schema.sql').read().split(';'):
-        db.e(statement)
+        db.exe(statement)
     # ensure a buyer
-    db.ensure_buyer()
+    # db.ensure_buyer()
 
     # ensure products are in
-    db.import_products(products)
+    # db.import_products(products)
+    db.close()

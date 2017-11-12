@@ -46,6 +46,8 @@ product_parameters = {
 # def torows(cursor, mapper=dictmapper):
 #     return [mapper(row) for row in cursor]
 
+DATABASE_FILE = 'bear-app.db'
+
 
 class Exchange:
     """Server running the stock exchange."""
