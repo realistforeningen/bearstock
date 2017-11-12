@@ -190,7 +190,7 @@ class Database:
         # Build a list of dict for each period
         def defaultval():
             return {"sold_units": 0, "adjustment": 0}
-        products = defaultdict(lambda: [defaultval() for _ in xrange(len(prices))])
+        products = defaultdict(lambda: [defaultval() for _ in range(len(prices))])
 
         price_id_to_idx = {}
 
