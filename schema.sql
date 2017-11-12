@@ -3,32 +3,29 @@
 CREATE TABLE IF NOT EXISTS buyers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
+  scaling REAL NOT NULL,
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 
+-- table of products
+-- code refers to a short "stock-like" code identifying the product
 CREATE TABLE IF NOT EXISTS products (
-  -- Short stock-like code
   code TEXT PRIMARY KEY,
-
-  -- Name of the beer
   name TEXT NOT NULL,
-
-  -- Brewery
-  brewery TEXT NOT NULL,
-
-  -- Aquisition price
+  producer TEXT NOT NULL,
   base_price INTEGER NOT NULL,
-
-  -- How many we have *before* any orders
   quantity INTEGER NOT NULL,
-
-  -- Beer type
   type TEXT NOT NULL,
-
-  -- product tags
   tags TEXT NOT NULL,
-
   is_hidden BOOLEAN NOT NULL DEFAULT 0
+);
+
+-- this table contains parameters for the price computations
+-- parameters are stored as a JSON dictionary
+CREATE TABLE IF NOT EXISTS parameters (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    data BLOB NOT NULL
 );
 
 -- This contains the full prices at a single point in time.

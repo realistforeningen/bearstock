@@ -1,13 +1,18 @@
+
 from flask import Flask, render_template, g, jsonify, request
-from bearstock.stock import Database
+
+from bearstock.database import Database
 from bearstock.statistics import get_top_bot
+
+DATABASE_FILE = 'bear-app.db'
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
 
 @app.before_request
 def before_request():
-    g.db = Database.default()
+    g.db: Database = Database(DATABASE_FILE)
+    g.db.connect()
 
 @app.teardown_request
 def teardown_request(exception):
@@ -25,9 +30,9 @@ def signup():
         name = request.form.get('name', '')
         if len(name) > 0:
             with g.db.conn:
-                buyer_id = g.db.insert_buyer(name)
+                buyer = g.db.insert_buyer(name)
 
-            return render_template('signup.html', buyer_id=buyer_id, name=name)
+            return render_template('signup.html', buyer_id=buyer.uid, name=buyer.name)
 
     return render_template('signup.html')
 
@@ -69,5 +74,5 @@ def orders_create():
 @app.route('/buyer')
 def buyer():
     buyer_id = int(request.args.get('id', -1))
-    buyer = g.db.find_buyer(buyer_id)
-    return jsonify(buyer=buyer)
+    buyer = g.db.get_buyer(buyer_id)
+    return jsonify(buyer=buyer.as_dict())

@@ -6,6 +6,7 @@ import sqlite3
 import pickle
 from collections import defaultdict
 
+from bearstock.database import Database
 from bearstock.price_logic import PriceLogic, Params
 
 default_params = {
@@ -30,258 +31,24 @@ product_parameters = {
 
 }
 
-def todict(cursor, key_field=0, value_field=1):
-    res = {}
-    for row in cursor:
-        res[row[key_field]] = row[value_field]
-    return res
+# def todict(cursor, key_field=0, value_field=1):
+#     res = {}
+#     for row in cursor:
+#         res[row[key_field]] = row[value_field]
+#     return res
+#
+# def dictmapper(row):
+#     data = {}
+#     for key in row.keys():
+#         data[key] = row[key]
+#     return data
+#
+# def torows(cursor, mapper=dictmapper):
+#     return [mapper(row) for row in cursor]
 
-def dictmapper(row):
-    data = {}
-    for key in row.keys():
-        data[key] = row[key]
-    return data
-
-def torows(cursor, mapper=dictmapper):
-    return [mapper(row) for row in cursor]
-
-class Database:
-    @classmethod
-    def default(self):
-        return self('app.db')
-
-    def __init__(self, filename):
-        self.conn = sqlite3.connect(filename)
-        self.conn.row_factory = sqlite3.Row
-        self.e('PRAGMA foreign_keys = ON')
-
-    def close(self):
-        self.conn.close()
-
-    def e(self, *args):
-        return self.conn.execute(*args)
-
-    def insert(self, table, **data):
-        keys = []
-        values = []
-        placeholders = []
-        for key in data:
-            keys.append(key)
-            values.append(data[key])
-            placeholders.append('?')
-
-        sql = 'INSERT INTO %s (%s) VALUES (%s)' % (table, ', '.join(keys), ', '.join(placeholders))
-        res = self.e(sql, values)
-        return res.lastrowid
-
-    def import_products(self, products):
-        with self.conn:
-            self.e('PRAGMA defer_foreign_keys = ON')
-            self.e('UPDATE products SET is_hidden = 1')
-
-            for product in products:
-                self.e('DELETE FROM products WHERE code = ?', (product['code'],))
-                taglist = product.get("tags", [])
-                taglist.append(product["brewery"])
-                tags = "|".join(taglist)
-                values = (
-                    product["code"],
-                    product["name"],
-                    product["brewery"],
-                    product["base_price"],
-                    product.get("quantity", 0),
-                    product["type"],
-                    tags
-                )
-                self.e('''
-                    INSERT INTO
-                    products (
-                        code, name, brewery, base_price, quantity, type, tags
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', values)
-
-    def ensure_prices(self):
-        with self.conn:
-            price_count = self.e('SELECT COUNT(*) FROM prices').fetchone()[0]
-            if price_count == 0:
-                self.insert_prices({})
-
-    def ensure_buyer(self):
-        with self.conn:
-            try:
-                self.insert("buyers", id=1, name="Test Buyer")
-            except sqlite3.IntegrityError:
-                # All fine
-                return
-
-    def insert_prices(self, prices):
-        data = pickle.dumps(prices)
-        self.e('INSERT INTO prices (data) VALUES (?)', (sqlite3.Binary(data),))
-
-    def insert_buyer(self, name):
-        return self.insert("buyers", name=name)
-
-    def read_all_orders(self):
-        return self.e('SELECT * FROM orders')
-
-    def read_products(self):
-        return self.e('SELECT * FROM products')
-
-    # How much money is on our own account?
-    def stock_account(self):
-        return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0] or 0
-
-    def last_price_time(self):
-        row = self.e('SELECT created_at FROM prices ORDER BY id DESC LIMIT 1').fetchone()
-        if row:
-            return datetime.fromtimestamp(row['created_at'])
-
-    def latest_prices(self, count=1):
-        cursor = self.e('SELECT * FROM prices ORDER BY id DESC LIMIT ?', (count,))
-
-        def mapper(row):
-            prices = pickle.loads(row["data"])
-            prices["_id"] = row["id"]
-            return prices
-
-        rows = torows(cursor, mapper)
-        if count == 1:
-            return rows[0]
-        else:
-            return rows + [None]*(count - len(rows))
-
-    def find_prices(self, id):
-        row = self.e('SELECT data FROM prices WHERE id = ?', (id,)).fetchone()
-        if row:
-            return pickle.loads(row['data'])
-
-    def prices_count(self):
-        return self.e('SELECT COUNT(*) FROM prices').fetchone()[0]
-
-    def base_prices(self):
-        cursor = self.e('SELECT code, base_price FROM products')
-        return todict(cursor)
-
-    def breweries(self):
-        cursor = self.e('SELECT code, brewery FROM products')
-        return todict(cursor)
-
-    def types(self):
-        cursor = self.e('SELECT code, type FROM products')
-        return todict(cursor)
-
-    def stock_left(self):
-        cursor = self.e("""
-            SELECT coalesce(orders.product_code, products.code) as code, quantity - COUNT(orders.id)
-            FROM products
-            LEFT OUTER JOIN orders ON orders.product_code = products.code
-            GROUP BY code
-        """)
-        return todict(cursor)
-
-    def price_adjustments(self):
-        # First fetch the prices:
-        prices = torows(self.e('SELECT id, data FROM prices ORDER BY id'))
-
-        # Build a list of dict for each period
-        def defaultval():
-            return {"sold_units": 0, "adjustment": 0}
-        products = defaultdict(lambda: [defaultval() for _ in xrange(len(prices))])
-
-        price_id_to_idx = {}
-
-        for idx, row in enumerate(prices):
-            price_id_to_idx[row['id']] = idx
-            adjustments = pickle.loads(row['data'])
-
-            for product_code in adjustments:
-                products[product_code][idx]["adjustment"] = adjustments[product_code]
-
-        # Then find the number of products sold per period
-        cursor = self.e("""
-            SELECT price_id, product_code, COUNT(id) as sold_units
-            FROM orders
-            GROUP BY price_id, product_code
-            ORDER BY price_id
-        """)
-
-        for row in cursor:
-            idx = price_id_to_idx[row['price_id']]
-            product_code = row['product_code']
-            products[product_code][idx]['sold_units'] = row['sold_units']
-
-        # Next make sure all products are included:
-        for row in self.e('SELECT code FROM products'):
-            products[row['code']]
-
-        return dict(products)
-
-    def find_buyer(self, buyer_id):
-        cursor = self.e('SELECT * FROM buyers WHERE id = ?', (buyer_id,))
-        row = cursor.fetchone()
-        if row:
-            return dictmapper(row)
-
-    def buyer_dict(self):
-        cursor = self.e('SELECT id, name FROM buyers')
-        return todict(cursor)
-
-    def current_products_with_prices(self, round_price=False):
-        products = []
-        with self.conn:
-            ultimate, penultimate = self.latest_prices(2)
-            if ultimate is None:
-                return products, None
-
-            for product in self.e('SELECT * FROM products WHERE is_hidden = 0'):
-                code = product["code"]
-                rel_cost = ultimate.get(code, 0)
-
-                if penultimate:
-                    delta_cost = rel_cost - penultimate.get(code, rel_cost)
-                else:
-                    delta_cost = 0
-
-                if round_price:
-                    rel_cost = int(round(rel_cost))
-
-                products.append({
-                    "code": code,
-                    "name": product["name"],
-                    "brewery": product["brewery"],
-                    "price_id": ultimate["_id"],
-                    "relative_cost": rel_cost,
-                    "delta_cost": delta_cost,
-                    "base_price": product['base_price'],
-                    "absolute_cost": product['base_price'] + rel_cost,
-                    "tags": product["tags"].split("|")
-                })
-        return products, ultimate["_id"]
-
-    def prices_for_product(self, codes, round_price=False):
-        arr = ", ".join(["?" for _ in codes])
-        base_prices = todict(
-            self.e('SELECT code, base_price FROM products WHERE code IN (%s)' % arr, codes))
-        price_data = defaultdict(lambda: [])
-        cursor = self.e('SELECT * FROM prices ORDER BY id')
-        for row in cursor:
-            prices = pickle.loads(row["data"])
-            for code in codes:
-                price_data[code].append({
-                    "timestamp": row["created_at"],
-                    "value": (
-                        prices.get(code, 0) + base_prices[code] if not round_price else
-                        round(prices.get(code, 0) + base_prices[code])
-                    )
-                })
-        return dict(price_data)
-
-    def orders_before(self, ts):
-        return torows(
-            self.e('SELECT * FROM orders WHERE created_at <= ? ORDER BY created_at', (ts,)))
-
-# Responsible for running the actual stock exchange
 class Exchange:
+    """Server running the stock exchange."""
+
     @classmethod
     def run_in_thread(self):
         thread = Thread(target=self.run_default)
