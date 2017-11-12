@@ -8,11 +8,13 @@ class Buyer:
     def __init__(self, *,
                  uid: Optional[int] = None,
                  name: Optional[str] = None,
+                 icon: Optional[str] = None,
                  scaling: Optional[int] = None,
                  created_at: Optional[int] = None,
                  database: Optional[Database] = None) -> None:
         self._uid = uid
         self._name = name
+        self._icon = icon
         self._scaling = scaling
         self._created_at = created_at
         self._database: Optional[Database] = database
@@ -35,6 +37,15 @@ class Buyer:
             self.update_in_db()
 
     @property
+    def icon(self) -> str:
+        return self._icon
+    @icon.setter
+    def _(self, icon) -> None:
+        self._icon = icon
+        if self._database is not None:
+            self.update_in_db()
+
+    @property
     def scaling(self) -> int:
         return self._scaling
     @scaling.setter
@@ -47,6 +58,7 @@ class Buyer:
         return dict(
             id=self.uid,
             name=self.name,
+            icon=self.icon,
             scaling=self.scaling,
             created_at=self._created_at,
         )

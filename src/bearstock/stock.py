@@ -46,6 +46,7 @@ product_parameters = {
 # def torows(cursor, mapper=dictmapper):
 #     return [mapper(row) for row in cursor]
 
+
 class Exchange:
     """Server running the stock exchange."""
 

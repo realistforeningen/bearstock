@@ -86,13 +86,14 @@ class Database:
 
     # buyer related methods
 
-    def insert_buyer(self, name: str, *, scaling: float = 1.0) -> Buyer:
+    def insert_buyer(self, name: str, icon: str, *, scaling: float = 1.0) -> Buyer:
         def inserted_id(cursor: sqlite3.Cursor) -> int:
             return cursor.lastrowid
         inserted_id = self.exe(
-            'INSERT INTO buyers ( name, scaling ) VALUES ( :name, :scaling )',
+                'INSERT INTO buyers ( name, icon, scaling ) VALUES ( :name, :icon, :scaling )',
             {
                 'name': name,
+                'icon': icon,
                 'scaling': scaling
             },
             inserted_id
@@ -101,10 +102,11 @@ class Database:
 
     def update_buyer(self, buyer: Buyer) -> None:
         self.exe(
-            'UPDATE buyers SET name = :name, scaling = :scaling WHERE id = :uid',
+            'UPDATE buyers SET name = :name, icon = :icon, scaling = :scaling WHERE id = :uid',
             {
                 'uid': buyer.uid,
                 'name': buyer.name,
+                'icon': buyer.icon,
                 'scaling': buyer.scaling,
             }
         )
@@ -116,14 +118,15 @@ class Database:
                 return Buyer(
                     uid=row['id'],
                     name=row['name'],
+                    icon=row['icon'],
                     scaling=row['scaling'],
                     created_at=row['created_at'],
-                    database=self
+                    database=self,
                 )
             else:
                 return None
         return self.exe(
-            'SELECT id, name, scaling, created_at FROM buyers WHERE id = :uid',
+            'SELECT id, name, icon, scaling, created_at FROM buyers WHERE id = :uid',
             {
                 'uid': uid,
             },
@@ -134,18 +137,46 @@ class Database:
         def retrive_all_buyers(cursor: sqlite3.Cursor) -> List[Buyer]:
             buyers: List[Buyer] = []
             for row in cursor:
-                buyers.append(Buyer(uid=row['id'], name=row['name'], scaling=row['scaling'],
-                              created_at=row['created_at'], database=self))
+                buyers.append(Buyer(
+                    uid=row['id'],
+                    name=row['name'],
+                    icon=row['icon'],
+                    scaling=row['scaling'],
+                    created_at=row['created_at'],
+                    database=self,
+                ))
             return sorted(buyers, key=lambda t: t[1].casefold())
         return self.exe(
-            'SELECT id, name, scaling, created_at FROM buyers WHERE name LIKE :name',
+            'SELECT id, name, icon, scaling, created_at FROM buyers WHERE name LIKE :name',
             {
                 'name': name
             },
             retrive_all_buyers
         )
 
+    def get_all_buyers(self) -> None:
+        def action(cursor) -> List[Buyer]:
+            buyers: List[Buyer] = []
+            for row in cursor:
+                buyers.append(Buyer(
+                    uid=row['id'],
+                    name=row['name'],
+                    icon=row['icon'],
+                    scaling=row['scaling'],
+                    created_at=row['created_at'],
+                    database=self,
+                ))
+            return buyers
+        return self.exe(
+            'SELECT id, name, icon, scaling, created_at FROM buyers',
+            callable=action
+        )
 
+
+#    def latest_orders(self, count=10):
+#        cursor = self.e('SELECT * FROM orders ORDER BY id DESC LIMIT ?', (count,))
+#        return torows(cursor)
+#
 #    def import_products(self, products):
 #        with self.conn:
 #            self.e('PRAGMA defer_foreign_keys = ON')
@@ -258,7 +289,7 @@ class Database:
 #        # Build a list of dict for each period
 #        def defaultval():
 #            return {"sold_units": 0, "adjustment": 0}
-#        products = defaultdict(lambda: [defaultval() for _ in xrange(len(prices))])
+#        products = defaultdict(lambda: [defaultval() for _ in range(len(prices))])
 #
 #        price_id_to_idx = {}
 #
