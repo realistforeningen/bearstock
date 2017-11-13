@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS products (
   quantity INTEGER NOT NULL,
   type TEXT NOT NULL,
   tags TEXT NOT NULL,
-  is_hidden BOOLEAN NOT NULL DEFAULT 0
+  hidden BOOLEAN NOT NULL DEFAULT 0
 );
 
 -- this table contains parameters for the price computations

@@ -1,10 +1,10 @@
 
 from typing import Any, Dict, List, Optional
 
-from .errors import BearDatabaseError
+from .errors import BearDatabaseError, BearModelError
+
 
 class Buyer:
-
     def __init__(self, *,
                  uid: Optional[int] = None,
                  name: Optional[str] = None,
@@ -33,7 +33,7 @@ class Buyer:
     @name.setter
     def _(self, name) -> None:
         self._name = name
-        if self._database is not None:
+        if self.is_bound():
             self.update_in_db()
 
     @property
@@ -42,19 +42,25 @@ class Buyer:
     @icon.setter
     def _(self, icon) -> None:
         self._icon = icon
-        if self._database is not None:
+        if self.is_bound():
             self.update_in_db()
 
     @property
     def scaling(self) -> int:
         return self._scaling
     @scaling.setter
-    def _(self, name) -> None:
+    def _(self, scaling) -> None:
         self._scaling = scaling
-        if self._database is not None:
+        if self.is_bound():
             self.update_in_db()
 
     def as_dict(self) -> Dict[str, Any]:
+        """Return the buyer as a dictionary.
+
+        This method is for interoperability with the web server parts of BearStock.
+        The fields in the dictionary are: ``id``, ``name``, ``icon``, ``scaling``, and
+        ``created_at``.
+        """
         return dict(
             id=self.uid,
             name=self.name,
@@ -63,8 +69,29 @@ class Buyer:
             created_at=self._created_at,
         )
 
+    def is_bound(self) -> bool:
+        """Return True if the buyer has a connected database."""
+        return self._database is not None and self._database.is_connected()
+
+    def synchronize(self) -> None:
+        """Reload the buyer from the database.
+
+        Raises:
+            BearDatabaseError: If the database read operation failed.
+            BearModelError: If the buyer is not bound to a connected database.
+        """
+        if not self.is_bound():
+            raise BearModelError('buyer not bound to any database')
+
+        # may raise BearDatabaseError
+        buyer = self.load_from_db(self._database, self.uid)
+
+        self._name = buyer._name
+        self._scaling = buyer._scaling
+        self._created_at = buyer._created_at
+
     def insert_into(self, db: 'Database', *, rebind: bool = False) -> None:
-        """Insert the buyer into a database.
+        """Insert the buyer into a database and bind the buyer to the database.
 
         Args:
             db: The database to insert into.
@@ -73,33 +100,56 @@ class Buyer:
                 The default is False.
 
         Raises:
-            BearDatabaseError: If the buyer already is inserted into database and
+            BearDatabaseError: If the insert operation failed.
+            BearModelError: If the buyer already is inserted into database and
                 rebind is False.
+            ValueError: If db is None or not connected.
         """
-        if self._database is not None and not rebind:
-            raise BearDatabaseError('buyer already bound to a database')
+        if self.is_bound() and not rebind:
+            raise BearModelError('buyer already bound to a database')
+        if db is None or not db.is_connected():
+            raise ValueError('database None or not connected')
 
         self._database = db
         self._uid = None
         self._created_at = None
 
-        inserted = db.insert_buyer(buyer)
+        # may raise BearDatabaseError
+        inserted = db.insert_buyer(self)
+        self._database = db
+
         self._uid = inserted.uid
         self._created_at = inserted.created_at
 
     def update_in_db(self) -> None:
-        """Update the buyer in the database."""
-        if self._database is None:
-            raise BearDatabaseError('buyer not bound to a database')
+        """Update the buyer in the database.
 
+        Raises:
+            BearDatabaseError: If the database update operation failed.
+            BearModelError: If the buyer is not bound to a connected database.
+        """
+        if self.is_bound() is None:
+            raise BearModelError('buyer not bound to a database')
+
+        # may raise BearDatabaseError
         self._database.update_user(self)
 
-    @staticmethod
-    def load_from_db(db: 'Database', uid: int) -> 'Buyer':
+    @classmethod
+    def load_from_db(cls, db: 'Database', uid: int) -> 'Buyer':
+        """Load a buyer from a database.
+
+        Raises:
+            BearDatabaseError: If the database read operation failed.
+            ValueError: If the database is None or not connected.
+        """
+        if db is None:
+            raise ValueError('database is None')
         if not db.is_connected():
             raise ValueError('database not connected')
 
+        # may throw BearDatabaseError
         buyer = db.get_buyer(uid)
+
         if buyer is None:
             raise ValueError(f'no buyer with id: {uid}')
 

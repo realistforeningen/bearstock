@@ -5,6 +5,7 @@ import sqlite3
 
 from .errors import BearDatabaseError
 from .buyer import Buyer
+from .product import Product
 
 __all__ = [
     'Database'
@@ -34,7 +35,7 @@ class Database:
     @property
     def connection(self) -> sqlite3.Connection:
         if not self.is_connected():
-            raise RuntimeError('database not open')
+            raise BearDatabaseError('database not open')
         return self._connection
 
     def is_connected(self) -> bool:
@@ -43,7 +44,7 @@ class Database:
     def connect(self) -> sqlite3.Connection:
         """Connect to the database and do required initializations."""
         if self.is_connected():
-            raise RuntimeError('database already open')  # TODO did you really just use RuntimeError...
+            raise BearDatabaseError('database already open')
 
         self._connection = sqlite3.connect(self.dbname)
         self._connection.row_factory = sqlite3.Row
@@ -52,19 +53,24 @@ class Database:
     def close(self) -> None:
         """Close to the database connection."""
         if not self.is_connected():
-            raise RuntimeError('database already closed')  # TODO did you really just use RuntimeError...
+            raise RuntimeError('database already closed')
         self._connection.close()
 
     # generic DB access methods
 
     def exe(self, sql: str, *,
-            args: Optional[DbArgs] = None,
+            args: Optional[Union[DbArgs, List[DbArgs]]] = None, many: bool = False,
             callable: Optional[Callable[[sqlite3.Cursor], T]] = None) -> Optional[T]:
         """Execute a arbitrary database query.
 
         Args:
             sql: SQL query.
-            args: Optional arguments to the query. Defaults to None.
+            args: Optional arguments to the query. If ``many`` is False ``args`` should be
+                a single argument, when it is True is should be a list of arguments.
+                Defaults to None.
+            many: If True ``args`` should contain a list of arguments, each of which ``sql``
+                should be executed with. All executions happen in the same transaction.
+                Defaults to False.
             callable: Optional action to perform on the cursor after the query have executed.
                 Defaults to None.
 
@@ -72,19 +78,26 @@ class Database:
             If callable is not not return what returned by it; otherwise None.
         """
         result: Optional[T] = None
-        with self.connection:
-            cursor = self.connection.cursor()
+        try:
+            with self.connection:
+                cursor = self.connection.cursor()
 
-            if args is None:
-                cursor.execute(sql)
-            else:
-                cursor.execute(sql, args)
+                if args is None:
+                    cursor.execute(sql)
+                else:
+                    if not many:
+                        cursor.execute(sql, args)
+                    else:
+                        for arg in args:
+                            cursor.execute(sql, args)
 
-            # do something with the query result
-            if callable is not None:
-                result = callable(cursor)
+                # do something with the query result
+                if callable is not None:
+                    result = callable(cursor)
 
-            cursor.close()
+                cursor.close()
+        except sqlite3.DatabaseError as e:
+            raise BearDatabaseError('query failed') from e
 
         return result
 
@@ -95,19 +108,19 @@ class Database:
             return cursor.lastrowid
         inserted_id = self.exe(
                 'INSERT INTO buyers ( name, icon, scaling ) VALUES ( :name, :icon, :scaling )',
-            {
+            args={
                 'name': name,
                 'icon': icon,
-                'scaling': scaling
+                'scaling': scaling,
             },
-            inserted_id
+            callable=inserted_id
         )
         return self.get_buyer(inserted_id)
 
     def update_buyer(self, buyer: Buyer) -> None:
         self.exe(
             'UPDATE buyers SET name = :name, icon = :icon, scaling = :scaling WHERE id = :uid',
-            {
+            args={
                 'uid': buyer.uid,
                 'name': buyer.name,
                 'icon': buyer.icon,
@@ -131,10 +144,8 @@ class Database:
                 return None
         return self.exe(
             'SELECT id, name, icon, scaling, created_at FROM buyers WHERE id = :uid',
-            {
-                'uid': uid,
-            },
-            retrive_buyer
+            args={'uid': uid,},
+            callable=retrive_buyer
         )
 
     def get_buyers_matching(self, name: str) -> List[Buyer]:
@@ -152,10 +163,8 @@ class Database:
             return sorted(buyers, key=lambda t: t[1].casefold())
         return self.exe(
             'SELECT id, name, icon, scaling, created_at FROM buyers WHERE name LIKE :name',
-            {
-                'name': name
-            },
-            retrive_all_buyers
+            args={'name': name,},
+            callable=retrive_all_buyers
         )
 
     def get_all_buyers(self) -> None:
@@ -176,36 +185,82 @@ class Database:
             callable=action
         )
 
+    # product related methods
+
+    def insert_product(self, *,
+                       code: str, name: str, producer: str,
+                       type: str, tags: List[str],
+                       base_price: int,
+                       quantity: int,
+                       hidden: bool,
+                       replace_existing: bool = False) -> Product:
+        def action(cursor) -> int:
+            return cursor.lastrowid
+        pid = self.exe((
+            f'INSERT {"OR REPLACE" if replace_existing else ""} INTO products ( '
+            '  code, name, producer, base_price, quantity, type, tags, hidden '
+            ') VALUES ( '
+            '  :code, :name, :producer, :base_price, :quantity, :type, :tags, :hidden '
+            ')'),
+            args={
+                'code': code, 'name': name, 'producer': producer,
+                'type': type, 'tags': '|'.join(tags),
+                'base_price': base_price,
+                'quantity': quantity,
+                'hidden': hidden,
+            },
+            callable=action
+        )
+        return self.get_product(uid=pid)
+
+    def import_products(self, *,
+                        products: Dict[str, Dict[str, Any]],
+                        replace_existing: bool = False) -> None:
+        args = []
+        for product in products:
+            args.append({
+                'code': product['code'], 'name': product['name'], 'producer': product['producer'],
+                'type': product['type'], 'tags': '|'.join(products.get('tags', [])),
+                'base_price': product['base_price'],
+                'quantity': product['quantity'],
+                'hidden': product['hidden'],
+            })
+        self.exe((
+            f'INSERT {"OR REPLACE" if replace_existing else ""} INTO products ( '
+            '  code, name, producer, base_price, quantity, type, tags, hidden '
+            ') VALUES ( '
+            '  :code, :name, :producer, :base_price, :quantity, :type, :tags, :hidden '
+            ')'), args=args, many=True
+        )
+
+    def update_product(self, product: Product) -> None:
+        pass
+
+    def get_product(self, *, pid: str) -> Product:
+        pass
+
+    def get_all_products(self) -> List[Product]:
+        pass
+
+    def get_base_prices(self) -> Dict[str, int]:
+        pass
+
+    def get_producers(self) -> Dict[str, int]:
+        pass
+
+    def get_types(self) -> List[str]:
+        pass
+
+    def get_quantity_remaining(self) -> Dict[str, int]:
+        # SELECT coalesce(orders.product_code, products.code) as code, quantity - COUNT(orders.id)
+        #   FROM products
+        #   LEFT OUTER JOIN orders ON orders.product_code = products.code
+        #   GROUP BY code
+        pass
 
 #    def latest_orders(self, count=10):
 #        cursor = self.e('SELECT * FROM orders ORDER BY id DESC LIMIT ?', (count,))
 #        return torows(cursor)
-#
-#    def import_products(self, products):
-#        with self.conn:
-#            self.e('PRAGMA defer_foreign_keys = ON')
-#            self.e('UPDATE products SET is_hidden = 1')
-#
-#            for product in products:
-#                self.e('DELETE FROM products WHERE code = ?', (product['code'],))
-#                taglist = product.get("tags", [])
-#                taglist.append(product["brewery"])
-#                tags = "|".join(taglist)
-#                values = (
-#                    product["code"],
-#                    product["name"],
-#                    product["brewery"],
-#                    product["base_price"],
-#                    product.get("quantity", 0),
-#                    product["type"],
-#                    tags
-#                )
-#                self.e('''
-#                    INSERT INTO
-#                    products (
-#                        code, name, brewery, base_price, quantity, type, tags
-#                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-#                ''', values)
 #
 #    def ensure_prices(self):
 #        with self.conn:
@@ -225,14 +280,8 @@ class Database:
 #        data = pickle.dumps(prices)
 #        self.e('INSERT INTO prices (data) VALUES (?)', (sqlite3.Binary(data),))
 #
-#    def insert_buyer(self, name):
-#        return self.insert("buyers", name=name)
-#
 #    def read_all_orders(self):
 #        return self.e('SELECT * FROM orders')
-#
-#    def read_products(self):
-#        return self.e('SELECT * FROM products')
 #
 #    # How much money is on our own account?
 #    def stock_account(self):
@@ -264,27 +313,6 @@ class Database:
 #
 #    def prices_count(self):
 #        return self.e('SELECT COUNT(*) FROM prices').fetchone()[0]
-#
-#    def base_prices(self):
-#        cursor = self.e('SELECT code, base_price FROM products')
-#        return todict(cursor)
-#
-#    def breweries(self):
-#        cursor = self.e('SELECT code, brewery FROM products')
-#        return todict(cursor)
-#
-#    def types(self):
-#        cursor = self.e('SELECT code, type FROM products')
-#        return todict(cursor)
-#
-#    def stock_left(self):
-#        cursor = self.e("""
-#            SELECT coalesce(orders.product_code, products.code) as code, quantity - COUNT(orders.id)
-#            FROM products
-#            LEFT OUTER JOIN orders ON orders.product_code = products.code
-#            GROUP BY code
-#        """)
-#        return todict(cursor)
 #
 #    def price_adjustments(self):
 #        # First fetch the prices:

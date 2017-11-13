@@ -1,9 +1,19 @@
 
 __all__ = [
-    'BearDatabaseError'
+    'BearError',
+    'BearModelError',
+    'BearDatabaseError',
 ]
 
 
-class BearDatabaseError(RuntimeError):
+class BearError(RuntimeError):
+    pass
+
+
+class BearDatabaseError(BearError):
+    pass
+
+
+class BearModelError(BearError):
     pass
 
