@@ -8,7 +8,7 @@ from .buyer import Buyer
 from .product import Product
 
 __all__ = [
-    'Database'
+    'Database',
 ]
 
 # custom type descriptions
@@ -128,7 +128,13 @@ class Database:
             }
         )
 
-    def get_buyer(self, uid: int) -> Buyer:
+    def get_buyer(self, uid: int) -> Optional[Buyer]:
+        """Get the buyer with ``uid`` from the database.
+
+        Raises:
+            BearDatabaseError: If no buyer with the id exists.
+            ValueError: If ``uid`` is not an integer.
+        """
         def retrive_buyer(cursor: sqlite3.Cursor) -> Buyer:
             row = cursor.fetchone()
             if row is not None:
@@ -141,7 +147,9 @@ class Database:
                     database=self,
                 )
             else:
-                return None
+                raise BearDatabaseError(f'could not find buyer with id: {uid}')
+        if not isinstance(uid, str):
+            raise ValueError('uid not an integer')
         return self.exe(
             'SELECT id, name, icon, scaling, created_at FROM buyers WHERE id = :uid',
             args={'uid': uid,},
@@ -193,9 +201,40 @@ class Database:
                        base_price: int,
                        quantity: int,
                        hidden: bool,
-                       replace_existing: bool = False) -> Product:
+                       *, replace_existing: bool = False) -> Product:
+        """Insert a new product into the database.
+
+        Args:
+            code, name, producer, type, tags, base_price, quantity, hidden:
+                Product parameters. See `Product` for descriptions.
+            replace_existing: Keyword only optional argument giving whether the product
+                should replace a product with the same code or if the method should raise
+                `BearDatabaseError`. Defaults to False.
+
+        Returns:
+            The inserted product.
+
+        Raises:
+            BearDatabaseError: If the insert operation failed. One possible reason is if
+                a product with code ``code`` exists in the database and ``replace_existing``
+                is False.
+            ValueError: If a product parameter is of invalid type.
+
+        See also `import_products` for inserting multiple products in the same transaction.
+        """
+        if not (isinstance(code, str)
+                and isinstance(name, str)
+                and isinstance(producer, str)
+                and isinstance(type, str)
+                and isinstance(tags, (list, tuple)) and all(map(lambda t: isinstance(t, str), tags))
+                and isinstance(base_price, int)
+                and isinstance(quantity, int)
+                and isinstance(hidden, bool)):
+            raise ValueError('a product parameter has wrong type')
+
         def action(cursor) -> int:
             return cursor.lastrowid
+
         pid = self.exe((
             f'INSERT {"OR REPLACE" if replace_existing else ""} INTO products ( '
             '  code, name, producer, base_price, quantity, type, tags, hidden '
@@ -213,9 +252,30 @@ class Database:
         )
         return self.get_product(uid=pid)
 
-    def import_products(self, *,
+    def import_products(self,
                         products: Dict[str, Dict[str, Any]],
-                        replace_existing: bool = False) -> None:
+                        *, replace_existing: bool = False) -> None:
+        """Import products into the database.
+
+        Products are supplied as a mapping type from product code to another mapping type which
+        must accept and return values for the same keys as `insert_product` takes as arguments.
+        Even ``code``.
+
+        All products are inserted in the same database transaction, so if one insert failes
+        the entire operation is rolled back.
+
+        Args:
+            products: Mapping type as described above.
+            replace_existing: Keyword only optional argument giving whether excisting products
+                should replace existing or the method should raise `BearDatabaseError`.
+                Defaults to False.
+
+        Raises:
+            BearDatabaseError: If the import failed. One possible reason is if
+                ``replace_existing`` is False and there is a duplicate product code.
+
+        See also `insert_product` for inserting a single product.
+        """
         args = []
         for product in products:
             args.append({
@@ -225,38 +285,100 @@ class Database:
                 'quantity': product['quantity'],
                 'hidden': product['hidden'],
             })
-        self.exe((
-            f'INSERT {"OR REPLACE" if replace_existing else ""} INTO products ( '
-            '  code, name, producer, base_price, quantity, type, tags, hidden '
-            ') VALUES ( '
-            '  :code, :name, :producer, :base_price, :quantity, :type, :tags, :hidden '
-            ')'), args=args, many=True
-        )
+        try:
+            self.exe((
+                f'INSERT {"OR REPLACE" if replace_existing else ""} INTO products ( '
+                '  code, name, producer, base_price, quantity, type, tags, hidden '
+                ') VALUES ( '
+                '  :code, :name, :producer, :base_price, :quantity, :type, :tags, :hidden '
+                ')'), args=args, many=True
+            )
+        except sqlite3.Error as e:
+            raise BearDatabaseError('failed to import products into the database') from e
 
     def update_product(self, product: Product) -> None:
-        pass
+        pass  # TODO
 
-    def get_product(self, *, pid: str) -> Product:
-        pass
+    def get_product(self, *, code: str) -> Product:
+        """Get the product with ``code`` from the database.
 
-    def get_all_products(self) -> List[Product]:
-        pass
+        Raises:
+            BearDatabaseError: If no buyer with the id exists.
+            ValueError: If ``uid`` is not an integer.
+        """
+        def action(cursor: sqlite3.Cursor) -> Product:
+            row = cursor.fetchone()
+            if row is not None:
+                return Product(
+                    code=row['code'],
+                    name=row['name'],
+                    producer=row['producer'],
+                    base_price=row['base_price'],
+                    quantity=row['quantity'],
+                    type=row['type'],
+                    tags=row['tags'].split('|'),
+                    hidden=row['hidden'],
+                    database=self,
+                )
+            else:
+                raise BearDatabaseError(f'could not find producer with id: {uid}')
+        return self.exe((
+            'SELECT code, name, producer, base_price, quantity, type, tags, hidden '
+            'FROM products '
+            'WHERE code = :code'),
+            args={'code': code},
+            callable=action
+        )
+
+    def get_all_products(self, *, bound=True) -> List[Product]:
+        """Get all products from the database.
+
+        Args:
+            bound: If True bind the products to this database; else bind to nothing.
+                Defaults to True.
+        """
+        def action(cursor) -> List[Product]:
+            products: List[Product] = []
+            for row in cursor:
+                products.append(Buyer(
+                    code=row['code'],
+                    name=row['name'],
+                    producer=row['producer'],
+                    base_price=row['base_price'],
+                    quantity=row['quantity'],
+                    type=row['type'],
+                    tags=row['tags'].split('|'),
+                    hidden=row['hidden'],
+                    database=self if bound else None,
+                ))
+            return products
+        return self.exe((
+            'SELECT code, name, producer, base_price, quantity, type, tags, hidden '
+            'FROM products '),
+            callable=action
+        )
 
     def get_base_prices(self) -> Dict[str, int]:
-        pass
+        """Get a dictionary of product code to base price for all products in the database."""
+        products = self.get_all_products(bind=False)
+        return {product.code: product.base_price for product in products}
 
-    def get_producers(self) -> Dict[str, int]:
-        pass
+    def get_producers(self) -> Dict[str, str]:
+        """Get a dictionary of product code to producers for all products in the database."""
+        products = self.get_all_products(bind=False)
+        return {product.code: product.producer for product in products}
 
     def get_types(self) -> List[str]:
-        pass
+        """Get a dictionary of distinct product types for products in the database."""
+        products = self.get_all_products(bind=False)
+        return list({product.type for product in products})
 
     def get_quantity_remaining(self) -> Dict[str, int]:
         # SELECT coalesce(orders.product_code, products.code) as code, quantity - COUNT(orders.id)
         #   FROM products
         #   LEFT OUTER JOIN orders ON orders.product_code = products.code
         #   GROUP BY code
-        pass
+        pass  # TODO requires orders
 
 #    def latest_orders(self, count=10):
 #        cursor = self.e('SELECT * FROM orders ORDER BY id DESC LIMIT ?', (count,))

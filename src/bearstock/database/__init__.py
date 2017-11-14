@@ -1,8 +1,11 @@
 
 __all__ = [
-    'Database', 'BearDatabaseError',
+    'Database',
     'Buyer', 'Product',
+    'BearDatabaseError', 'BearModelError',
 ]
+
+from .errors import BearDatabaseError, BearModelError
 
 from .database import Database, BearDatabaseError
 
