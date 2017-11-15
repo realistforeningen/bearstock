@@ -3,8 +3,10 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 import sqlite3
 
-from .errors import BearDatabaseError
+from .errors import BearDatabaseError, BearModelError
 from .buyer import Buyer
+from .model import Model
+from .order import Order
 from .product import Product
 
 __all__ = [
@@ -55,6 +57,9 @@ class Database:
         if not self.is_connected():
             raise RuntimeError('database already closed')
         self._connection.close()
+
+    def is_model_mine(self, model: Model) -> bool:
+        return model.get_db() is self
 
     # generic DB access methods
 
@@ -118,6 +123,13 @@ class Database:
         return self.get_buyer(inserted_id)
 
     def update_buyer(self, buyer: Buyer) -> None:
+        """Update the buyer stored in the database from a buyer model.
+
+        Raises:
+            ValueError: If the buyer is not bound to this database.
+        """
+        if not self.is_model_mine(buyer):
+            raise ValueError('buyer not bound to this database')
         self.exe(
             'UPDATE buyers SET name = :name, icon = :icon, scaling = :scaling WHERE id = :uid',
             args={
@@ -201,7 +213,7 @@ class Database:
                        base_price: int,
                        quantity: int,
                        hidden: bool,
-                       *, replace_existing: bool = False) -> Product:
+                       replace_existing: bool = False) -> Product:
         """Insert a new product into the database.
 
         Args:
@@ -285,19 +297,40 @@ class Database:
                 'quantity': product['quantity'],
                 'hidden': product['hidden'],
             })
-        try:
-            self.exe((
-                f'INSERT {"OR REPLACE" if replace_existing else ""} INTO products ( '
-                '  code, name, producer, base_price, quantity, type, tags, hidden '
-                ') VALUES ( '
-                '  :code, :name, :producer, :base_price, :quantity, :type, :tags, :hidden '
-                ')'), args=args, many=True
-            )
-        except sqlite3.Error as e:
-            raise BearDatabaseError('failed to import products into the database') from e
+        self.exe((
+            f'INSERT {"OR REPLACE" if replace_existing else ""} INTO products ( '
+            '  code, name, producer, base_price, quantity, type, tags, hidden '
+            ') VALUES ( '
+            '  :code, :name, :producer, :base_price, :quantity, :type, :tags, :hidden '
+            ')'), args=args, many=True
+        )
 
     def update_product(self, product: Product) -> None:
-        pass  # TODO
+        """Update a product with values from the database.
+        The product code can not be changed.
+
+        Raises:
+            BearDatabaseError: If the update query failed.
+            ValueError: If the product is not bound to this database.
+        """
+        if not self.is_model_mine(buyer):
+            raise ValueError('buyer not bound to this database')
+        self.exe((
+            'UPDATE products SET '
+            '  name = :name, producer = :producer, type = :type, '
+            '  tags = :tags, base_price = :base_price, quantity = :quantity, hidden = :hidden '
+            'WHERE code = :code'),
+            args={
+                'code': product.code,
+                'name': product.name,
+                'producer': product.producer,
+                'type': product.type,
+                'tags': '|'.join(product.tags),
+                'base_price': product.base_price,
+                'quantity': product.quantity,
+                'hidden': product.hidden,
+            }
+        )
 
     def get_product(self, *, code: str) -> Product:
         """Get the product with ``code`` from the database.
@@ -321,7 +354,7 @@ class Database:
                     database=self,
                 )
             else:
-                raise BearDatabaseError(f'could not find producer with id: {uid}')
+                raise BearDatabaseError(f'could not find producer with code: {code}')
         return self.exe((
             'SELECT code, name, producer, base_price, quantity, type, tags, hidden '
             'FROM products '
@@ -380,40 +413,276 @@ class Database:
         #   GROUP BY code
         pass  # TODO requires orders
 
-#    def latest_orders(self, count=10):
-#        cursor = self.e('SELECT * FROM orders ORDER BY id DESC LIMIT ?', (count,))
-#        return torows(cursor)
-#
-#    def ensure_prices(self):
-#        with self.conn:
-#            price_count = self.e('SELECT COUNT(*) FROM prices').fetchone()[0]
-#            if price_count == 0:
-#                self.insert_prices({})
-#
-#    def ensure_buyer(self):
-#        with self.conn:
-#            try:
-#                self.insert("buyers", id=1, name="Test Buyer")
-#            except sqlite3.IntegrityError:
-#                # All fine
-#                return
-#
+    # order methods
+
+    def insert_order(self, *,
+                     buyer: Buyer, product: Product,
+                     relativ_cost: int, created_at: Optional[int] = None) -> Order:
+        """Insert a new order into the database.
+
+        Args:
+            buyer, product, relative_cost, created_at:
+                Order parameters. See `Order` for descriptions.
+
+        Returns:
+            The inserted order model.
+
+        Raises:
+            BearDatabaseError: If the insert operation failed.
+            ValueError: If a product parameter is of invalid type.
+
+        See also `import_orders` for inserting multiple orders in the same transaction.
+        """
+        def action(cursor: sqlite3.Cursor) -> int:
+            return cursor.lastrowid
+
+        insered_id = self.exe((
+            f'INSERT INTO orders ( '
+            f'  buyer_id, product_code, relative_cost{"" if created_at is None else ", created_at"} '
+            f') VALUES ( '
+            f'  :buyer, :product, :relative_cost{"" if created_at is None else ", :created_at"} '
+            f')'),
+            callable=action,
+            args={
+                'buyer': buyer_id,
+                'product': product_id,
+                'relative_cost': relative_cost,
+                'created_at': created_at
+            })
+        return self.get_order(insered_id)
+
+    def import_orders(self, orders: List[Dict[str, Any]]) -> None:
+        """Import orders into the database.
+
+        Orders are supplied as a list of mappings which must accept and return values for
+        the same keys as `insert_order` takes as arguments.
+
+        All orders are inserted in the same database transaction, so if one insert failes
+        the entire operation is rolled back.
+
+        Args:
+            orders: Mapping type as described above.
+
+        Raises:
+            BearDatabaseError: If the import failed.
+
+        See also `insert_order` for inserting a single order.
+        """
+        args = []
+        for order in orders:
+            args.append({
+                'buyer': order['order_id'], 'product_id': product['product_id'],
+                'relative_cost': order['relative_cost'], 'created_at': order['created_at'],
+            })
+        self.exe((
+            'INSERT INTO orders ( '
+            f'  buyer_id, product_code, relative_cost{"" if created_at is None else ", created_at"} '
+            ') VALUES ( '
+            f'  :buyer, :product, :relative_cost{"" if created_at is None else ", :created_at"} '
+            ')'),
+            args=args, many=True
+        )
+
+    def update_order(self, order: Order) -> None:
+        """Update the order stored in the database.
+        The order id  can not be changed.
+
+        Raises:
+            BearDatabaseError: If the update query failed.
+            BearModelError: If the buyer or product related to the order is not bound to the same
+                database as the order.
+            ValueError: If the order is not bound to this database.
+        """
+        if not self.is_model_mine(order):
+            raise ValueError('order is not bound to this database')
+        if not self.is_model_mine(order.buyer) or not self.is_model_mine(order.product):
+            raise BearModelError('buyer or product related to order is not bound to the same database as order')
+
+        self.exe((
+            'UPDATE order SET '
+            '  buyer_id = :buyer, product_id = :producer, '
+            '  relative_cost = :relative_cost, created_at = :created_at '
+            'WHERE id = :uid'),
+            args={
+                'buyer': order.buyer.uid,
+                'product': order.product.code,
+                'relative_cost': order.relative_cost,
+                'created_at': order.created_at,
+            }
+        )
+
+    def get_order(self, uid: int) -> Order:
+        """Get the order with ``uid`` from the database.
+
+        Raises:
+            BearDatabaseError: If the database query falied, or the order was not found.
+            ValueError: If ``uid`` is not an integer.
+        """
+        def action(cursor: sqlite3.Cursor) -> Order:
+            row = cursor.fetchone()
+            if row is not None:
+                return Order(
+                    uid=row['id'],
+                    buyer=self.get_buyer(row['buyer_id']),
+                    product=self.get_product(row['product_code']),
+                    relative_cost=row['relative_cost'],
+                    created_at=row['created_at'],
+                    database=self,
+                )
+            else:
+                raise BearDatabaseError(f'could not find order with id: {uid}')
+        return self.exe((
+            'SELECT id, buyer_id, product_code, relative_cost, created_at '
+            'FROM orders '
+            'WHERE id = :uid'),
+            args={'uid': uid},
+            callable=action
+        )
+
+    def get_all_orders(self, *, bound: bool = True) -> List[Order]:
+        """Get all orders stored in the database, ordered acsending (earliest orders first) by time.
+
+        Args:
+            bound: If True bind the order to this database; else bind to nothing.
+                Defaults to True.
+
+        Raises:
+            BearDatabaseError: If the query failed.
+        """
+        def action(cursor) -> List[Order]:
+            order: List[Order] = []
+            for row in cursor:
+                order.append(Buyer(
+                    uid=row['id'],
+                    buyer=self.get_buyer(row['buyer_id']),
+                    product=self.get_product(row['product_code']),
+                    relative_cost=row['relative_cost'],
+                    created_at=row['created_at'],
+                    database=self if bound else None,
+                ))
+            return order
+        return self.exe((
+            'SELECT id, buyer_id, product_code, relative_cost, created_at '
+            'FROM orders '
+            'ORDER BY created_at ASC'),
+            callable=action
+        )
+
+    def get_latest_orders(self, count: int = 1, *, bound: bool = True) -> List[Order]:
+        """Get the ``count`` last orders stored in the database, ordered descending
+        (newest order first) by time.
+
+        Args:
+            count: Number of order rows to get.
+            bound: If True bind the order to this database; else bind to nothing.
+                Defaults to True.
+
+        Raises:
+            BearDatabaseError: If the query failed.
+            ValueError: If ``count`` is less than 0.
+        """
+        if count < 0:
+            raise ValueError('cannot retreive a negative number of orders')
+
+        def action(cursor) -> List[Order]:
+            order: List[Order] = []
+            for row in cursor:
+                order.append(Buyer(
+                    uid=row['id'],
+                    buyer=self.get_buyer(row['buyer_id']),
+                    product=self.get_product(row['product_code']),
+                    relative_cost=row['relative_cost'],
+                    created_at=row['created_at'],
+                    database=self if bound else None,
+                ))
+            return order
+        return self.exe((
+            'SELECT id, buyer_id, product_code, relative_cost, created_at '
+            'FROM orders '
+            'ORDER BY created_at DESC LIMIT :count'),
+            args={'count': count},
+            callable=action
+        )
+
+    def get_orders_after(self, t: int,
+                         *, exclusive: bool = True, bound: bool = True) -> List[Order]:
+        """Get all orders made after time ``t``, ordered ascending (oldest first).
+
+        Args:
+            t: Time point ot get orders after.
+            exclusive: If ``t`` is exclusive or inclusive. Defaults to True.
+            bound: If True bind the order to this database; else bind to nothing.
+                Defaults to True.
+
+        Raises:
+            BearDatabaseError: If the query failed.
+        """
+        def action(cursor) -> List[Order]:
+            order: List[Order] = []
+            for row in cursor:
+                order.append(Buyer(
+                    uid=row['id'],
+                    buyer=self.get_buyer(row['buyer_id']),
+                    product=self.get_product(row['product_code']),
+                    relative_cost=row['relative_cost'],
+                    created_at=row['created_at'],
+                    database=self if bound else None,
+                ))
+            return order
+        return self.exe((
+            'SELECT id, buyer_id, product_code, relative_cost, created_at '
+            'FROM orders '
+            f'WHERE created_at {">" if exclusive else ">="} :time '
+            'ORDER BY created_at DESC'),
+            args={'count': count},
+            callable=action
+        )
+
+    def get_orders_befores(self, t: int,
+                           *, exclusive: bool = True, bound: bool = True) -> List[Order]:
+        """Get all orders made befre time ``t``, ordered ascending (oldest first).
+
+        Args:
+            t: Time point ot get orders before.
+            exclusive: If ``t`` is exclusive or inclusive. Defaults to True.
+            bound: If True bind the order to this database; else bind to nothing.
+                Defaults to True.
+
+        Raises:
+            BearDatabaseError: If the query failed.
+        """
+        def action(cursor) -> List[Order]:
+            order: List[Order] = []
+            for row in cursor:
+                order.append(Buyer(
+                    uid=row['id'],
+                    buyer=self.get_buyer(row['buyer_id']),
+                    product=self.get_product(row['product_code']),
+                    relative_cost=row['relative_cost'],
+                    created_at=row['created_at'],
+                    database=self if bound else None,
+                ))
+            return order
+        return self.exe((
+            'SELECT id, buyer_id, product_code, relative_cost, created_at '
+            'FROM orders '
+            f'WHERE created_at {"<" if exclusive else "<="} :time '
+            'ORDER BY created_at DESC'),
+            args={'count': count},
+            callable=action
+        )
+
+    # price methods
+
 #    def insert_prices(self, prices):
 #        data = pickle.dumps(prices)
 #        self.e('INSERT INTO prices (data) VALUES (?)', (sqlite3.Binary(data),))
-#
-#    def read_all_orders(self):
-#        return self.e('SELECT * FROM orders')
-#
-#    # How much money is on our own account?
-#    def stock_account(self):
-#        return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0] or 0
-#
+
 #    def last_price_time(self):
 #        row = self.e('SELECT created_at FROM prices ORDER BY id DESC LIMIT 1').fetchone()
 #        if row:
 #            return datetime.fromtimestamp(row['created_at'])
-#
+
 #    def latest_prices(self, count=1):
 #        cursor = self.e('SELECT * FROM prices ORDER BY id DESC LIMIT ?', (count,))
 #
@@ -427,15 +696,15 @@ class Database:
 #            return rows[0]
 #        else:
 #            return rows + [None]*(count - len(rows))
-#
+
 #    def find_prices(self, id):
 #        row = self.e('SELECT data FROM prices WHERE id = ?', (id,)).fetchone()
 #        if row:
 #            return pickle.loads(row['data'])
-#
+
 #    def prices_count(self):
 #        return self.e('SELECT COUNT(*) FROM prices').fetchone()[0]
-#
+
 #    def price_adjustments(self):
 #        # First fetch the prices:
 #        prices = torows(self.e('SELECT id, data FROM prices ORDER BY id'))
@@ -472,7 +741,13 @@ class Database:
 #            products[row['code']]
 #
 #        return dict(products)
-#
+
+    # various methods
+
+#    # How much money is on our own account?
+#    def stock_account(self):
+#        return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0] or 0
+
 #    def current_products_with_prices(self, round_price=False):
 #        products = []
 #        with self.conn:
@@ -522,9 +797,5 @@ class Database:
 #                    )
 #                })
 #        return dict(price_data)
-#
-#    def orders_before(self, ts):
-#        return torows(
-#            self.e('SELECT * FROM orders WHERE created_at <= ? ORDER BY created_at', (ts,)))
 
 

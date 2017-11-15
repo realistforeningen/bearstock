@@ -2,9 +2,10 @@
 from typing import Any, Dict, List, Optional
 
 from .errors import BearDatabaseError, BearModelError
+from .model import Model
 
 
-class Buyer:
+class Buyer(Model):
     def __init__(self, *,
                  uid: Optional[int] = None,
                  name: Optional[str] = None,
@@ -12,12 +13,13 @@ class Buyer:
                  scaling: Optional[int] = None,
                  created_at: Optional[int] = None,
                  database: Optional['Database'] = None) -> None:
+        super().__init__(self, database=database)
+
         self._uid = uid
         self._name = name
         self._icon = icon
         self._scaling = scaling
         self._created_at = created_at
-        self._database: Optional['Database'] = database
 
     @property
     def uid(self) -> Optional[int]:
@@ -69,10 +71,6 @@ class Buyer:
             created_at=self._created_at,
         )
 
-    def is_bound(self) -> bool:
-        """Return True if the buyer has a connected database."""
-        return self._database is not None and self._database.is_connected()
-
     def synchronize(self) -> None:
         """Reload the buyer from the database.
 
@@ -115,7 +113,8 @@ class Buyer:
         self._created_at = None
 
         # may raise BearDatabaseError
-        inserted = db.insert_buyer(self)
+        inserted = db.insert_buyer(
+                name=self.name, icon=self.icon, scaling=self.scaling)
         self._database = db
 
         self._uid = inserted.uid

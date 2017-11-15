@@ -2,6 +2,7 @@
 from typing import Any, Dict, List, Optional
 
 from .errors import BearDatabaseError, BearModelError
+from .model import Model
 
 
 class Product:
@@ -15,6 +16,8 @@ class Product:
                  quantity: Optional[int] = None,
                  hidden: Optional[bool] = None,
                  database: Optional['Database'] = None) -> None:
+        super().__init__(self, database=database)
+
         self._code = code
         self._name = name
         self._producer = producer
@@ -23,7 +26,6 @@ class Product:
         self._base_price = base_price
         self._quantity = quantity
         self._hidden = hidden
-        self._database = database
 
     @property
     def code(self) -> Optional[str]:
@@ -102,17 +104,24 @@ class Product:
         """Return the product as a dictionary.
 
         This method is for interoperability with the web server parts of BearStock.
-        The fields in the dictionary are: !!! TODO !!!
+        The fields in the dictionary are: ``code``, ``name``, ``producer``, ``type``,
+        ``tags`` (a list of strings), ``base_price``, ``quantity``, ``hidden``.
 
         Args:
             with_derived: Include derived product fields: ``current_price``,
                 ``timeline``, ``qty_remaining``
         """
-        pass  # TODO Remember docs!
-
-    def is_bound(self) -> bool:
-        """Return True if the product has a connected database."""
-        return self._database is not None and self._database.is_connected()
+        # TODO derived
+        return dict(
+            code=self._code,
+            name=self._name,
+            producer=self._producer,
+            type=self._type,
+            tags=self._tags,
+            base_price=self._base_price,
+            quantity=self._quantity,
+            hidden=self._hidden
+        )
 
     def synchronize(self) -> None:
         """Reload the product from the database.
@@ -122,7 +131,7 @@ class Product:
             BearModelError: If the product is not bound to a connected database.
         """
         if not self.is_bound():
-            raise BearDatabaseError('product not bound to any database')
+            raise BearDatabaseError('product not bound to any connected database')
 
         product = self.load_from_db(self._database, self.uid)
 
@@ -142,6 +151,8 @@ class Product:
             rebind: If the product is already inserted into database this method will
                 fail with an exception unless rebind is set to True.
                 The default is False.
+            overwrite: Optional keyword only argument giving whether the product should
+                overwrite a product in the database with the same code.
 
         Raises:
             BearDatabaseError: If the insert operation failed.
@@ -155,8 +166,9 @@ class Product:
             raise ValueError('database None or not connected')
 
         # may raise BearDatabaseError
-        inserted = db.insert_product(self)
-        self._database = db
+        inserted = db.insert_product(
+                code=self.code, name=self, producer=self.producer, type=self.type, tags=self.tags,
+                base_price=self.base_price, quantity=self.quantity, hidden=self.hidden)
 
     def update_in_db(self) -> None:
         """Update the product in the database.
@@ -165,7 +177,7 @@ class Product:
             BearDatabaseError: If the database update operation failed.
             BearModelError: If the product is not bound to a connected database.
         """
-        if self.is_bound() is None:
+        if not self.is_bound():
             raise BearModelError('product not bound to a database')
 
         # may raise BearDatabaseError
@@ -177,7 +189,8 @@ class Product:
 
         Raises:
             BearDatabaseError: If the database read operation failed.
-            ValueError: If the database is None or not connected.
+            ValueError: If the database is None or not connected, or no
+                product with code ``code`` was found.
         """
         if db is None:
             raise ValueError('database is None')
