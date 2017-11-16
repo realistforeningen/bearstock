@@ -1,6 +1,7 @@
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
+import pickle
 import sqlite3
 
 from .errors import BearDatabaseError, BearModelError
@@ -94,7 +95,7 @@ class Database:
                         cursor.execute(sql, args)
                     else:
                         for arg in args:
-                            cursor.execute(sql, args)
+                            cursor.execute(sql, arg)
 
                 # do something with the query result
                 if callable is not None:
@@ -147,6 +148,9 @@ class Database:
             BearDatabaseError: If no buyer with the id exists.
             ValueError: If ``uid`` is not an integer.
         """
+        if not isinstance(uid, int):
+            raise ValueError('uid not an integer')
+
         def retrive_buyer(cursor: sqlite3.Cursor) -> Buyer:
             row = cursor.fetchone()
             if row is not None:
@@ -160,8 +164,7 @@ class Database:
                 )
             else:
                 raise BearDatabaseError(f'could not find buyer with id: {uid}')
-        if not isinstance(uid, str):
-            raise ValueError('uid not an integer')
+
         return self.exe(
             'SELECT id, name, icon, scaling, created_at FROM buyers WHERE id = :uid',
             args={'uid': uid,},
@@ -292,11 +295,12 @@ class Database:
         for product in products:
             args.append({
                 'code': product['code'], 'name': product['name'], 'producer': product['producer'],
-                'type': product['type'], 'tags': '|'.join(products.get('tags', [])),
+                'type': product['type'], 'tags': '|'.join(product.get('tags', [])),
                 'base_price': product['base_price'],
                 'quantity': product['quantity'],
                 'hidden': product['hidden'],
             })
+
         self.exe((
             f'INSERT {"OR REPLACE" if replace_existing else ""} INTO products ( '
             '  code, name, producer, base_price, quantity, type, tags, hidden '
@@ -332,7 +336,7 @@ class Database:
             }
         )
 
-    def get_product(self, *, code: str) -> Product:
+    def get_product(self, code: str) -> Product:
         """Get the product with ``code`` from the database.
 
         Raises:
@@ -373,7 +377,7 @@ class Database:
         def action(cursor) -> List[Product]:
             products: List[Product] = []
             for row in cursor:
-                products.append(Buyer(
+                products.append(Product(
                     code=row['code'],
                     name=row['name'],
                     producer=row['producer'],
@@ -391,20 +395,20 @@ class Database:
             callable=action
         )
 
-    def get_base_prices(self) -> Dict[str, int]:
-        """Get a dictionary of product code to base price for all products in the database."""
-        products = self.get_all_products(bind=False)
-        return {product.code: product.base_price for product in products}
-
-    def get_producers(self) -> Dict[str, str]:
-        """Get a dictionary of product code to producers for all products in the database."""
-        products = self.get_all_products(bind=False)
-        return {product.code: product.producer for product in products}
-
-    def get_types(self) -> List[str]:
-        """Get a dictionary of distinct product types for products in the database."""
-        products = self.get_all_products(bind=False)
-        return list({product.type for product in products})
+    # def get_base_prices(self) -> Dict[str, int]:
+    #     """Get a dictionary of product code to base price for all products in the database."""
+    #     products = self.get_all_products(bind=False)
+    #     return {product.code: product.base_price for product in products}
+    #
+    # def get_producers(self) -> Dict[str, str]:
+    #     """Get a dictionary of product code to producers for all products in the database."""
+    #     products = self.get_all_products(bind=False)
+    #     return {product.code: product.producer for product in products}
+    #
+    # def get_types(self) -> List[str]:
+    #     """Get a dictionary of distinct product types for products in the database."""
+    #     products = self.get_all_products(bind=False)
+    #     return list({product.type for product in products})
 
     def get_quantity_remaining(self) -> Dict[str, int]:
         # SELECT coalesce(orders.product_code, products.code) as code, quantity - COUNT(orders.id)
@@ -674,128 +678,62 @@ class Database:
 
     # price methods
 
-#    def insert_prices(self, prices):
-#        data = pickle.dumps(prices)
-#        self.e('INSERT INTO prices (data) VALUES (?)', (sqlite3.Binary(data),))
+    def do_tick(self, price_adjustments: Dict[str, Any], *, tick_no: Optional[int] = None) -> None:
+        """Insert a new set of price adjustments into the database and increment the ticks.
 
-#    def last_price_time(self):
-#        row = self.e('SELECT created_at FROM prices ORDER BY id DESC LIMIT 1').fetchone()
-#        if row:
-#            return datetime.fromtimestamp(row['created_at'])
+        Raises:
+            BearDatabaseError: In the insert operation failed.
+        """
+        self.exe((
+            'INSERT INTO ticks ( '
+            f'  {"tick_no," if tick_no is not None else ""} price_adjustments '
+            ') VALUES ( '
+            f'  {":tick_no," if tick_no is not None else ""} :blob '
+            ')'),
+            args={
+                'tick_no': tick_no,
+                'blob': sqlite3.Binary(pickle.dumps(price_adjustments)),
+            })
 
-#    def latest_prices(self, count=1):
-#        cursor = self.e('SELECT * FROM prices ORDER BY id DESC LIMIT ?', (count,))
-#
-#        def mapper(row):
-#            prices = pickle.loads(row["data"])
-#            prices["_id"] = row["id"]
-#            return prices
-#
-#        rows = torows(cursor, mapper)
-#        if count == 1:
-#            return rows[0]
-#        else:
-#            return rows + [None]*(count - len(rows))
+    def get_product_price_adjustment(self, code: str) -> int:
+        """Get the price adjustment for product with code ``code``.
 
-#    def find_prices(self, id):
-#        row = self.e('SELECT data FROM prices WHERE id = ?', (id,)).fetchone()
-#        if row:
-#            return pickle.loads(row['data'])
+        Raises:
+            BearDatabaseError: If the database lookup failed.
+            ValueError: If code is not a string.
+        """
+        if not isinstance(code, str):
+            raise ValueError('code is not a string')
 
-#    def prices_count(self):
-#        return self.e('SELECT COUNT(*) FROM prices').fetchone()[0]
+        def action(cursor: sqlite3.Cursor) -> Dict[str, Any]:
+            row = cursor.fetchone()
+            return pickle.loads(row['price_adjustments'])
 
-#    def price_adjustments(self):
-#        # First fetch the prices:
-#        prices = torows(self.e('SELECT id, data FROM prices ORDER BY id'))
-#
-#        # Build a list of dict for each period
-#        def defaultval():
-#            return {"sold_units": 0, "adjustment": 0}
-#        products = defaultdict(lambda: [defaultval() for _ in range(len(prices))])
-#
-#        price_id_to_idx = {}
-#
-#        for idx, row in enumerate(prices):
-#            price_id_to_idx[row['id']] = idx
-#            adjustments = pickle.loads(row['data'])
-#
-#            for product_code in adjustments:
-#                products[product_code][idx]["adjustment"] = adjustments[product_code]
-#
-#        # Then find the number of products sold per period
-#        cursor = self.e("""
-#            SELECT price_id, product_code, COUNT(id) as sold_units
-#            FROM orders
-#            GROUP BY price_id, product_code
-#            ORDER BY price_id
-#        """)
-#
-#        for row in cursor:
-#            idx = price_id_to_idx[row['price_id']]
-#            product_code = row['product_code']
-#            products[product_code][idx]['sold_units'] = row['sold_units']
-#
-#        # Next make sure all products are included:
-#        for row in self.e('SELECT code FROM products'):
-#            products[row['code']]
-#
-#        return dict(products)
+        adjustments = self.exe(
+            'SELECT tick_no, price_adjustments FROM ticks ORDER BY tick_no DESC LIMIT 1',
+            callable=action
+        )
+
+        if code in adjustments:
+            return adjustments[code]
+        raise ValueError(f'no product with code {code} in database prices')
 
     # various methods
+
+    def get_tick_number(self) -> int:
+        """Returns the current tick number.
+
+        Raises:
+            BearDatabaseError: If the query failed.
+        """
+        def action(cursor: sqlite3.Cursor) -> int:
+            return cursor.fetchone()['tick_no']
+        return self.exe(
+            'SELECT tick_no FROM ticks ORDER BY tick_no DESC LIMIT 1',
+            callable=action
+        )
 
 #    # How much money is on our own account?
 #    def stock_account(self):
 #        return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0] or 0
-
-#    def current_products_with_prices(self, round_price=False):
-#        products = []
-#        with self.conn:
-#            ultimate, penultimate = self.latest_prices(2)
-#            if ultimate is None:
-#                return products, None
-#
-#            for product in self.e('SELECT * FROM products WHERE is_hidden = 0'):
-#                code = product["code"]
-#                rel_cost = ultimate.get(code, 0)
-#
-#                if penultimate:
-#                    delta_cost = rel_cost - penultimate.get(code, rel_cost)
-#                else:
-#                    delta_cost = 0
-#
-#                if round_price:
-#                    rel_cost = int(round(rel_cost))
-#
-#                products.append({
-#                    "code": code,
-#                    "name": product["name"],
-#                    "brewery": product["brewery"],
-#                    "price_id": ultimate["_id"],
-#                    "relative_cost": rel_cost,
-#                    "delta_cost": delta_cost,
-#                    "base_price": product['base_price'],
-#                    "absolute_cost": product['base_price'] + rel_cost,
-#                    "tags": product["tags"].split("|")
-#                })
-#        return products, ultimate["_id"]
-#
-#    def prices_for_product(self, codes, round_price=False):
-#        arr = ", ".join(["?" for _ in codes])
-#        base_prices = todict(
-#            self.e('SELECT code, base_price FROM products WHERE code IN (%s)' % arr, codes))
-#        price_data = defaultdict(lambda: [])
-#        cursor = self.e('SELECT * FROM prices ORDER BY id')
-#        for row in cursor:
-#            prices = pickle.loads(row["data"])
-#            for code in codes:
-#                price_data[code].append({
-#                    "timestamp": row["created_at"],
-#                    "value": (
-#                        prices.get(code, 0) + base_prices[code] if not round_price else
-#                        round(prices.get(code, 0) + base_prices[code])
-#                    )
-#                })
-#        return dict(price_data)
-
 

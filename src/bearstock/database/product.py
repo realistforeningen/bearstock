@@ -5,7 +5,7 @@ from .errors import BearDatabaseError, BearModelError
 from .model import Model
 
 
-class Product:
+class Product(Model):
     def __init__(self, *,
                  code: Optional[str] = None,
                  name: Optional[str] = None,
@@ -16,7 +16,7 @@ class Product:
                  quantity: Optional[int] = None,
                  hidden: Optional[bool] = None,
                  database: Optional['Database'] = None) -> None:
-        super().__init__(self, database=database)
+        super().__init__(database=database)
 
         self._code = code
         self._name = name
@@ -100,6 +100,35 @@ class Product:
         if self.is_bound():
             self.update_in_db()
 
+    @property
+    def price_adjustment(self) -> int:
+        """Get the latest product price adjustment relative to the base price.
+        The Value is in ``1/100`` of the currency.
+
+        Note:
+            This is a derived attribute. It needs a database access to get it.
+
+        Raises:
+            BearModelError: If the product is not connected to a database.
+        """
+        if not self.is_bound():
+            raise BearModelError('product not connected to the database')
+        return self._database.get_product_price_adjustment(self.code)
+
+    @property
+    def current_price(self) -> int:
+        """Get the latest product price.
+
+        Note:
+            This is a derived attribute. It needs a database access to get it.
+
+        Raises:
+            BearModelError: If the product is not connected to a database.
+        """
+        if not self.is_bound():
+            raise BearModelError('product not connected to the database')
+        return self.base_price + self.price_adjustment*100
+
     def as_dict(self, *, with_derived: bool = False) -> Dict[str, Any]:
         """Return the product as a dictionary.
 
@@ -108,8 +137,9 @@ class Product:
         ``tags`` (a list of strings), ``base_price``, ``quantity``, ``hidden``.
 
         Args:
-            with_derived: Include derived product fields: ``current_price``,
-                ``timeline``, ``qty_remaining``
+            with_derived: Include derived product fields: ``price_adjustment``,
+                ``current_price``, ``timeline``, and ``qty_remaining``.
+                Derived fields requires the product to be connected to a database.
         """
         # TODO derived
         return dict(
@@ -120,7 +150,10 @@ class Product:
             tags=self._tags,
             base_price=self._base_price,
             quantity=self._quantity,
-            hidden=self._hidden
+            hidden=self._hidden,
+            # derived
+            current_price=None if not with_derived else self.current_price,
+            price_adjustment=None if not with_derived else self.price_adjustment,
         )
 
     def synchronize(self) -> None:

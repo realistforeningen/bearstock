@@ -13,7 +13,7 @@ class Order(Model):
                  relative_cost: Optional[int] = None,
                  created_at: Optional[int] = None,
                  database: Optional['Database'] = None) -> None:
-        super().__init__(self, database=database)
+        super().__init__(database=database)
 
         self._uid = uid
         self._buyer_id = buyer.uid if buyer is not None else None

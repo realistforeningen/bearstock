@@ -5,7 +5,7 @@ from abc import ABC
 
 class Model(ABC):
     def __init__(self, *, database: Optional['Database'] = None):
-        self._database
+        self._database = database
 
     def get_db(self) -> 'Database':
         """Get the model database, or None if no database is registered."""

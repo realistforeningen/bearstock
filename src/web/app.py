@@ -28,10 +28,9 @@ def index():
 def signup():
     if request.method == 'POST':
         name = request.form.get('name', '')
+        icon = 'FOO'  # icon = request.form.get('icon', '')
         if len(name) > 0:
-            with g.db.conn:
-                buyer = g.db.insert_buyer(name)
-
+            buyer = g.db.insert_buyer(name=name, icon=icon)
             return render_template('signup.html', buyer_id=buyer.uid, name=buyer.name)
 
     return render_template('signup.html')
@@ -42,43 +41,48 @@ def stats():
 
 @app.route('/products')
 def products():
-    products, price_id = g.db.current_products_with_prices(round_price=True)
-    return jsonify(products=products, price_id=price_id)
+    tick_no = g.db.get_tick_number()
+    products = [p.as_dict(with_derived=True) for p in g.db.get_all_products()]
+    return jsonify(products=products, price_id=tick_no)
 
 @app.route('/buyers')
 def buyers():
-    buyers = g.db.buyers()
-    return jsonify(buyers=buyers)
+    buyers = g.db.get_all_buyers()
+    return jsonify(buyers=[ buyer.as_dict() for buyer in buyers ])
 
-@app.route('/prices')
+@app.route('/prices')  # TODO se kladdebok
 def prices():
     codes = request.args.getlist('code')
-    prices = g.db.prices_for_product(codes, round_price=True)
-    return jsonify(prices)
+    products = [
+        p.as_dict(with_derived=True)
+            for p in g.db.get_all_products()
+            if p.code in codes
+    ]
+    return jsonify({})
 
-@app.route('/stats/buyers')
+@app.route('/stats/buyers')  # TODO
 def stats_buyers():
-    stats = get_top_bot(5, g.db)
+    # stats = get_top_bot(5, g.db)
     return jsonify(buyers=stats)
 
-@app.route('/orders')
+@app.route('/orders')  # TODO
 def orders_list():
-    orders = g.db.latest_orders()
-    return jsonify(orders=orders)
+    orders = g.db.get_latest_orders(count=10)
+    return jsonify(orders=[  order.as_dict() for order in orders ])
 
-@app.route('/orders', methods=['POST'])
+@app.route('/orders', methods=['POST'])  # TODO
 def orders_create():
     body = request.get_json()
     product = body["product"]
-    with g.db.conn:
-        g.db.insert(
-            "orders",
-            buyer_id=body["buyer_id"],
-            product_code=product["code"],
-            price_id=product["price_id"],
-            absolute_cost=product['absolute_cost'],
-            relative_cost=product['relative_cost']
-        )
+    # with g.db.conn:
+    #     g.db.insert(
+    #         "orders",
+    #         buyer_id=body["buyer_id"],
+    #         product_code=product["code"],
+    #         price_id=product["price_id"],
+    #         absolute_cost=product['absolute_cost'],
+    #         relative_cost=product['relative_cost']
+    #     )
     return jsonify(ok=True)
 
 @app.route('/buyer')
