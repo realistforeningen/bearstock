@@ -64,6 +64,35 @@ tag Button < button
 	def render
 		<self.{@main-css}>
 
+tag Inset
+	styles.insert self,
+		main-css:
+			background: 'white'
+			border: '1px solid'
+			border-top-color: '#000'
+			border-left-color: '#000'
+			border-bottom-color: '#dfdfdf'
+			border-right-color: '#dfdfdf'
+
+			"& > .body":
+				border: '1px solid'
+				border-top-color: '#808080'
+				border-left-color: '#808080'
+				border-bottom-color: '#fff'
+				border-right-color: '#fff'
+				padding: "10px"
+
+	def body
+		<@body>
+
+	def setContent content, type
+		body.setChildren(content, type)
+		self
+
+	def render
+		<self.{@main-css}>
+			body
+
 tag App
 	prop db
 	prop modal
@@ -344,8 +373,14 @@ tag OrderList
 		data
 
 	styles.insert self,
+		main-css:
+			margin: "18px 0"
+			flex: 1
+
+			"& > .Inset":
+				flex: 1
+
 		header-css:
-			margin-top: "18px"
 			font-weight: "bold" 
 
 		order-css:
@@ -357,7 +392,7 @@ tag OrderList
 				margin-right: "18px"
 
 	def render
-		<self>
+		<self.{@main-css}> <Inset>
 			<div .{@header-css}> "Latest orders"
 			if !orders
 				<div> "Loading…"
