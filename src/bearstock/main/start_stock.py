@@ -1,7 +1,7 @@
 
-from bearstock.stock import Database
+from bearstock.stock import DATABASE_FILE
+from bearstock.database import Database
 
 def main(argv=None):
-    db = Database.default()
-    db.ensure_prices()
+    db = Database(DATABASE_FILE)
 
