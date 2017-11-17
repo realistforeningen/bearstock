@@ -21,6 +21,7 @@ var grow = styles.create flex: 1
 tag Window
 	styles.insert self,
 		main-css:
+			margin: "20px"
 			background: '#bfbfbf'
 			padding: '5px'
 			border: '1px solid'
@@ -28,6 +29,7 @@ tag Window
 			border-left-color: '#dfdfdf'
 			border-right-color: '#808080'
 			border-bottom-color: '#808080'
+			flex: 1
 
 			"& > .header":
 				background: 'linear-gradient(to right, #000080, #1084d0)'
@@ -81,6 +83,7 @@ tag Inset
 				border-bottom-color: '#fff'
 				border-right-color: '#fff'
 				padding: "10px"
+				flex: 1
 
 	def body
 		<@body>
@@ -96,6 +99,7 @@ tag Inset
 tag App
 	prop db
 	prop modal
+	prop bluescreen
 
 	styles.insert self,
 		modal-css:
@@ -143,19 +147,25 @@ tag App
 	def buyers
 		db.buyers
 
+	def superfail
+		bluescreen = <Bluescreen>
+
 	def render
 		<self .{h100}>
 			<style> styles.toString
-			<Window .{h100}>
-				<.header>
-					<p> "BearStock v2"
-				<.content>
-					<BuyView.{grow}>
-
-			if modal
-				<.{@modal-css}>
-					modal.end
-					<.backdrop :tap="cancelModal">
+			if bluescreen
+				bluescreen.end
+			else
+				<Window .{h100}>
+					<.header>
+						<p> "BearStock v2"
+					<.content>
+						<BuyView.{grow}>
+	
+				if modal
+					<.{@modal-css}>
+						modal.end
+						<.backdrop :tap="cancelModal">
 
 tag BuyView
 	styles.insert self,
@@ -480,5 +490,24 @@ tag ScrollHint
 				content
 				<Line> "End of list"
 				<.{@filler-css}>
+
+tag Bluescreen
+	styles.insert self,
+		main-css:
+			background: "blue"
+			color: "white"
+			font-weight: "bold"
+			font-family: "monospace"
+			flex: 1
+			align-items: "center"
+			justify-content: "center"
+			padding: "20px 0"
+
+			"& > p":
+				max-width: "600px"
+
+	def render
+		<self.{@main-css}>
+			<p> "A problem has been detected and Windows has been shut down to prevent damange to your life"
 
 Imba.mount(<App>, document:body)

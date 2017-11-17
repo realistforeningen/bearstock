@@ -28,7 +28,6 @@ body {
   width: 100%;
   position: fixed;
   background: #008080;
-  padding: 20px;
 }
 
 @-webkit-keyframes flash {
