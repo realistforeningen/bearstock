@@ -301,7 +301,6 @@ tag BuyerSelection
 tag OrderList
 	def orders
 		data
-		[{buyer_id: 1, product_code: "FYPA", absolute_cost: 37}]
 
 	styles.insert self,
 		main-css:
@@ -329,12 +328,10 @@ tag OrderList
 				<div> "Loading…"
 				
 			for order in orders
-				var buyer = APP.db.findBuyer(order:buyer_id)
-				if buyer
-					<div .{@order-css}>
-						<div.left> "{buyer:name} {buyer:icon}"
-						<div .{grow}>
-						<div> "{order:product_code} — {order:absolute_cost} NOK"
+				<div .{@order-css}>
+					<div.left> "{order:buyer:name} {order:buyer:icon}"
+					<div .{grow}>
+					<div> "{order:product_code} — {order:price} NOK"
 
 
 tag ScrollHint

@@ -86,7 +86,8 @@ export class DB
 			headers: {'Content-Type': 'application/json'}
 			body: JSON.stringify
 				buyer_id: buyer:id
-				product: product
+				product_code: product:code
+				price: product:current_price
 		await req
 		fetchLoop
 
