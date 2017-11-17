@@ -3,10 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
+from bearstock.price_logic_table import PriceLogicBasic
+
 from bearstock.products import PRODUCTS
-from bearstock.price_logic_old import PriceLogicOld
-from bearstock.price_logic import PriceLogicBasic
-from bearstock.price_logic_fancy import PriceLogic
 
 
 def buyer(N=30):
@@ -30,16 +29,12 @@ def simulate():
     product_dict = PRODUCTS
 
     for i, buy_list in enumerate(buyer()):
-        # pl = PriceLogicOld(
-        # pl = PriceLogicBasic(
-        pl = PriceLogic(
+        pl = PriceLogicBasic(
             current_surplus=surplus,
             current_period_id=i,
             period_duration=1,
-            periods_left=54 - i
+            periods_left=5000 - i
         )
-        if i == 20:
-            break
 
         for product in product_dict:
             args = PRODUCTS[product]

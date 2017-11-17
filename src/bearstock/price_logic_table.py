@@ -8,8 +8,6 @@ from typing import (
     Tuple,
 )
 
-from .parameters import Params
-
 ## logic
 
 class PriceLogicBase:
@@ -50,7 +48,7 @@ class PriceLogicBase:
             products_left: int,
             product_type: float,
             price_data: List[Dict[str, float]],
-            params: Params=None
+            params=None
     ) -> None:
         """
         Parameters
@@ -103,7 +101,7 @@ class PriceLogicBase:
                 sold_products/float(self.total_products_sold) if self.total_products_sold > 0 else 0
             ),
             'p': (
-                params if params is not None else Params()
+                None
             ),
         }
 
@@ -116,11 +114,6 @@ class PriceLogicBase:
             adjustment is zero.
         """
         adjustments = self._adjust_deficit()    # Compute change in price
-        # for code in self.products:
-        #     product = self.products[code]
-        #     if product['base_price'] + adjustments[code] < product['p'].min_price:
-        #         # Is adjustment the new price, or the change in price?
-        #         adjustments[code] = product["p"].min_price
         return adjustments
 
 
@@ -128,68 +121,39 @@ class PriceLogicBasic(PriceLogicBase):
     def _adjust_deficit(self) -> Dict[str, float]:
         periods_left = max(1, self.periods_left)    # Avoid division by zero
 
-        subsidy_this_tick = self.current_surplus/max(1, self.periods_left)
         expected_sales = self._expected_sales()     # numver of beers
         total_expected_sales = max(1, sum(expected_sales.values()))
+        target_deficit = self._get_subsidy()
 
-        adjustment_weights = self._compute_adjustments()
+        adjustments = self._compute_adjustments()
 
         min_price = 20
         max_price = 200
-
-        adjustments = {code: adjustment_weights[code] for code in adjustment_weights}
         
-        deficit_this_tick = self._compute_deficit(adjustment_weights)
-
-        maxiter = 10
-        niter = 0
-        """
-        print(deficit, subsidy_this_tick)
+        deficits = {
+            code: self._get_current_price(code) + adjustments[code] for code in adjustments
+        }
+        deficits = {}
         for code in self.products:
-              # The current price is
-            current_price = self._get_current_price(code)
+            deficits[code] = self._get_current_price(code) + adjustments[code]
+            deficits[code] *= self._expected_sales()[code]
 
-            # I am currently subsidisuoiing the beer by this much
-            current_subsidy = self.products[code]["base_price"] - current_price
+        total_deficits = sum(deficits.values())
+        if total_deficits == 0:
+            total_deficits = 1
 
-            # I want to subsidise by this much
-            subsidy_per_beer = subsidy_this_tick/total_expected_sales*expected_sales[code]
+        correction_weights = {
+            code: 1 - deficits[code]/total_deficits for code in adjustments
+        }
 
-            # # Change in subsidy
-            delta_subsidy = subsidy_per_beer - current_subsidy
-
-            # adjustment if not violating min/max price
-            tmp_adjustment = adjustment_weights[code] - delta_subsidy
-
-            adjustments[code] = tmp_adjustment
-            if current_price + tmp_adjustment <= min_price or \
-                    current_price + tmp_adjustment >= max_price:
+        for code in adjustments:
+            if self._get_current_price(code) + adjustments[code] < min_price:
                 adjustments[code] = 0
-        """
-       
-        """
-        adjustments = {}
-        for code in self.products:
-            # The current price is
-            current_price = self._get_current_price(code)
-
-            # I am currently subsidisuoiing the beer by this much
-            current_subsidy = self.products[code]["base_price"] - current_price
-
-            # I want to subsidise by this much
-            subsidy_per_beer = subsidy_this_tick/total_expected_sales*expected_sales[code]
-
-            # Change in subsidy
-            delta_subsidy = subsidy_per_beer - current_subsidy
-
-            # adjustment if not violating min/max price
-            tmp_adjustment = adjustment_weights[code] - delta_subsidy
-
-            adjustments[code] = tmp_adjustment
-            if current_price + tmp_adjustment <= min_price or \
-                    current_price + tmp_adjustment >= max_price:
+            elif self._get_current_price(code) + adjustments[code] > max_price: 
                 adjustments[code] = 0
-        """
+
+            adjustments[code] *= correction_weights[code]
+
         return adjustments
 
     def _compute_deficit(self, prices):
@@ -211,23 +175,12 @@ class PriceLogicBasic(PriceLogicBase):
         return sum(new_price.values())
 
     def _get_subsidy(self) -> float:
-        total_subsidy = self.current_surplus/max(1, periods_left)
-        return total_subsidy/self._estimate_total_sales()
+        total_subsidy = self.current_surplus/max(1, self.periods_left)
+        estimate_total_sales = max(1, sum(self._expected_sales().values()))
+        return total_subsidy/estimate_total_sales
 
     def _compute_weight(self, code: str) -> float:
         current_price = self._get_current_price(code)
-        base_price = self.products[code]["base_price"]
-        # base_adjustment = abs(current_price - base_price)
-        base_adjustment = 20
-
-        adjustment_table = [
-            -5,
-            -2,
-            1,
-            5,
-            10,
-        ]
-
 
         num_lookback_ticks = 5
         units_sold = self._total_sold(num_lookback_ticks)[code]
@@ -240,18 +193,6 @@ class PriceLogicBasic(PriceLogicBase):
             return 5
         if units_sold > 10:
             return 10
-        # total_sold = max(1, sum(units_sold.values()))
-        # frac = units_sold[code]/total_sold/100
-
-        # if frac < 0.05:
-        #     return adjustment_table[0]
-        # elif frac < 0.1:
-        #     return adjustment_table[1]
-        # elif frac < 0.2:
-        #     return adjustment_table[2]
-        # elif frac < 0.3:
-        #     return adjustment_table[3]
-        return adjustment_table[4]
 
     def _compute_adjustments(self) -> Dict[str, float]:
         """This is where the magic happens."""
