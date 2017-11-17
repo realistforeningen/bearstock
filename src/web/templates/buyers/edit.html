@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>  
+  <title>BearStock</title>
+</head>
+<body>
+
+  <div class="buyer-edit container">
+    <button>Save</button>
+    <label>ID</label>
+    <p>#{{ buyer.uid }}</p>
+    <label>Name</label>
+    <input type="text" name="name" value="{{ buyer.name }}">
+    <label>Username</label>
+    <input type="text" name="username">
+    <label>Icon</label>
+    <div id="emoji"></div>
+  </div>
+  <script src="/static/assets/app.js"></script>
+  <script>
+    insertStyles();
+  	startEmojiPicker(emoji, "{{ buyer.icon }}");
+  </script>
+</body>
+</html>
+

@@ -77,7 +77,6 @@ export tag Register
 
 	def render
 		<self .{@main-css}>
-			<style> styles.toString
 			if bluescreen
 				bluescreen.end
 			else
@@ -302,6 +301,7 @@ tag BuyerSelection
 tag OrderList
 	def orders
 		data
+		[{buyer_id: 1, product_code: "FYPA", absolute_cost: 37}]
 
 	styles.insert self,
 		main-css:

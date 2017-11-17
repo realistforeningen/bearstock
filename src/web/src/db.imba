@@ -33,9 +33,9 @@ export class DB
 
 	def fetchAll
 		var data = await Promise.all [
-			fetch("/products").then(tojson)
-			fetch("/buyers").then(tojson)
-			fetch("/orders").then(tojson)
+			fetch("/products.json").then(tojson)
+			fetch("/buyers.json").then(tojson)
+			fetch("/orders.json").then(tojson)
 		]
 		updateProducts(data[0])
 		buyers = data[1]:buyers
