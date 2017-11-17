@@ -11,7 +11,6 @@ export class DB
 	prop products
 	prop buyers
 	prop orders
-	prop priceId
 	prop error
 
 	def initialize(options = {})
@@ -28,16 +27,13 @@ export class DB
 	def start
 		fetchLoop
 
-	def isClosed
-		products && !priceId
-
 	def fetchAll
 		var data = await Promise.all [
 			fetch("/products.json").then(tojson)
 			fetch("/buyers.json").then(tojson)
 			fetch("/orders.json").then(tojson)
 		]
-		updateProducts(data[0])
+		products = data[0]:products
 		buyers = data[1]:buyers
 		orders = data[2]:orders
 
@@ -52,35 +48,7 @@ export class DB
 				sync
 				@setTimeout = setTimeout(&, 10*1000) do fetchLoop
 
-	def updateProductsNow data
-		products = data:products
-		priceId = data:price_id
-		sync
-
-	def updateProducts data
-		if !priceId or !@updateDelay
-			updateProductsNow(data)
-			return
-
-		if priceId == data:price_id
-			return
-
-		products = null
-		priceId = null
-		sync
-
-		setTimeout(&, @updateDelay) do
-			updateProductsNow(data)
-
-	def findBuyer id
-		for buyer in buyers
-			if buyer:id == id
-				return buyer
-		return null
-
 	def order product, buyer
-		orders = null
-
 		let req = fetch "/orders"
 			method: 'post'
 			headers: {'Content-Type': 'application/json'}
