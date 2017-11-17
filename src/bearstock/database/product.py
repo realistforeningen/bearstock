@@ -140,7 +140,7 @@ class Product(Model):
         """
         if not self.is_bound():
             raise BearModelError('product not connected to the database')
-        return self.get_db().get_product_price_adjustment(self)
+        return self.get_db().get_product_historic_prices(self)
 
     def as_dict(self, *, with_derived: bool = False) -> Dict[str, Any]:
         """Return the product as a dictionary.
