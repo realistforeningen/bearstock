@@ -399,7 +399,7 @@ class Database:
             return products
         return self.exe((
             'SELECT code, name, producer, base_price, quantity, type, tags, hidden '
-            'FROM products '
+            'FROM products '),
             callable=action
         )
 
