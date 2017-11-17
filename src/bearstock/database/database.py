@@ -684,6 +684,27 @@ class Database:
             callable=action
         )
 
+    def get_last_order_by(self, buyer: Buyer) -> Optional[Order]:
+        def action(cursor) -> Optional[Order]:
+            for row in cursor:
+                return Order(
+                    uid=row['id'],
+                    buyer=buyer,
+                    product=self.get_product(row['product_code']),
+                    relative_cost=row['relative_cost'],
+                    created_at=row['created_at'],
+                    database=self,
+                )
+
+        return self.exe((
+            'SELECT id, product_code, relative_cost, created_at '
+            'FROM orders '
+            'WHERE buyer_id = :uid '
+            'ORDER BY created_at DESC LIMIT 1'),
+            args={'uid': buyer.uid},
+            callable=action
+        )
+
     # price methods
 
     def do_tick(self, price_adjustments: Dict[str, Any], *, tick_no: Optional[int] = None) -> None:
