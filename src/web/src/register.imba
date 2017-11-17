@@ -10,7 +10,8 @@ import h100, grow, winColors from './styling'
 export tag Register
 	prop db
 	prop modal
-	prop bluescreen
+	prop override
+	prop currentError watch: yes
 
 	styles.insert self,
 		main-css:
@@ -47,15 +48,12 @@ export tag Register
 		APP = self
 		db = DB.new(updateDelay: 500)
 		db:sync = do
-			if db.error
-				bluescreen = <Bluescreen error=db.error>
-			else
-				bluescreen = null
+			currentError = db.error
 			render
 		db.start
 
 	def mount
-		schedule
+		schedule(interval: 100)
 
 	def products
 		db.products
@@ -69,16 +67,19 @@ export tag Register
 		else
 			modal = null
 
+	def currentErrorDidSet new
+		if new
+			override = <Bluescreen error=new>
+		else
+			override = null
+
 	def buyers
 		db.buyers
 
-	def superfail
-		bluescreen = <Bluescreen>
-
 	def render
 		<self .{@main-css}>
-			if bluescreen
-				bluescreen.end
+			if override
+				override.end
 			else
 				<Window .{grow}>
 					<.header>
