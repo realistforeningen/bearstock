@@ -13,7 +13,7 @@ def parse_products_csv(filename):
         csvfile.seek(0)
         # parse
         for row in csv.DictReader(csvfile, restval='extratags', dialect=dialect):
-            product = {'code': '', 'tags': []}
+            product = {'code': '', 'tags': [], 'hidden': False}
             for key, value in row.items():
                 if key:
                     # ensure unicode
@@ -33,7 +33,7 @@ def parse_products_csv(filename):
                     else:
                         product[key.replace(' ', '_')] = value
                 else:  # extra values are stored under a None key
-                    product['tags'].append(value)
+                    product['tags'] += value
             products.append(product)
     return products
 
