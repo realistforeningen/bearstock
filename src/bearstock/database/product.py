@@ -77,7 +77,11 @@ class Product(Model):
 
     @property
     def base_price(self) -> Optional[int]:
-        """Product base_price."""
+        """Product base_price.
+
+        Note:
+            The value is a integer multiple of 1 currency.
+        """
         return self._base_price
     @base_price.setter
     def base_price(self, base_price: int) -> None:
@@ -127,7 +131,7 @@ class Product(Model):
         """
         if not self.is_bound():
             raise BearModelError('product not connected to the database')
-        return self.base_price + self.price_adjustment*100
+        return int(round(self.base_price + self.price_adjustment/100))
 
     @property
     def timeline(self) -> 'ProductPriceAdjustments':

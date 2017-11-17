@@ -60,7 +60,11 @@ class Order(Model):
 
     @property
     def relative_cost(self) -> Optional[int]:
-        """Cost relative the the product base price."""
+        """Cost relative the the product base price.
+
+        Note:
+            The value is a integer multiple of 1 currency.
+        """
         return self._relative_cost
 
     @property

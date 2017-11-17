@@ -373,31 +373,33 @@ class Database:
             callable=action
         )
 
-    def get_all_products(self, *, bound=True) -> List[Product]:
+    def get_all_products(self, *, include_hidden: bool = True, bound=True) -> List[Product]:
         """Get all products from the database.
 
         Args:
+            include_hidden: Include hidden products. Defaults to True.
             bound: If True bind the products to this database; else bind to nothing.
                 Defaults to True.
         """
         def action(cursor) -> List[Product]:
             products: List[Product] = []
             for row in cursor:
-                products.append(Product(
-                    code=row['code'],
-                    name=row['name'],
-                    producer=row['producer'],
-                    base_price=row['base_price'],
-                    quantity=row['quantity'],
-                    type=row['type'],
-                    tags=row['tags'].split('|'),
-                    hidden=row['hidden'],
-                    database=self if bound else None,
-                ))
+                if include_hidden or not row['hidden']:
+                    products.append(Product(
+                        code=row['code'],
+                        name=row['name'],
+                        producer=row['producer'],
+                        base_price=row['base_price'],
+                        quantity=row['quantity'],
+                        type=row['type'],
+                        tags=row['tags'].split('|'),
+                        hidden=row['hidden'],
+                        database=self if bound else None,
+                    ))
             return products
         return self.exe((
             'SELECT code, name, producer, base_price, quantity, type, tags, hidden '
-            'FROM products '),
+            'FROM products '
             callable=action
         )
 
@@ -687,6 +689,12 @@ class Database:
     def do_tick(self, price_adjustments: Dict[str, Any], *, tick_no: Optional[int] = None) -> None:
         """Insert a new set of price adjustments into the database and increment the ticks.
 
+        Args:
+            price_adjustments: The new price adjustments.
+                *NB*: The unit is a multiple of ``1/100`` of a currency.
+            tick_no: Use the number given as the next tick number. Only use this
+                if you know what you are doing.
+
         Raises:
             BearDatabaseError: In the insert operation failed.
         """
@@ -756,7 +764,7 @@ class Database:
 
                 timestamps.append(row['timestamp'])
                 adjustments.append(adj[code])
-                prices.append(base_price + adj[code])
+                prices.append(int(round(base_price + adj[code]/100)))
 
             return timestamps, adjustments, prices
 
@@ -793,7 +801,7 @@ class Database:
                 for code in adj:
                     products[adj].timestamps.append(row['timestamp'])
                     products[adj].adjustments.append(adj[code])
-                    products[adj].prices.append(base_prices[code] + adj[code])
+                    products[adj].prices.append(int(round(base_prices[code] + adj[code]/100)))
 
             return products
 
