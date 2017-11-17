@@ -72,3 +72,50 @@ def orders_create():
     g.db.insert_order(buyer=buyer, product=product, relative_cost=(price-product.base_price))
     return jsonify(ok=True)
 
+
+## Plots
+
+
+from bokeh.embed import components
+from bokeh.plotting import figure
+from bokeh.models import Legend
+from bokeh.resources import INLINE
+from bokeh.util.string import encode_utf8
+from bokeh.layouts import layout
+from bokeh.palettes import Category20
+
+@app.route('/stats')
+def stats():
+    fig = figure(title="Stocks")
+
+    fig.xaxis.axis_label = 'Time'
+    fig.yaxis.axis_label = 'Price (NOK)'
+    fig.toolbar.logo = None
+    fig.toolbar_location = None
+
+    products = g.db.get_all_products()
+
+    legends = []
+
+    palette = Category20[20]
+
+    for idx, p in enumerate(products):
+        l = fig.line(p.timeline[0], p.timeline[2], line_width=1, line_color=palette[idx % len(palette)])
+        legends.append((p.code, [l]))
+
+    js_resources = INLINE.render_js()
+    css_resources = INLINE.render_css()
+
+    fig.add_layout(Legend(items=legends), 'right')
+
+
+    script, div = components(fig)
+
+    return render_template(
+        'stats.html',
+        plot_script=script,
+        plot_div=div,
+        js_resources=js_resources,
+        css_resources=css_resources,
+    )
+

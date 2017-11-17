@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>  
-  <script src="/static/assets/stats.js"></script>
   <title>BearStock</title>
 </head>
 <body>
-  <script>startApp()</script>
+	{{ js_resources|safe }}
+	{{ css_resources|safe }}
+	{{ plot_div|safe }}
+	{{ plot_script|safe }}
 </body>
 </html>
 
