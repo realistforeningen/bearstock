@@ -68,7 +68,7 @@ class Order(Model):
         """Timestamp of the order."""
         return self._created_at
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self, *, with_derived: bool = False) -> Dict[str, Any]:
         """Return the order a dictionary.
 
         This method is for interoperability with the web server parts of BearStock.
@@ -76,15 +76,21 @@ class Order(Model):
         ``relative_cost``, and ``created_at``.
 
         Args:
-            with_derived: Include derived order fields: ``absolute_cost``.
+            with_derived: Include derived product fields: ``buyer``, ``product``,
+                ``price``.
+                Derived fields requires the product to be connected to a database.
         """
-        # TODO derived
+        product = None if not with_derived else self.product
         return dict(
             id=self._uid,
             buyer_id=self._buyer_id,
             product_code=self._product_code,
             relative_cost=self._relative_cost,
             created_at=self._created_at,
+            # derived fields
+            buyer=None if not with_derived else self.buyer.as_dict(),
+            product=None if not with_derived else product.as_dict(with_derived=True),
+            price=None if not with_derived else (product.base_price + self.relative_cost),
         )
 
     def synchronize(self) -> None:

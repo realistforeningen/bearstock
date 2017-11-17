@@ -427,7 +427,7 @@ class Database:
 
     def insert_order(self, *,
                      buyer: Buyer, product: Product,
-                     relativ_cost: int, created_at: Optional[int] = None) -> Order:
+                     relative_cost: int, created_at: Optional[int] = None) -> Order:
         """Insert a new order into the database.
 
         Args:
@@ -454,10 +454,10 @@ class Database:
             f')'),
             callable=action,
             args={
-                'buyer': buyer_id,
-                'product': product_id,
+                'buyer': buyer.uid,
+                'product': product.code,
                 'relative_cost': relative_cost,
-                'created_at': created_at
+                'created_at': created_at,
             })
         return self.get_order(insered_id)
 
@@ -597,7 +597,7 @@ class Database:
         def action(cursor) -> List[Order]:
             order: List[Order] = []
             for row in cursor:
-                order.append(Buyer(
+                order.append(Order(
                     uid=row['id'],
                     buyer=self.get_buyer(row['buyer_id']),
                     product=self.get_product(row['product_code']),

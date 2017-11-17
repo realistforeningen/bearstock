@@ -46,23 +46,17 @@ def buyers():
     buyers = g.db.get_all_buyers()
     return jsonify(buyers=[ buyer.as_dict() for buyer in buyers ])
 
-@app.route('/orders')  # TODO
+@app.route('/orders')
 def orders_list():
     orders = g.db.get_latest_orders(count=10)
-    return jsonify(orders=[  order.as_dict() for order in orders ])
+    return jsonify(orders=[  order.as_dict(with_derived=True) for order in orders ])
 
-@app.route('/orders', methods=['POST'])  # TODO
+@app.route('/orders', methods=['POST'])
 def orders_create():
     body = request.get_json()
-    product = body["product"]
-    # with g.db.conn:
-    #     g.db.insert(
-    #         "orders",
-    #         buyer_id=body["buyer_id"],
-    #         product_code=product["code"],
-    #         price_id=product["price_id"],
-    #         absolute_cost=product['absolute_cost'],
-    #         relative_cost=product['relative_cost']
-    #     )
+    product = g.db.get_product(body['product_code'])
+    buyer = g.db.get_buyer(body['buyer_id'])
+    price = body['price']
+    g.db.insert_order(buyer=buyer, product=product, relative_cost=(price-product.base_price))
     return jsonify(ok=True)
 
