@@ -27,3 +27,40 @@ body {
   height: 100%;
   width: 100%;
 }
+
+.container {
+  margin: 20px auto;
+  max-width: 800px;
+}
+
+.buyer-edit {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-gap: 20px;
+
+  justify-content: center;
+}
+
+.buyer-edit input {
+  padding: 0.5em 1em;
+}
+
+.buyer-edit label {
+  padding: 0.5em;
+  grid-column: 1;
+}
+
+.buyer-edit p {
+  padding: 0.5em;
+}
+
+.buyer-edit button {
+  grid-column: 3;
+  border-radius: 5px;
+  padding: 0.5em 1em;
+}
+
+#emoji {
+  grid-column: 1 / -1;
+}
+

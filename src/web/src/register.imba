@@ -18,7 +18,9 @@ export tag Register
 			position: "fixed"
 			width: "100%"
 			height: "100%"
-			padding: "20px"
+
+			"& > .Window":
+				margin: "20px"
 
 		modal-css:
 			position: "absolute"
@@ -44,7 +46,12 @@ export tag Register
 	def setup
 		APP = self
 		db = DB.new(updateDelay: 500)
-		db:sync = do render
+		db:sync = do
+			if db.error
+				bluescreen = <Bluescreen error=db.error>
+			else
+				bluescreen = null
+			render
 		db.start
 
 	def mount
@@ -70,7 +77,6 @@ export tag Register
 
 	def render
 		<self .{@main-css}>
-			<style> styles.toString
 			if bluescreen
 				bluescreen.end
 			else
@@ -295,6 +301,7 @@ tag BuyerSelection
 tag OrderList
 	def orders
 		data
+		[{buyer_id: 1, product_code: "FYPA", absolute_cost: 37}]
 
 	styles.insert self,
 		main-css:
@@ -407,6 +414,8 @@ tag ScrollHint
 				<.{@filler-css}>
 
 tag Bluescreen
+	prop error
+
 	styles.insert self,
 		main-css:
 			background: "blue"
@@ -418,9 +427,13 @@ tag Bluescreen
 			justify-content: "center"
 			padding: "20px 0"
 
-			"& > p":
+			"& p":
+				margin-bottom: "1em"
 				max-width: "600px"
 
 	def render
 		<self.{@main-css}>
-			<p> "A problem has been detected and Windows has been shut down to prevent damange to your life"
+			<div>
+				<p> "A problem has been detected and Windows has been shut down to prevent damage to your life"
+				if error
+					<p> "Error message: {error}"

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>  
+  <title>BearStock</title>
+</head>
+<body>
+
+  <div class="buyer-list container">
+    <ul>
+      {% for buyer in buyers %}
+        <li><a href="/buyers/{{ buyer.uid }}">{{ buyer.name }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <script src="/static/assets/app.js"></script>
+  <script>
+    insertStyles();
+  </script>
+</body>
+</html>
+

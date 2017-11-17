@@ -35,19 +35,31 @@ def signup():
 
     return render_template('signup.html')
 
-@app.route('/products')
-def products():
+@app.route('/buyers')
+def buyers_list():
+    buyers = g.db.get_all_buyers()
+    return render_template('buyers/list.html', buyers=buyers)
+
+@app.route('/buyers/<id>')
+def buyers_edit(id):
+    buyer = g.db.get_buyer(int(id))
+    return render_template('buyers/edit.html', buyer=buyer)
+
+
+@app.route('/products.json')
+def products_json():
     tick_no = g.db.get_tick_number()
     products = [p.as_dict(with_derived=True) for p in g.db.get_all_products()]
     return jsonify(products=products, tick_no=tick_no)
 
-@app.route('/buyers')
-def buyers():
+@app.route('/buyers.json')
+def buyers_json():
     buyers = g.db.get_all_buyers()
     return jsonify(buyers=[ buyer.as_dict() for buyer in buyers ])
 
-@app.route('/orders')
-def orders_list():
+
+@app.route('/orders.json')
+def orders_json():
     orders = g.db.get_latest_orders(count=10)
     return jsonify(orders=[  order.as_dict(with_derived=True) for order in orders ])
 
