@@ -886,7 +886,7 @@ ieee754@^1.1.4:
 
 imba-styles@judofyr/imba-styles:
   version "0.1.1"
-  resolved "https://codeload.github.com/judofyr/imba-styles/tar.gz/1f73be4b1d1f38f4635ae72ed1a2063cd525daad"
+  resolved "https://codeload.github.com/judofyr/imba-styles/tar.gz/eca8edef30807335ad404e2881a849d5c425a166"
 
 imba@^1.0.0:
   version "1.0.0"
