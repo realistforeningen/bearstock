@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 import pickle
 import sqlite3
+from collections import namedtuple
 
 from .errors import BearDatabaseError, BearModelError
 from .buyer import Buyer
@@ -17,6 +18,11 @@ __all__ = [
 # custom type descriptions
 DbArgs = Union[Tuple[Any], Dict[str, Any]]
 T = TypeVar('T')
+
+# collection types
+ProductPriceAdjustments = namedtuple(
+    'ProductPriceAdjustments', ['timestamps', 'adjustments', 'prices']
+)
 
 
 class Database:
@@ -717,6 +723,84 @@ class Database:
         if code in adjustments:
             return adjustments[code]
         raise ValueError(f'no product with code {code} in database prices')
+
+    def get_product_historic_prices(self, product: Union[str, Product]) -> Tuple[List[int], List[int], List[int]]:
+        """Get historic prices and price adjustments for a product.
+
+        Args:
+            product: Either a string product code, or a actual product.
+
+        Returns:
+            A namedtuple with three elements: ``timestamps``, ``adjustments``, and ``prices``.
+
+        Raises:
+            BearDatabaseError: If the database query failed.
+            ValueError: If no product with ``code`` exists.
+        """
+        if isinstance(product, str):
+            product = self.get_product(code)
+        elif isinstance(product, Product):
+            if not product.is_bound():
+                product = self.get_product(code)
+        else:
+            raise ValueError('product not a product or product code')
+
+        code, base_price = product.code, product.base_price
+
+        def action(cursor: sqlite3.Cursor) -> Tuple[List[int], List[int], List[int]]:
+            timestamps = []
+            adjustments = []
+            prices = []
+            for row in cursor:
+                adj = pickle.loads(row['price_adjustments'])
+
+                timestamps.append(row['timestamp'])
+                adjustments.append(adj[code])
+                prices.append(base_price + adj[code])
+
+            return timestamps, adjustments, prices
+
+        return self.exe(
+            'SELECT price_adjustments, timestamp FROM ticks',
+            callable=action
+        )
+
+    def get_all_product_historic_prices(self, *, include_hidden: bool = True
+                                        ) -> Dict[str, ProductPriceAdjustments]:
+        """Get historic prices and price adjustments for all products.
+
+        Args:
+            include_hidden: Include hidden products.
+
+        Returns:
+            A dictionary mapping from product code to a namedtuple with three elements:
+                ``timestamps``, ``adjustments``, and ``prices``.
+
+        Raises:
+            BearDatabaseError: If the database query failed.
+        """
+        base_prices = {
+            product.code: product.base_price
+                for product in self.get_all_products() if (hidden or product.hidden)
+        }
+        def action(cursor: sqlite3.Cursor) -> Dict[str, ProductPriceAdjustments]:
+            products = {
+                code: ProductPriceAdjustments for code in base_prices
+            }
+            for row in cursor:
+                adj = pickle.loads(row['price_adjustments'])
+
+                for code in adj:
+                    products[adj].timestamps.append(row['timestamp'])
+                    products[adj].adjustments.append(adj[code])
+                    products[adj].prices.append(base_prices[code] + adj[code])
+
+            return products
+
+        return self.exe(
+            'SELECT price_adjustments, timestamp FROM ticks',
+            callable=action
+        )
 
     # various methods
 

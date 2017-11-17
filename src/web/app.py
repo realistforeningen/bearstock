@@ -35,35 +35,16 @@ def signup():
 
     return render_template('signup.html')
 
-@app.route('/stats')
-def stats():
-    return render_template('stats.html')
-
 @app.route('/products')
 def products():
     tick_no = g.db.get_tick_number()
     products = [p.as_dict(with_derived=True) for p in g.db.get_all_products()]
-    return jsonify(products=products, price_id=tick_no)
+    return jsonify(products=products, tick_no=tick_no)
 
 @app.route('/buyers')
 def buyers():
     buyers = g.db.get_all_buyers()
     return jsonify(buyers=[ buyer.as_dict() for buyer in buyers ])
-
-@app.route('/prices')  # TODO se kladdebok
-def prices():
-    codes = request.args.getlist('code')
-    products = [
-        p.as_dict(with_derived=True)
-            for p in g.db.get_all_products()
-            if p.code in codes
-    ]
-    return jsonify({})
-
-@app.route('/stats/buyers')  # TODO
-def stats_buyers():
-    # stats = get_top_bot(5, g.db)
-    return jsonify(buyers=stats)
 
 @app.route('/orders')  # TODO
 def orders_list():
@@ -85,8 +66,3 @@ def orders_create():
     #     )
     return jsonify(ok=True)
 
-@app.route('/buyer')
-def buyer():
-    buyer_id = int(request.args.get('id', -1))
-    buyer = g.db.get_buyer(buyer_id)
-    return jsonify(buyer=buyer.as_dict())

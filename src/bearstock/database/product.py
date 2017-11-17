@@ -129,6 +129,19 @@ class Product(Model):
             raise BearModelError('product not connected to the database')
         return self.base_price + self.price_adjustment*100
 
+    @property
+    def timeline(self) -> 'ProductPriceAdjustments':
+        """Get a namedtuple with three elements: ``timestamps``, ``adjustments``, and
+        ``prices``.
+
+        Raises:
+            BearDatabaseError: If the database query failed.
+            BearModelError: If the product is not connected to a database.
+        """
+        if not self.is_bound():
+            raise BearModelError('product not connected to the database')
+        return self.get_db().get_product_price_adjustment(self)
+
     def as_dict(self, *, with_derived: bool = False) -> Dict[str, Any]:
         """Return the product as a dictionary.
 
@@ -154,6 +167,7 @@ class Product(Model):
             # derived
             current_price=None if not with_derived else self.current_price,
             price_adjustment=None if not with_derived else self.price_adjustment,
+            timeline=None if not with_derived else self.timeline,
         )
 
     def synchronize(self) -> None:
