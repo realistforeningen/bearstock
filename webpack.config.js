@@ -2,7 +2,7 @@ var webpack = require('webpack');
 
 module.exports = {
   entry: {
-    register: './src/web/src/register',
+    app: './src/web/src/app',
   },
 
   output: {

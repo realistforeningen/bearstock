@@ -1,107 +1,25 @@
-var Imba = require 'imba'
-
-require 'whatwg-fetch'
-extern fetch
 var styles = require 'imba-styles'
-
-var Color = require 'color'
-
-require "./normalize.css"
-require "./default.css"
 
 import ProductCollection from "./filters"
 import DB from "./db"
 
-let colors =
-	background: Color("#C9D6DF")
+import Window, Button, Inset from "./win98"
 
-var h100 = styles.create height: '100%'
-var grow = styles.create flex: 1
+import h100, grow, winColors from './styling'
 
-tag Window
-	styles.insert self,
-		main-css:
-			margin: "20px"
-			background: '#bfbfbf'
-			padding: '5px'
-			border: '1px solid'
-			border-top-color: '#dfdfdf'
-			border-left-color: '#dfdfdf'
-			border-right-color: '#808080'
-			border-bottom-color: '#808080'
-			flex: 1
-
-			"& > .header":
-				background: 'linear-gradient(to right, #000080, #1084d0)'
-				color: '#fff'
-				padding: '0.5em 1em'
-				flex-direction: 'row'
-
-			"& > .content":
-				flex: 1
-	def render
-		<self.{@main-css}>
-
-tag Button < button
-	styles.insert self,
-		main-css:
-			color: '#1E2022'
-			margin: "5px 0"
-			padding: "0.5em"
-
-			background: "inherit"
-			border-radius: 0
-
-			border: '1px solid'
-			border-top-color: '#dfdfdf'
-			border-left-color: '#dfdfdf'
-			border-right-color: '#808080'
-			border-bottom-color: '#808080'
-
-			font-weight: "bold"
-
-			"&.cancel":
-				font-weight: "normal"
-
-	def render
-		<self.{@main-css}>
-
-tag Inset
-	styles.insert self,
-		main-css:
-			background: 'white'
-			border: '1px solid'
-			border-top-color: '#000'
-			border-left-color: '#000'
-			border-bottom-color: '#dfdfdf'
-			border-right-color: '#dfdfdf'
-
-			"& > .body":
-				border: '1px solid'
-				border-top-color: '#808080'
-				border-left-color: '#808080'
-				border-bottom-color: '#fff'
-				border-right-color: '#fff'
-				padding: "10px"
-				flex: 1
-
-	def body
-		<@body>
-
-	def setContent content, type
-		body.setChildren(content, type)
-		self
-
-	def render
-		<self.{@main-css}>
-			body
-
-tag App
+export tag Register
 	prop db
 	prop modal
 	prop bluescreen
 
 	styles.insert self,
+		main-css:
+			background: winColors:desktop
+			position: "fixed"
+			width: "100%"
+			height: "100%"
+			padding: "20px"
+
 		modal-css:
 			position: "absolute"
 			height: "100%"
@@ -151,12 +69,12 @@ tag App
 		bluescreen = <Bluescreen>
 
 	def render
-		<self .{h100}>
+		<self .{@main-css}>
 			<style> styles.toString
 			if bluescreen
 				bluescreen.end
 			else
-				<Window .{h100}>
+				<Window .{grow}>
 					<.header>
 						<p> "BearStock v2"
 					<.content>
@@ -186,24 +104,17 @@ tag BuyView
 				max-width: "300px"
 
 		box-css:
-			color: '#1E2022'
 			margin: "5px 0"
-			padding: "1em 0.5em"
+			padding: "1em 10px"
 			flex: '0 0 auto'
 
-			border: '1px solid'
-			border-top-color: '#dfdfdf'
-			border-left-color: '#dfdfdf'
-			border-right-color: '#808080'
-			border-bottom-color: '#808080'
-
 			"&.next":
-				background: colors:background.darken(0.2).hex
+				background: winColors:g2.darken(0.1)
 				text-align: 'center'
 
 			"& .header":
 				flex-direction: "row"
-				font-size: "12px"
+				font-size: "14px"
 
 			"& .code":
 				font-weight: 'bold'
@@ -265,18 +176,18 @@ tag BuyView
 		<self .{@main-css}>
 			<div .{@column-css}.sidebar> <ScrollHint> <div>
 				if collection.isFiltered
-					<div .{@box-css}.next :tap="clearFilters"> "Reset"
+					<Button.{@box-css}.next :tap="clearFilters"> "Reset"
 
 				for filter in pendingFilters
-					<div .{@box-css} :tap=["applyFilter", filter]>
+					<Button.{@box-css} :tap=["applyFilter", filter]>
 						filter
 
 				if isTruncated and !collection.spansAllProducts(pendingFilters)
-					<div .{@box-css}.next :tap="next"> "Next"
+					<Button.{@box-css}.next :tap="next"> "Next"
 
 			<div .{@column-css}> <ScrollHint.{grow}> <.{@products-css}>
 				for product in collection.toArray
-					<div.{@box-css} :tap=["buy", product]>
+					<Button.{@box-css} :tap=["buy", product]>
 						<div.header>
 							<div.code> product:code
 							<div.fill>
@@ -301,6 +212,9 @@ tag BuyProduct
 			"& > .buttons":
 				flex-direction: "row"
 				font-size: "18px"
+
+			"& .Button":
+				padding: "0.5em 1em"
 
 		accept-css:
 			margin-right: "14px"
@@ -350,8 +264,8 @@ tag BuyProduct
 					<div.right> "Buying…"
 				else
 					<div.right.buttons>
-						<Button .{@accept-css} :tap="accept"> "Accept"
-						<Button.cancel :tap="cancel"> "Cancel"
+						<Button.bold.{@accept-css} :tap="accept"> "Accept"
+						<Button :tap="cancel"> "Cancel"
 
 tag BuyerSelection
 	prop product
@@ -409,10 +323,11 @@ tag OrderList
 				
 			for order in orders
 				var buyer = APP.db.findBuyer(order:buyer_id)
-				<div .{@order-css}>
-					<div.left> "{buyer:name} {buyer:icon}"
-					<div .{grow}>
-					<div> "{order:product_code} — {order:absolute_cost} NOK"
+				if buyer
+					<div .{@order-css}>
+						<div.left> "{buyer:name} {buyer:icon}"
+						<div .{grow}>
+						<div> "{order:product_code} — {order:absolute_cost} NOK"
 
 
 tag ScrollHint
@@ -509,5 +424,3 @@ tag Bluescreen
 	def render
 		<self.{@main-css}>
 			<p> "A problem has been detected and Windows has been shut down to prevent damange to your life"
-
-Imba.mount(<App>, document:body)
