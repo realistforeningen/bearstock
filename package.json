@@ -9,6 +9,7 @@
     "whatwg-fetch": "^2.0.3"
   },
   "scripts": {
-  	"build": "imbapack"
+    "build": "imbapack",
+    "watch": "imbapack -w"
   }
 }
