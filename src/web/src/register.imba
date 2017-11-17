@@ -241,8 +241,8 @@ tag BuyView
 						<div.header>
 							<div.code> product:code
 							<div.fill>
-							<div> "{product:absolute_cost} NOK"
-						<div> "{product:brewery} {product:name}"
+							<div> "{product:current_price} NOK"
+						<div> "{product:producer} {product:name}"
 
 			<div .{@column-css}.list> <OrderList[APP.db.orders]>
 
@@ -295,12 +295,12 @@ tag BuyProduct
 			<.content.{@grid-css}>
 				<p> "Code"
 				<p> <strong> product:code
-				<p> "Brewery"
-				<p> product:brewery
+				<p> "Producer"
+				<p> product:producer
 				<p> "Name"
 				<p> product:name
 				<p> "Price"
-				<p> "{product:absolute_cost} NOK"
+				<p> "{product:current_price} NOK"
 				<p> "Buyer"
 				<p.right>
 					buyer:name
