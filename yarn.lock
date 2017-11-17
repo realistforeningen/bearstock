@@ -884,9 +884,9 @@ ieee754@^1.1.4:
   version "1.1.8"
   resolved "https://registry.yarnpkg.com/ieee754/-/ieee754-1.1.8.tgz#be33d40ac10ef1926701f6f08a2d86fbfd1ad3e4"
 
-imba-styles@judofyr/imba-styles:
+"imba-styles@git+https://github.com/judofyr/imba-styles.git":
   version "0.1.1"
-  resolved "https://codeload.github.com/judofyr/imba-styles/tar.gz/eca8edef30807335ad404e2881a849d5c425a166"
+  resolved "git+https://github.com/judofyr/imba-styles.git#eca8edef30807335ad404e2881a849d5c425a166"
 
 imba@^1.0.0:
   version "1.0.0"
