@@ -12,7 +12,7 @@ export class DB
 	prop buyers
 	prop orders
 	prop priceId
-	prop failing
+	prop error
 
 	def initialize(options = {})
 		@updateDelay = options:updateDelay
@@ -20,6 +20,7 @@ export class DB
 		@buyers = []
 		@orders = null
 		@timeout = null
+		@error = null
 
 	def sync
 		# Override
@@ -36,7 +37,6 @@ export class DB
 			fetch("/buyers").then(tojson)
 			fetch("/orders").then(tojson)
 		]
-		failing = no
 		updateProducts(data[0])
 		buyers = data[1]:buyers
 		orders = data[2]:orders
@@ -46,7 +46,8 @@ export class DB
 			clearTimeout(@timeout)
 
 		fetchAll
-			.catch(do failing = yes)
+			.then(do error = null)
+			.catch(do |err| error = err)
 			.then do
 				sync
 				@setTimeout = setTimeout(&, 10*1000) do fetchLoop
