@@ -435,3 +435,49 @@ tag Bluescreen
 				<p> "A problem has been detected and Windows has been shut down to prevent damage to your life"
 				if error
 					<p> "Error message: {error}"
+
+tag UpdateScreen
+	styles.insert self,
+		main-css:
+			margin-top: "50px"
+			align-items: "center"
+
+			"& p":
+				padding: "10px 5px"
+
+			"& .Window":
+				max-width: "600px"
+
+			"& .progress":
+				margin: "10px 20px"
+
+			"& .Inset .body":
+				flex-direction: "row"
+				flex-wrap: "wrap"
+				padding: "5px"
+				padding-top: 0
+
+			"& .blob":
+				background: "blue"
+				margin-right: "5px"
+				width: "10px"
+				height: "30px"
+				flex: "0 0 auto"
+				margin-top: "5px"
+
+	var ms = 1/1000
+	def build
+		@start = Date.now
+		@rate = 1/5 * ms # [boxes/msec]
+
+	def render
+		var count = Math.floor((Date.now - @start) * @rate)
+
+		<self.{@main-css}>
+			<Window.{grow}>
+				<.header> "Configuring update for Windows 98"
+				<.body>
+					<p> "Do not turn off computer"
+					<.progress> <Inset>
+						for i in [0 .. count]
+							<.blob> " "
