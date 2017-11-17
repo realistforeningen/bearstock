@@ -1,14 +1,13 @@
 import math
-from math import exp
 import sys
 
 from typing import (
     List,
     Dict,
     Tuple,
+    Any,
 )
 
-## logic
 
 class PriceLogicBase:
     def __init__(
@@ -16,7 +15,8 @@ class PriceLogicBase:
             current_surplus: float,
             current_period_id: int,
             period_duration: float,
-            periods_left: int
+            periods_left: int,
+            kwargs: Dict[str, Any]=None
     ) -> None:
         """
         Parameters
@@ -27,12 +27,13 @@ class PriceLogicBase:
         period_duration: Length of a period. Unit is seconds.
         periods_left: Number of periods left.
         """
+
         self.current_surplus = current_surplus
 
         # period data
         self.current_period_id = current_period_id
         self.period_duration = period_duration
-        self.periods_left = periods_left
+        self.periods_left = max(1, periods_left)
 
         # product data
         self.total_products_sold = 0
@@ -113,86 +114,84 @@ class PriceLogicBase:
         adjustments: Product code to adjustment dictionary. Missing entries means the
             adjustment is zero.
         """
-        adjustments = self._adjust_deficit()    # Compute change in price
-        return adjustments
-
-
-class PriceLogicBasic(PriceLogicBase):
-    def _adjust_deficit(self) -> Dict[str, float]:
-        periods_left = max(1, self.periods_left)    # Avoid division by zero
-
-        expected_sales = self._expected_sales()     # numver of beers
-        total_expected_sales = max(1, sum(expected_sales.values()))
-        target_deficit = self._get_subsidy()
-
-        adjustments = self._compute_adjustments()
-
         min_price = 20
         max_price = 200
-        
-        deficits = {
-            code: self._get_current_price(code) + adjustments[code] for code in adjustments
-        }
-        deficits = {}
-        for code in self.products:
-            deficits[code] = self._get_current_price(code) + adjustments[code]
-            deficits[code] *= self._expected_sales()[code]
 
-        total_deficits = sum(deficits.values())
-        if total_deficits == 0:
-            total_deficits = 1
-
-        correction_weights = {
-            code: 1 - deficits[code]/total_deficits for code in adjustments
-        }
-
+        adjustments = self._adjust_deficit()    # Compute change in price
         for code in adjustments:
             if self._get_current_price(code) + adjustments[code] < min_price:
                 adjustments[code] = 0
-            elif self._get_current_price(code) + adjustments[code] > max_price: 
+            elif self._get_current_price(code) + adjustments[code] > max_price:
                 adjustments[code] = 0
+        return adjustments
 
+    def _adjust_deficit(self) -> Dict[str, float]:
+        """Correct the adjustments to satisfy budget constriants."""
+        target_deficit = self._target_deficit_this_tick()
+        adjustments = self._compute_adjustments() # Price adjustments
+        expected_sales = self._expected_sales(adjustments) # Per beer species
+        total_expected_sales = max(1, sum(expected_sales.values())) # In total 
+
+        deficits = {}   # Compute current deficit this tick per beer species
+        for code in self.products:
+            deficits[code] = self._get_current_price(code) + adjustments[code]
+            deficits[code] *= expected_sales[code]
+
+        total_deficits = sum(deficits.values())
+        if total_deficits == 0:     # Avoid division by zero for first tick
+            total_deficits = 1
+
+        correction_weights = {      # Scale price adjustments by deficit target
+            code: 1 - deficits[code]/total_deficits for code in adjustments
+        }
+
+        for code in adjustments:    # Scale the price adjustments
             adjustments[code] *= correction_weights[code]
 
         return adjustments
 
-    def _compute_deficit(self, prices):
-        deficit = 0
-        for code in self.products:
-            deficit += self.products[code]["base_price"] - (self._get_current_price(code) + prices[code])
-        return deficit
+    def _expected_sales(self, adjustments: Dict[str, float]=None) -> Dict[str, float]:
+        """Return estimated sales for each beer species."""
+        raise NotImplementedError
 
+    def _target_deficit_this_tick(self) -> float:
+        """Return target deficit this tick."""
+        raise NotImplementedError
+
+    def _compute_adjustments(self) -> Dict[str, float]:
+        """Return dict with price adjustments."""
+        raise NotImplementedError
+
+
+class PriceLogicBasic(PriceLogicBase):
     def _get_current_price(self, code: str) -> float:
+        # TODO: replace by database lookup
         product = self.products[code]
         base_price = product["base_price"]
         adjustments = sum(map(lambda x: x["adjustment"], product["price_data"]))
         return base_price + adjustments
 
-    def compute_deficit(self, delta_p):
-        new_price = {}
-        for code in delta_p:
-            new_price[code] = self._get_current_price(code) + delta_p[code]
-        return sum(new_price.values())
-
-    def _get_subsidy(self) -> float:
+    def _target_deficit_this_tick(self) -> float:
         total_subsidy = self.current_surplus/max(1, self.periods_left)
         estimate_total_sales = max(1, sum(self._expected_sales().values()))
         return total_subsidy/estimate_total_sales
 
-    def _compute_weight(self, code: str) -> float:
+    def _compute_weight(self, code: str, num_lookback_ticks: int=10) -> float:
+        """Compute weights based on number of beer sold."""
         current_price = self._get_current_price(code)
 
-        num_lookback_ticks = 5
         units_sold = self._total_sold(num_lookback_ticks)[code]
+        product = self.products[code]
+        base_adjustment = max(1, self._get_current_price(code) - product["base_price"])
 
         if units_sold == 0:
-            return  -5
-        if units_sold <= num_lookback_ticks:
-            return -2
-        if units_sold > num_lookback_ticks:
-            return 5
+            return  -4*base_adjustment
+        if units_sold <= 5:
+            return -2*base_adjustment
+        if units_sold > 5:
+            return 2*base_adjustment
         if units_sold > 10:
-            return 10
+            return 5*base_adjustment
 
     def _compute_adjustments(self) -> Dict[str, float]:
         """This is where the magic happens."""
@@ -202,24 +201,6 @@ class PriceLogicBasic(PriceLogicBase):
         for code in self.products:
             weights[code] /= total_weight
         return weights
-
-    def _expected_sales(self) -> Dict[str, float]:
-        """Compute expected sales for a product with code."""
-        expected_sales = {}
-        for code in self.products:
-            # List of time points
-            times = list(range(len(self.products[code]["price_data"])))
-
-            # List of past sales
-            sales = [self.products[code]["price_data"][t]["sold_units"] for t in times]
-
-            # List of weights
-            weights = [exp(-(self.current_period_id - t + 1)) for t in times]
-
-            # Compute weights average
-            expected_sales[code] = sum([w*s for w, s in zip(weights, sales)])/sum(weights)
-
-        return expected_sales
 
     def _total_sold(self, N: int) -> Dict[str, float]:
         """Compute the total number of sold beer over N past ticks."""
@@ -231,3 +212,48 @@ class PriceLogicBasic(PriceLogicBase):
                 product["price_data"][::-1][:N]
             ))
         return total_sold
+
+    def _estimate_total_sales(self) -> float:
+        """Compute expected sales for a product with code."""
+        alpha = 1e-1    # parameter for time weights
+        
+        expected_sales = {}
+        for code in self.products:
+            # List of time points
+            times = list(range(len(self.products[code]["price_data"])))
+
+            # List of past sales
+            sales = [self.products[code]["price_data"][t]["sold_units"] for t in times]
+
+            # List of weights
+            # TODO: remove +1 if 0 indexed tick numbers ???
+            weights = [math.exp(-alpha*(self.current_period_id - t + 1)) for t in times]
+
+            # Compute weights average
+            expected_sales[code] = sum([w*s for w, s in zip(weights, sales)])/sum(weights)
+        return max(1, sum(expected_sales.values()))
+
+    def _expected_sales(self, prices: Dict[str, float]=None) -> Dict[str, float]:
+        """Estimate the sales for each species."""
+        beta = 1e-1     # slope parameter
+        gamma = 1.0     # scale parameter
+
+        sales = {}
+        for code in self.products:
+            current_price = self._get_current_price(code)
+            if prices is not None:
+                current_price += prices[code]
+            base_price = self.products[code]["base_price"]
+            sales[code] = gamma*math.exp(-beta*(current_price - base_price))
+
+        total_sales = self._estimate_total_sales()
+
+        # Scale so they sum to 1 using Softmax
+        maximum = max(sales.values())
+        sales[code] = math.exp(sales[code] - maximum)
+
+        scale = sum(sales.values())
+        for code in sales:
+            sales[code] /= scale
+            sales[code] *= total_sales      # Scale to match estimated total sales
+        return sales
