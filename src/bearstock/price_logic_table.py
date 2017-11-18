@@ -130,11 +130,11 @@ class PriceLogic(PriceLogicBase):
         base_adjustment = 1
 
         if units_sold == 0:
-            return  -4*base_adjustment
-        if units_sold <= 2:
+            return  -3*base_adjustment
+        if units_sold <= 1:
             return -2*base_adjustment
-        if units_sold > 2:
-            return 2*base_adjustment
+        if units_sold > 1:
+            return 3*base_adjustment
         if units_sold > 5:
             return 10*base_adjustment
 
