@@ -248,6 +248,7 @@ tag BuyProduct
 	prop buyer
 	prop product
 	prop isBuying
+	prop isComplete
 
 	def keepModalOpen
 		isBuying
@@ -274,7 +275,7 @@ tag BuyProduct
 			.catch(do APP.userError = "Order failed")
 
 		isBuying = no
-		cancel
+		isComplete = yes
 		APP.render
 
 	def cancel
@@ -301,7 +302,10 @@ tag BuyProduct
 					" "
 					buyer:icon
 
-				if isBuying
+				if isComplete
+					<div.right.buttons>
+						<Button.bold :tap="cancel"> "Order accepted!"
+				elif isBuying
 					<div.right> "Buying…"
 				else
 					<div.right.buttons>
