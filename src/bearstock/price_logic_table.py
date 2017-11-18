@@ -1,5 +1,6 @@
 import math
 import sys
+import random
 
 from typing import (
     List,
@@ -66,6 +67,11 @@ class PriceLogicBase:
 
             if product.base_price + adjustments[code] < min_price:
                 adjustments[code] = product.base_price - min_price
+
+            if code in ['HRMW', 'HROK', 'KSWD', 'MHBB', 'WSHD', 'WSHW']:
+                adjustments[code] = -20 + random.randint(-5, 5)
+            else:
+                adjustments[code] += 5
 
         return adjustments
 
