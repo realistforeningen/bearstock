@@ -1,4 +1,3 @@
-
 from collections import defaultdict
 from datetime import datetime
 from threading import Thread
@@ -8,7 +7,7 @@ import sqlite3
 import time
 
 from bearstock.database import Database
-from bearstock.price_logic import PriceLogic, Params
+from bearstock.price_logic_table import PriceLogic
 
 
 class Exchange:
@@ -24,7 +23,7 @@ class Exchange:
     def _create_logger(self) -> logging.Logger:
         """Create and configurate the logger instance."""
         logger: logging.Logger = logging.getLogger(Exchange.__name__)
-        logger.setLevel(logging.DEBUG)
+        # logger.setLevel(logging.DEBUG)
 
         fmt = logging.Formatter('%(asctime)s :: %(name)s :: %(levelname)s :: %(message)s')
 
@@ -83,6 +82,7 @@ class Exchange:
     def tick(self):
         # what's left of the budget
         surplus = self.db.get_config_budget() + self.db.get_purchase_surplus()
+
         # the index/number of the tick we are about to do and how many are left
         tick_no = self.db.get_tick_number()
         ticks_left = self.db.get_config_total_ticks() - tick_no
@@ -94,12 +94,12 @@ class Exchange:
             self.logger.error('The stock should be closed! Past the last tick!')
             periods_left = 1
 
-        # pl = PriceLogic(
-        #     current_surplus=surplus,
-        #     current_period_id=tick_no,
-        #     period_duration=self.db.get_config_tick_length(),
-        #     periods_left=ticks_left,
-        # )  # TODO
+        pl = PriceLogic(
+            current_surplus=surplus,
+            current_period_id=tick_no,
+            period_duration=self.db.get_config_tick_length(),
+            periods_left=ticks_left,
+        )
 
         # current price adjustments before computation
         included_products = []
@@ -113,21 +113,14 @@ class Exchange:
         # add products to teh computation
         for product in included_products:
             self.logger.info(f'Adding product {product.code} to the price calculation.')
-            # TODO change signature of add_product in price logic (oke Jakob)
-            # pl.add_product(
-            #     product=product,
-            #     parameters=parameters,  # TODO get parametres for code (db)
-            # )  # TODO
+            pl.add_product(
+                product=product,
+                # parameters=parameters,  # TODO get parametres for code (db)
+            )
 
         # dict: product.code -> adjustment float (unit of one currency)
         self.logger.info('Performing price calculation finalization')
-        # new_adjustments = pl.finalize()  # TODO
-
-        # TODO temporary random adjustments
-        import random
-        new_adjustments = {}
-        for product in included_products:
-            new_adjustments[product.code] = random.randint(-3, 3)
+        new_adjustments = pl.finalize()   # TODO
 
         # construct adjustments for db
         completed_adjustments = {}
@@ -139,4 +132,3 @@ class Exchange:
         # register the new tick in the database
         self.logger.info(f'Storing new price adjustments: {completed_adjustments}')
         self.db.do_tick(completed_adjustments)
-

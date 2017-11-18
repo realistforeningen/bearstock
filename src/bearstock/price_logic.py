@@ -1,4 +1,3 @@
-
 from math import exp
 
 ## logic
@@ -18,10 +17,12 @@ class PriceLogic:
             Number of periods left.
         """
         self.surplus = current_surplus
+
         # period data
         self.pid = period_id
         self.p_duration = period_duration
         self.p_left = periods_left
+
         # product data
         self.total_products_sold = 0
         self.products = {}

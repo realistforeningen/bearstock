@@ -39,6 +39,7 @@ class Product(Model):
     def name(self) -> Optional[str]:
         """Product name."""
         return self._name
+
     @name.setter
     def name(self, name: str) -> None:
         self._name = name
@@ -49,6 +50,7 @@ class Product(Model):
     def producer(self) -> Optional[str]:
         """Product producer."""
         return self._producer
+
     @producer.setter
     def producer(self, producer: str) -> None:
         self._producer = producer
@@ -59,6 +61,7 @@ class Product(Model):
     def type(self) -> Optional[str]:
         """Product type."""
         return self._type
+
     @type.setter
     def type(self, type: str) -> None:
         self._type = type
@@ -69,6 +72,7 @@ class Product(Model):
     def tags(self) -> Optional[List[str]]:
         """Product tags."""
         return self._tags
+
     @tags.setter
     def tags(self, tags: List[str]) -> None:
         self._tags = tags
@@ -83,6 +87,7 @@ class Product(Model):
             The value is a integer multiple of 1 currency.
         """
         return self._base_price
+
     @base_price.setter
     def base_price(self, base_price: int) -> None:
         self._base_price = base_price
@@ -98,6 +103,7 @@ class Product(Model):
     def hidden(self) -> Optional[bool]:
         """Is the product hidden."""
         return self._hidden
+
     @hidden.setter
     def hidden(self, hidden: bool) -> None:
         self._hidden = hidden
@@ -254,4 +260,3 @@ class Product(Model):
             raise ValueError(f'no product with id: {code}')
 
         return product
-
