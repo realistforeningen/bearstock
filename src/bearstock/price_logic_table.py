@@ -76,22 +76,22 @@ class PriceLogicBase:
         expected_sales = self._expected_sales(adjustments) # Per beer species
         total_expected_sales = self._total_estimated_sales()
 
-        deficits = {}   # Compute current deficit this tick per beer species
-        for code in self.products:
-            deficits[code] = self.products[code].base_price + adjustments[code]
-            deficits[code] *= expected_sales[code]
+        #deficits = {}   # Compute current deficit this tick per beer species
+        #for code in self.products:
+        #    deficits[code] = self.products[code].base_price + adjustments[code]
+        #    deficits[code] *= expected_sales[code]
 
         # Avoid division by zero for first tick
-        total_deficits = sum(deficits.values())
-        if total_deficits == 0:
-            total_deficits = 1
+        #total_deficits = sum(deficits.values())
+        #if total_deficits == 0:
+        #    total_deficits = 1
 
-        correction_weights = {      # Scale price adjustments by deficit target
-            code: 1 - deficits[code]/total_deficits for code in adjustments
-        }
+        #correction_weights = {      # Scale price adjustments by deficit target
+        #    code: 1 - deficits[code]/total_deficits for code in adjustments
+        #}
 
-        for code in adjustments:    # Scale the price adjustments
-            adjustments[code] *= correction_weights[code]
+        #for code in adjustments:    # Scale the price adjustments
+        #    adjustments[code] *= correction_weights[code]
 
         return adjustments
 
