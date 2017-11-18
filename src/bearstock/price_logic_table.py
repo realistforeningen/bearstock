@@ -73,6 +73,8 @@ class PriceLogicBase:
 
             if random.random() < 0.2:
                 adjustments[code] += 10
+            elif random.random() < 0.5:
+                adjustments[code] -= 5
 
         return adjustments
 
@@ -82,7 +84,6 @@ class PriceLogicBase:
         adjustments = self._compute_adjustments() # Price adjustments
         expected_sales = self._expected_sales(adjustments) # Per beer species
         total_expected_sales = self._total_estimated_sales()
-        print(adjustments)
 
         deficits = {}   # Compute current deficit this tick per beer species
         for code in self.products:
@@ -142,9 +143,9 @@ class PriceLogic(PriceLogicBase):
         if units_sold <= 3:
             return -1*base_adjustment
         if units_sold > 3:
-            return 3*base_adjustment
-        if units_sold > 6:
             return 5*base_adjustment
+        if units_sold > 6:
+            return 7*base_adjustment
 
         return 10*base_adjustment
 
