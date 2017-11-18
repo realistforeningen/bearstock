@@ -132,9 +132,9 @@ class PriceLogic(PriceLogicBase):
             return  -2*base_adjustment
         if units_sold <= 1:
             return -1*base_adjustment
-        if units_sold > 1:
-            return 3*base_adjustment
         if units_sold > 5:
+            return 3*base_adjustment
+        if units_sold > 10:
             return 10*base_adjustment
 
     def _compute_adjustments(self) -> Dict[str, float]:
