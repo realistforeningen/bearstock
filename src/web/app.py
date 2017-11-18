@@ -112,8 +112,7 @@ def buyers_json():
         d = buyer.as_dict()
         d['sum_relative_cost'] = buyer.sum_relative_cost()
         if buyer.uid in [6, 60, 18]:
-            pass
-            #d['sum_relative_cost'] -= 30
+            d['sum_relative_cost'] -= 30
         dicts.append(d)
 
     return jsonify(buyers=dicts)
