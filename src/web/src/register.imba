@@ -187,6 +187,9 @@ tag BuyView
 			negativeFilters.push(name)
 		@collection = null
 
+	def mount
+		clearFilters
+
 	def clearFilters
 		reset
 
