@@ -362,6 +362,7 @@ tag OrderList
 		main-css:
 			margin: "18px 0"
 			flex: 1
+			overflow: 'hidden'
 
 			"& > .Inset":
 				flex: 1
