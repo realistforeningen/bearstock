@@ -87,6 +87,9 @@ export tag Register
 		db.buyers
 
 	def overrideView
+		if !db.isOpen
+			return <UpdateScreen@updateScreen>
+
 		if userErrorView
 			return userErrorView
 
@@ -513,7 +516,7 @@ tag UpdateScreen
 				margin-top: "5px"
 
 	var ms = 1/1000
-	def build
+	def mount
 		@start = Date.now
 		@rate = 1/5 * ms # [boxes/msec]
 
@@ -522,7 +525,7 @@ tag UpdateScreen
 
 		<self.{@main-css}>
 			<Window.{grow}>
-				<.header> "Configuring update for Windows 98"
+				<.header> <p> "Configuring update for Windows 98"
 				<.body>
 					<p> "Do not turn off computer"
 					<.progress> <Inset>
