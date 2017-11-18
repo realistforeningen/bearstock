@@ -140,15 +140,6 @@ class Database:
                         args={'name': ConfigKeys.STOCK_RUNNING.name},
                         callable=action)
 
-    def get_config_quarantine(self) -> Optional[int]:
-        def action(cur: sqlite3.Cursor) -> bool:
-            row = cur.fetchone()
-            if row:
-                return row['int_value']
-        return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
-                        args={'name': ConfigKeys.QUARANTINE.name},
-                        callable=action)
-
     def set_config_budget(self, budget: int) -> None:
         self.exe(('INSERT OR REPLACE INTO config ( '
                   '  name, int_value '
@@ -189,6 +180,20 @@ class Database:
             return cur.fetchone()['int_value']
         return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
                         args={'name': ConfigKeys.TOTAL_TICKS.name},
+                        callable=action)
+
+    def set_config_quarantine(self, time: int) -> None:
+        self.exe(('INSERT OR REPLACE INTO config ( '
+                  '  name, int_value '
+                  ') VALUES ( :name, :time )'),
+                 args={'name': ConfigKeys.QUARANTINE.name,
+                       'time': time})
+
+    def get_config_quarantine(self) -> int:
+        def action(cur: sqlite3.Cursor) -> int:
+            return cur.fetchone()['int_value']
+        return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
+                        args={'name': ConfigKeys.QUARANTINE.name},
                         callable=action)
 
     # buyer related methods
