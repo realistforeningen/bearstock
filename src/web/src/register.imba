@@ -428,14 +428,14 @@ tag ScrollHint
 			height: spacing
 			width: '100%'
 			zIndex: 1000
-			background: 'linear-gradient(to bottom, #bfbfbf, rgba(255,255,255,0))'
+			background: "linear-gradient(to bottom, {winColors:g2}, {winColors:g2.alpha(0)})"
 
 		bottom-css:
 			position: 'absolute'
 			bottom: 0
 			height: spacing
 			width: '100%'
-			background: 'linear-gradient(to top, #bfbfbf, rgba(255,255,255,0))'
+			background: "linear-gradient(to top, {winColors:g2}, {winColors:g2.alpha(0)})"
 			zIndex: 1000
 
 		scroller-css:
