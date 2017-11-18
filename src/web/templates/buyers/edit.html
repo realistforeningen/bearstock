@@ -2,11 +2,12 @@
 <html>
 <head>  
   <title>BearStock</title>
+  <script src="/static/assets/app.js"></script>
 </head>
 <body>
 
   <form method="post">
-    <div class="buyer-edit container">
+    <div class="buyer-edit container form">
       <button>Save</button>
       <label>ID</label>
       <p>#{{ buyer.uid }}</p>
@@ -18,7 +19,6 @@
       <div id="emoji"></div>
     </div>
   </form>
-  <script src="/static/assets/app.js"></script>
   <script>
     insertStyles();
   	startEmojiPicker(emoji, "{{ buyer.icon }}");

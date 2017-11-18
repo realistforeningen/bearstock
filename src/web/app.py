@@ -1,7 +1,7 @@
 
 from flask import Flask, render_template, g, jsonify, request, redirect
 
-from bearstock.database import Database
+from bearstock.database import Database, Buyer
 from bearstock.statistics import get_top_bot
 
 DATABASE_FILE = 'bear-app.db'
@@ -39,6 +39,12 @@ def signup():
 def buyers_list():
     buyers = g.db.get_all_buyers()
     return render_template('buyers/list.html', buyers=buyers)
+
+@app.route('/buyers', methods=['POST'])
+def buyers_create():
+    buyer = Buyer(name=request.form['name'], scaling=1)
+    buyer.insert_into(g.db)
+    return redirect("/buyers/{}".format(buyer.uid))
 
 @app.route('/buyers/<id>')
 def buyers_edit(id):
