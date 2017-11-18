@@ -1,7 +1,7 @@
 
-from bearstock.stock import DATABASE_FILE
+from bearstock.stock import Exchange
 from bearstock.database import Database
 
-def main(argv=None):
-    db = Database(DATABASE_FILE)
+def main():
+    Exchange.run_default()
 

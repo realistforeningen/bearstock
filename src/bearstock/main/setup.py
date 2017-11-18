@@ -2,7 +2,7 @@
 import argparse as ap
 import csv
 
-from bearstock.stock import DATABASE_FILE
+from bearstock.stock import Exchange
 from bearstock.database import Database
 
 def parse_products_csv(filename):
@@ -33,6 +33,8 @@ def parse_products_csv(filename):
                     else:
                         product[key.replace(' ', '_')] = value
                 else:  # extra values are stored under a None key
+                    if not isinstance(value, list):
+                        value = [value]
                     product['tags'] += value
             products.append(product)
     return products
@@ -42,6 +44,12 @@ def main():
     # parse args
     parser = ap.ArgumentParser()
     parser.add_argument('csv', type=str, help='CSV file to read products from')
+    parser.add_argument('--budget', metavar='budget',
+                        type=int, required=True, help='Total budget to initialize db with.')
+    parser.add_argument('--tick-length', metavar='tick_length',
+                        type=int, required=True, help='The length of a tick.')
+    parser.add_argument('--tick-count', metavar='tick_count',
+                        type=int, required=True, help='Total number of planned ticks.')
     parsed = parser.parse_args()
 
     # get products and construct zero adjustments
@@ -49,12 +57,18 @@ def main():
     adjustments = {product['code']: 0 for product in products}
 
     # setup DB
-    db = Database(DATABASE_FILE)
+    db = Database(Exchange.DATABASE_FILE)
     db.connect()
 
     # ensure schema exists
     for statement in open('schema.sql').read().split(';'):
         db.exe(statement)
+
+    # set configuration
+    db.set_config_stock_running(False)
+    db.set_config_budget(parsed.budget)
+    db.set_config_tick_length(parsed.tick_length)
+    db.set_config_total_ticks(parsed.tick_count)
 
     db.import_products(products, replace_existing=True)
     try:

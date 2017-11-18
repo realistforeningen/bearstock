@@ -17,11 +17,32 @@ export tag Window
 			"& > .header":
 				background: 'linear-gradient(to right, #000080, #1084d0)'
 				color: '#fff'
-				padding: '0.5em 1em'
 				flex-direction: 'row'
+				align-items: 'center'
+
+				"& p":
+					padding: '0.5em 1em'
 
 			"& > .content":
 				flex: 1
+
+			"& > .header .close":
+				border: '1px solid'
+				border-top-color: winColors:g1
+				border-left-color: winColors:g1
+				border-bottom-color: winColors:g3
+				border-right-color: winColors:g3
+				background: winColors:g2
+				color: '#000'
+				font-size: '30px'
+				height: '1em'
+				line-height: 0.7
+				padding: '0 0.1em'
+				margin-right: '5px'
+
+				':before':
+					content: '×'
+
 	def render
 		<self.{@main-css}>
 

@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 import pickle
 import sqlite3
 from collections import namedtuple
+from enum import Enum, auto
 
 from .errors import BearDatabaseError, BearModelError
 from .buyer import Buyer
@@ -12,7 +13,7 @@ from .order import Order
 from .product import Product
 
 __all__ = [
-    'Database',
+    'Database', 'ConfigKeys',
 ]
 
 # custom type descriptions
@@ -23,6 +24,13 @@ T = TypeVar('T')
 ProductPriceAdjustments = namedtuple(
     'ProductPriceAdjustments', ['timestamps', 'adjustments', 'prices']
 )
+
+
+class ConfigKeys(Enum):
+    STOCK_RUNNING = auto()
+    TOTAL_BUDGET = auto()
+    TICK_LENGTH = auto()
+    TOTAL_TICKS = auto()
 
 
 class Database:
@@ -113,6 +121,65 @@ class Database:
 
         return result
 
+    # config methods
+
+    def set_config_stock_running(self, is_running: bool) -> None:
+        self.exe(('INSERT OR REPLACE INTO config ( '
+                  '  name, int_value '
+                  ') VALUES ( :name, :running )'),
+                 args={'name': ConfigKeys.STOCK_RUNNING.name,
+                       'running': 1 if is_running else 0})
+
+    def get_config_stock_running(self) -> bool:
+        def action(cur: sqlite3.Cursor) -> bool:
+            row = cur.fetchone()
+            return row is not None and row['int_value'] != 0
+        return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
+                        args={'name': ConfigKeys.STOCK_RUNNING.name},
+                        callable=action)
+
+    def set_config_budget(self, budget: int) -> None:
+        self.exe(('INSERT OR REPLACE INTO config ( '
+                  '  name, int_value '
+                  ') VALUES ( :name, :budget )'),
+                 args={'name': ConfigKeys.TOTAL_BUDGET.name,
+                       'budget': budget})
+
+    def get_config_budget(self) -> int:
+        def action(cur: sqlite3.Cursor) -> int:
+            return cur.fetchone()['int_value']
+        return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
+                        args={'name': ConfigKeys.TOTAL_BUDGET.name},
+                        callable=action)
+
+    def set_config_tick_length(self, duration: int) -> None:
+        self.exe(('INSERT OR REPLACE INTO config ( '
+                  '  name, int_value '
+                  ') VALUES ( :name, :duration )'),
+                 args={'name': ConfigKeys.TICK_LENGTH.name,
+                       'duration': duration})
+
+    def get_config_tick_length(self) -> int:
+        def action(cur: sqlite3.Cursor) -> int:
+            return cur.fetchone()['int_value']
+        return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
+                        args={'name': ConfigKeys.TICK_LENGTH.name},
+                        callable=action)
+
+    def set_config_total_ticks(self, total: int) -> None:
+        self.exe(('INSERT OR REPLACE INTO config ( '
+                  '  name, int_value '
+                  ') VALUES ( :name, :total )'),
+                 args={'name': ConfigKeys.TOTAL_TICKS.name,
+                       'total': total})
+
+    def get_config_total_ticks(self) -> int:
+        def action(cur: sqlite3.Cursor) -> int:
+            return cur.fetchone()['int_value']
+        return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
+                        args={'name': ConfigKeys.TOTAL_TICKS.name},
+                        callable=action)
+
     # buyer related methods
 
     def insert_buyer(self, name: str, icon: str, *, scaling: float = 1.0) -> Buyer:
@@ -196,6 +263,16 @@ class Database:
             callable=retrive_all_buyers
         )
 
+    # XXX refactor to get_all_buyer_icons
+    def get_all_icons(self) -> List[str]:
+        def tolist(cursor: sqlite3.Cursor) -> List[str]:
+            return [row['icon'] for row in cursor]
+
+        return self.exe(
+            'SELECT icon FROM buyers WHERE icon IS NOT NULL',
+            callable=tolist
+        )
+
     def get_all_buyers(self) -> None:
         def action(cursor) -> List[Buyer]:
             buyers: List[Buyer] = []
@@ -210,7 +287,7 @@ class Database:
                 ))
             return buyers
         return self.exe(
-            'SELECT id, name, icon, scaling, created_at FROM buyers',
+            'SELECT id, name, icon, scaling, created_at FROM buyers ORDER BY name ASC',
             callable=action
         )
 
@@ -399,41 +476,29 @@ class Database:
             return products
         return self.exe((
             'SELECT code, name, producer, base_price, quantity, type, tags, hidden '
-            'FROM products '
+            'FROM products'),
             callable=action
         )
 
-    # def get_base_prices(self) -> Dict[str, int]:
-    #     """Get a dictionary of product code to base price for all products in the database."""
-    #     products = self.get_all_products(bind=False)
-    #     return {product.code: product.base_price for product in products}
-    #
-    # def get_producers(self) -> Dict[str, str]:
-    #     """Get a dictionary of product code to producers for all products in the database."""
-    #     products = self.get_all_products(bind=False)
-    #     return {product.code: product.producer for product in products}
-    #
-    # def get_types(self) -> List[str]:
-    #     """Get a dictionary of distinct product types for products in the database."""
-    #     products = self.get_all_products(bind=False)
-    #     return list({product.type for product in products})
-
-    def get_quantity_remaining(self) -> Dict[str, int]:
-        # SELECT coalesce(orders.product_code, products.code) as code, quantity - COUNT(orders.id)
-        #   FROM products
-        #   LEFT OUTER JOIN orders ON orders.product_code = products.code
-        #   GROUP BY code
-        pass  # TODO requires orders
+    # def get_product_quantity_remaining(self) -> Dict[str, int]:
+    #     # SELECT
+    #     #   coalesce(orders.product_code, products.code) as code,
+    #     #   quantity - COUNT(orders.id)
+    #     # FROM products
+    #     # LEFT OUTER JOIN orders ON orders.product_code = products.code
+    #     # GROUP BY code
+    #     pass  # TODO requires orders
 
     # order methods
 
     def insert_order(self, *,
                      buyer: Buyer, product: Product,
-                     relative_cost: int, created_at: Optional[int] = None) -> Order:
+                     relative_cost: int,
+                     tick_no: int, created_at: Optional[int] = None) -> Order:
         """Insert a new order into the database.
 
         Args:
-            buyer, product, relative_cost, created_at:
+            buyer, product, relative_cost, tick_no created_at:
                 Order parameters. See `Order` for descriptions.
 
         Returns:
@@ -450,15 +515,16 @@ class Database:
 
         insered_id = self.exe((
             f'INSERT INTO orders ( '
-            f'  buyer_id, product_code, relative_cost{"" if created_at is None else ", created_at"} '
+            f'  buyer_id, product_code, relative_cost, tick_no{"" if created_at is None else ", created_at"} '
             f') VALUES ( '
-            f'  :buyer, :product, :relative_cost{"" if created_at is None else ", :created_at"} '
+            f'  :buyer, :product, :relative_cost, :tick_no{"" if created_at is None else ", :created_at"} '
             f')'),
             callable=action,
             args={
                 'buyer': buyer.uid,
                 'product': product.code,
                 'relative_cost': relative_cost,
+                'tick_no': tick_no,
                 'created_at': created_at,
             })
         return self.get_order(insered_id)
@@ -484,13 +550,14 @@ class Database:
         for order in orders:
             args.append({
                 'buyer': order['order_id'], 'product_id': product['product_id'],
-                'relative_cost': order['relative_cost'], 'created_at': order['created_at'],
+                'relative_cost': order['relative_cost'],
+                'tick_no': order['tick_no'], 'created_at': order['created_at'],
             })
         self.exe((
             'INSERT INTO orders ( '
-            f'  buyer_id, product_code, relative_cost{"" if created_at is None else ", created_at"} '
+            f'  buyer_id, product_code, relative_cost, tick_no{"" if created_at is None else ", created_at"} '
             ') VALUES ( '
-            f'  :buyer, :product, :relative_cost{"" if created_at is None else ", :created_at"} '
+            f'  :buyer, :product, :relative_cost, tick_no{"" if created_at is None else ", :created_at"} '
             ')'),
             args=args, many=True
         )
@@ -513,12 +580,13 @@ class Database:
         self.exe((
             'UPDATE order SET '
             '  buyer_id = :buyer, product_id = :producer, '
-            '  relative_cost = :relative_cost, created_at = :created_at '
+            '  relative_cost = :relative_cost, tick_no = :tick_no, created_at = :created_at '
             'WHERE id = :uid'),
             args={
                 'buyer': order.buyer.uid,
                 'product': order.product.code,
                 'relative_cost': order.relative_cost,
+                'tick_no': order.tick_no,
                 'created_at': order.created_at,
             }
         )
@@ -538,13 +606,14 @@ class Database:
                     buyer=self.get_buyer(row['buyer_id']),
                     product=self.get_product(row['product_code']),
                     relative_cost=row['relative_cost'],
+                    tick_no=row['tick_no'],
                     created_at=row['created_at'],
                     database=self,
                 )
             else:
                 raise BearDatabaseError(f'could not find order with id: {uid}')
         return self.exe((
-            'SELECT id, buyer_id, product_code, relative_cost, created_at '
+            'SELECT id, buyer_id, product_code, relative_cost, tick_no, created_at '
             'FROM orders '
             'WHERE id = :uid'),
             args={'uid': uid},
@@ -569,12 +638,13 @@ class Database:
                     buyer=self.get_buyer(row['buyer_id']),
                     product=self.get_product(row['product_code']),
                     relative_cost=row['relative_cost'],
+                    tick_no=row['tick_no'],
                     created_at=row['created_at'],
                     database=self if bound else None,
                 ))
             return order
         return self.exe((
-            'SELECT id, buyer_id, product_code, relative_cost, created_at '
+            'SELECT id, buyer_id, product_code, relative_cost, tick_no, created_at '
             'FROM orders '
             'ORDER BY created_at ASC'),
             callable=action
@@ -604,12 +674,13 @@ class Database:
                     buyer=self.get_buyer(row['buyer_id']),
                     product=self.get_product(row['product_code']),
                     relative_cost=row['relative_cost'],
+                    tick_no=row['tick_no'],
                     created_at=row['created_at'],
                     database=self if bound else None,
                 ))
             return order
         return self.exe((
-            'SELECT id, buyer_id, product_code, relative_cost, created_at '
+            'SELECT id, buyer_id, product_code, relative_cost, tick_no, created_at '
             'FROM orders '
             'ORDER BY created_at DESC LIMIT :count'),
             args={'count': count},
@@ -637,12 +708,13 @@ class Database:
                     buyer=self.get_buyer(row['buyer_id']),
                     product=self.get_product(row['product_code']),
                     relative_cost=row['relative_cost'],
+                    tick_no=row['tick_no'],
                     created_at=row['created_at'],
                     database=self if bound else None,
                 ))
             return order
         return self.exe((
-            'SELECT id, buyer_id, product_code, relative_cost, created_at '
+            'SELECT id, buyer_id, product_code, relative_cost, tick_no, created_at '
             'FROM orders '
             f'WHERE created_at {">" if exclusive else ">="} :time '
             'ORDER BY created_at DESC'),
@@ -671,16 +743,39 @@ class Database:
                     buyer=self.get_buyer(row['buyer_id']),
                     product=self.get_product(row['product_code']),
                     relative_cost=row['relative_cost'],
+                    tick_no=row['tick_no'],
                     created_at=row['created_at'],
                     database=self if bound else None,
                 ))
             return order
         return self.exe((
-            'SELECT id, buyer_id, product_code, relative_cost, created_at '
+            'SELECT id, buyer_id, product_code, relative_cost, tick_no, created_at '
             'FROM orders '
             f'WHERE created_at {"<" if exclusive else "<="} :time '
             'ORDER BY created_at DESC'),
             args={'count': count},
+            callable=action
+        )
+
+    # XXX refactor to get_order_last_by_buyer
+    def get_last_order_by(self, buyer: Buyer) -> Optional[Order]:
+        def action(cursor) -> Optional[Order]:
+            for row in cursor:
+                return Order(
+                    uid=row['id'],
+                    buyer=buyer,
+                    product=self.get_product(row['product_code']),
+                    relative_cost=row['relative_cost'],
+                    created_at=row['created_at'],
+                    database=self,
+                )
+
+        return self.exe((
+            'SELECT id, product_code, relative_cost, created_at '
+            'FROM orders '
+            'WHERE buyer_id = :uid '
+            'ORDER BY created_at DESC LIMIT 1'),
+            args={'uid': buyer.uid},
             callable=action
         )
 
@@ -799,9 +894,9 @@ class Database:
                 adj = pickle.loads(row['price_adjustments'])
 
                 for code in adj:
-                    products[adj].timestamps.append(row['timestamp'])
-                    products[adj].adjustments.append(adj[code])
-                    products[adj].prices.append(int(round(base_prices[code] + adj[code]/100)))
+                    products[code].timestamps.append(row['timestamp'])
+                    products[code].adjustments.append(adj[code])
+                    products[code].prices.append(int(round(base_prices[code] + adj[code]/100)))
 
             return products
 
@@ -810,11 +905,67 @@ class Database:
             callable=action
         )
 
+    def get_product_sold_per_tick(self, product: Union[str, Product]) -> List[int]:
+        """Get the number of products with ``code`` sold at each tick.
+
+        Args:
+            product: Either a product code or a product.
+
+        Raises:
+            BearDatabaseError: If the database queries failed.
+            ValueError: if ``product`` is not a product or string (product code).
+        """
+        ticks = self.get_tick_number()
+        if isinstance(product, str):
+            product = self.get_product(product)
+        elif isinstance(product, Product):
+            if not product.is_bound():
+                product = self.get_product(product.code)
+        else:
+            raise ValueError('argument must be aproduct or a string product code')
+
+        def action(cursor: sqlite3.Cursor) -> List[int]:
+            per_tick: List[int] = [0]*ticks
+            for row in cursor:
+                per_tick[row['tick_no']] = row['sold']
+            return per_tick
+
+        return self.exe(
+            ('SELECT tick_no, count(id) AS sold FROM orders '
+             'WHERE product_code LIKE :code '
+             'GROUP BY tick_no '
+             'ORDER BY tick_no ASC'),
+            args={'code': product.code},
+            callable=action,
+        )
+
+    def get_all_products_sold_per_tick(self) -> Dict[str, List[int]]:
+        """Get a dictionary mapping product code to a list of products sold at each tick.
+
+        Raises:
+            BearDatabaseError: If the database queries failed.
+        """
+        ticks = self.get_tick_number()
+        def action(cursor: sqlite3.Cursor) -> Dict[str, List[int]]:
+            products: Dict[str, List[int]] = {}
+            for row in cursor:
+                code = row['product_code']
+                if code not in products:
+                    products[code] = [0]*ticks
+                products[code][row['tick_no']] = row['count']
+            return products
+
+        return self.exe(
+            ('SELECT tick_no, product_code, count(id) AS sold FROM orders '
+             'GROUP BY tick_no, product_code '
+             'ORDER BY tick_no ASC'),
+            callable=action,
+        )
+
     # various methods
 
     def get_tick_number(self) -> int:
         """Returns the current tick number.
-
         Raises:
             BearDatabaseError: If the query failed.
         """
@@ -825,7 +976,22 @@ class Database:
             callable=action
         )
 
-#    # How much money is on our own account?
-#    def stock_account(self):
-#        return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0] or 0
+    def get_tick_last_timestamp(self) -> int:
+        """Get the timestamp of the last tick.
+
+        Raises:
+            BearDatabaseError: If the database query failed.
+        """
+        def action(cursor: sqlite3.Cursor) -> int:
+            return cursor.fetchone()['timestamp']
+        return self.exe(
+            'SELECT timestamp FROM ticks ORDER BY timestamp DESC LIMIT 1',
+            callable=action
+        )
+
+    def get_purchase_surplus(self) -> int:
+       """Get the total surplus from orders relative to product base prices."""
+       def action(cur: sqlite3.Cursor) -> int:
+           return cur.fetchone()[0] or 0
+       return self.exe('SELECT SUM(relative_cost) FROM orders', callable=action)
 

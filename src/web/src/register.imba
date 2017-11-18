@@ -10,7 +10,9 @@ import h100, grow, winColors from './styling'
 export tag Register
 	prop db
 	prop modal
-	prop bluescreen
+	prop currentError watch: yes
+	prop syncErrorView
+	prop userErrorView
 
 	styles.insert self,
 		main-css:
@@ -47,15 +49,12 @@ export tag Register
 		APP = self
 		db = DB.new(updateDelay: 500)
 		db:sync = do
-			if db.error
-				bluescreen = <Bluescreen error=db.error>
-			else
-				bluescreen = null
+			currentError = db.error
 			render
 		db.start
 
 	def mount
-		schedule
+		schedule(interval: 100)
 
 	def products
 		db.products
@@ -69,20 +68,41 @@ export tag Register
 		else
 			modal = null
 
+	def currentErrorDidSet new
+		if new
+			syncErrorView = <Bluescreen messages=["Error message: {new}"]>
+		else
+			syncErrorView = null
+
+	def setUserError msg
+		userErrorView = <Bluescreen messages=[msg, "Tap to reboot"] :tap='closeUserError'>
+
+	def closeUserError
+		userErrorView = null
+
+	def tapCloseWindow
+		userError = "Doctor, it hurts when I press the close button"
+
 	def buyers
 		db.buyers
 
-	def superfail
-		bluescreen = <Bluescreen>
+	def overrideView
+		if userErrorView
+			return userErrorView
+
+		if syncErrorView
+			return syncErrorView
 
 	def render
 		<self .{@main-css}>
-			if bluescreen
-				bluescreen.end
+			if var view = overrideView
+				view.end
 			else
 				<Window .{grow}>
 					<.header>
 						<p> "BearStock v2"
+						<.{grow}>
+						<.close :tap='tapCloseWindow'>
 					<.content>
 						<BuyView.{grow}>
 	
@@ -228,21 +248,34 @@ tag BuyProduct
 	prop buyer
 	prop product
 	prop isBuying
+	prop isComplete
 
 	def keepModalOpen
 		isBuying
+
+	def buyTimelimit
+		# TODO
+		null
 
 	def accept
 		if isBuying
 			return
 
+		var limit = buyTimelimit
+
+		if limit and limit > 0
+			APP.userError = "You must wait {limit} seconds before you can make another order"
+			cancel
+			return
+
+
 		isBuying = yes
 
 		await APP.db.order(product, buyer)
-			.catch(do APP.superfail)
+			.catch(do APP.userError = "Order failed")
 
 		isBuying = no
-		cancel
+		isComplete = yes
 		APP.render
 
 	def cancel
@@ -250,7 +283,10 @@ tag BuyProduct
 
 	def render
 		<self> <Window>
-			<.header> product:name
+			<.header>
+				<p> product:name
+				<.{grow}>
+				<.close :tap='cancel'>
 			<.content.{@grid-css}>
 				<p> "Code"
 				<p> <strong> product:code
@@ -266,7 +302,10 @@ tag BuyProduct
 					" "
 					buyer:icon
 
-				if isBuying
+				if isComplete
+					<div.right.buttons>
+						<Button.bold :tap="cancel"> "Order accepted!"
+				elif isBuying
 					<div.right> "Buying…"
 				else
 					<div.right.buttons>
@@ -290,9 +329,15 @@ tag BuyerSelection
 	def selectBuyer buyer
 		APP.modal = <BuyProduct product=product buyer=buyer>
 
+	def closeModal
+		APP.cancelModal
+
 	def render
 		<self> <Window>
-			<.header> "Buyer Identification"
+			<.header>
+				<p> "Buyer Identification"
+				<.{grow}>
+				<.close :tap='closeModal'>
 			<.content>
 				<.{@buyers-css}>
 					for buyer in APP.buyers
@@ -301,7 +346,6 @@ tag BuyerSelection
 tag OrderList
 	def orders
 		data
-		[{buyer_id: 1, product_code: "FYPA", absolute_cost: 37}]
 
 	styles.insert self,
 		main-css:
@@ -322,19 +366,20 @@ tag OrderList
 			"& > .left":
 				margin-right: "18px"
 
+			"&.first":
+				font-weight: "bold"
+
 	def render
 		<self.{@main-css}> <Inset>
 			<div .{@header-css}> "Latest orders"
 			if !orders
 				<div> "Loading…"
 				
-			for order in orders
-				var buyer = APP.db.findBuyer(order:buyer_id)
-				if buyer
-					<div .{@order-css}>
-						<div.left> "{buyer:name} {buyer:icon}"
-						<div .{grow}>
-						<div> "{order:product_code} — {order:absolute_cost} NOK"
+			for order, idx in orders
+				<div .{@order-css}.first=(idx == 0)>
+					<div.left> "{order:buyer:name} {order:buyer:icon}"
+					<div .{grow}>
+					<div> "{order:product_code} — {order:price} NOK"
 
 
 tag ScrollHint
@@ -414,7 +459,7 @@ tag ScrollHint
 				<.{@filler-css}>
 
 tag Bluescreen
-	prop error
+	prop messages
 
 	styles.insert self,
 		main-css:
@@ -434,6 +479,52 @@ tag Bluescreen
 	def render
 		<self.{@main-css}>
 			<div>
-				<p> "A problem has been detected and Windows has been shut down to prevent damage to your life"
-				if error
-					<p> "Error message: {error}"
+				<p> "A problem has been detected and Windows has been shut down to prevent damage to your life:"
+				for msg in messages
+					<p> msg
+
+tag UpdateScreen
+	styles.insert self,
+		main-css:
+			margin-top: "50px"
+			align-items: "center"
+
+			"& p":
+				padding: "10px 5px"
+
+			"& .Window":
+				max-width: "600px"
+
+			"& .progress":
+				margin: "10px 20px"
+
+			"& .Inset .body":
+				flex-direction: "row"
+				flex-wrap: "wrap"
+				padding: "5px"
+				padding-top: 0
+
+			"& .blob":
+				background: "blue"
+				margin-right: "5px"
+				width: "10px"
+				height: "30px"
+				flex: "0 0 auto"
+				margin-top: "5px"
+
+	var ms = 1/1000
+	def build
+		@start = Date.now
+		@rate = 1/5 * ms # [boxes/msec]
+
+	def render
+		var count = Math.floor((Date.now - @start) * @rate)
+
+		<self.{@main-css}>
+			<Window.{grow}>
+				<.header> "Configuring update for Windows 98"
+				<.body>
+					<p> "Do not turn off computer"
+					<.progress> <Inset>
+						for i in [0 .. count]
+							<.blob> " "

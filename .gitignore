@@ -17,3 +17,5 @@ src/app.db
 # application database
 *app.db
 
+*.log
+
