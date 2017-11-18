@@ -351,7 +351,7 @@ tag BuyerSelection
 				<.close :tap='closeModal'>
 			<.content>
 				<.{@buyers-css}>
-					for buyer in APP.buyers
+					for buyer in APP.buyers when buyer:icon
 						<p :tap=["selectBuyer", buyer]> buyer:icon
 
 tag OrderList
