@@ -71,23 +71,6 @@ def buyers_update(id):
     buyer.update_in_db()
     return redirect('/')
 
-@app.route('/products.json')
-def products_json():
-    tick_no = g.db.get_tick_number()
-    products = [p.as_dict(with_derived=True) for p in g.db.get_all_products()]
-    return jsonify(products=products, tick_no=tick_no)
-
-@app.route('/buyers.json')
-def buyers_json():
-    buyers = g.db.get_all_buyers()
-    return jsonify(buyers=[ buyer.as_dict() for buyer in buyers ])
-
-
-@app.route('/orders.json')
-def orders_json():
-    orders = g.db.get_latest_orders(count=10)
-    return jsonify(orders=[  order.as_dict(with_derived=True) for order in orders ])
-
 @app.route('/orders', methods=['POST'])
 def orders_create():
     body = request.get_json()
@@ -97,6 +80,18 @@ def orders_create():
     g.db.insert_order(buyer=buyer, product=product, relative_cost=(price-product.base_price))
     return jsonify(ok=True)
 
+@app.route('/register.json')
+def register_json():
+    tick_no = g.db.get_tick_number()
+    products = [p.as_dict(with_derived=True) for p in g.db.get_all_products()]
+    buyers = g.db.get_all_buyers()
+    orders = g.db.get_latest_orders(count=10)
+    return jsonify(
+        tick_no=tick_no,
+        products=products,
+        buyers=[buyer.as_dict() for buyer in buyers ],
+        orders=[order.as_dict(with_derived=True) for order in orders ],
+    )
 
 ## Plots
 

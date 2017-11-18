@@ -28,14 +28,10 @@ export class DB
 		fetchLoop
 
 	def fetchAll
-		var data = await Promise.all [
-			fetch("/products.json").then(tojson)
-			fetch("/buyers.json").then(tojson)
-			fetch("/orders.json").then(tojson)
-		]
-		products = data[0]:products
-		buyers = data[1]:buyers
-		orders = data[2]:orders
+		var data = await fetch("/register.json").then(tojson)
+		products = data:products
+		buyers = data:buyers
+		orders = data:orders
 
 	def fetchLoop
 		if @timeout
