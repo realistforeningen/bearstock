@@ -122,15 +122,15 @@ class PriceLogic(PriceLogicBase):
 
         product = self.products[code]
         current_price = product.current_price
-        units_sold = sum(product.timeline.sales[-15:])
+        units_sold = sum(product.timeline.sales[-30:])
 
-        base_adjustment = max(1, current_price - product.base_price)
-        #base_adjustment = 1
+        #base_adjustment = max(1, current_price - product.base_price)
+        base_adjustment = 2
 
         if units_sold == 0:
-            return  -3*base_adjustment
+            return  -2*base_adjustment
         if units_sold <= 1:
-            return -2*base_adjustment
+            return -1*base_adjustment
         if units_sold > 1:
             return 3*base_adjustment
         if units_sold > 5:
