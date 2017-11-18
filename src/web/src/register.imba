@@ -348,14 +348,17 @@ tag OrderList
 			"& > .left":
 				margin-right: "18px"
 
+			"&.first":
+				font-weight: "bold"
+
 	def render
 		<self.{@main-css}> <Inset>
 			<div .{@header-css}> "Latest orders"
 			if !orders
 				<div> "Loading…"
 				
-			for order in orders
-				<div .{@order-css}>
+			for order, idx in orders
+				<div .{@order-css}.first=(idx == 0)>
 					<div.left> "{order:buyer:name} {order:buyer:icon}"
 					<div .{grow}>
 					<div> "{order:product_code} — {order:price} NOK"
