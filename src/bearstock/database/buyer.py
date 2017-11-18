@@ -9,6 +9,7 @@ class Buyer(Model):
     def __init__(self, *,
                  uid: Optional[int] = None,
                  name: Optional[str] = None,
+                 username: Optional[str] = None,
                  icon: Optional[str] = None,
                  scaling: Optional[int] = None,
                  created_at: Optional[int] = None,
@@ -17,6 +18,7 @@ class Buyer(Model):
 
         self._uid = uid
         self._name = name
+        self._username = username
         self._icon = icon
         self._scaling = scaling
         self._created_at = created_at
@@ -30,11 +32,18 @@ class Buyer(Model):
         return self._created_at
 
     @property
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         return self._name
     @name.setter
     def name(self, name) -> None:
         self._name = name
+
+    @property
+    def username(self) -> str:
+        return self._username
+    @username.setter
+    def username(self, username) -> None:
+        self._username = username
 
     @property
     def icon(self) -> str:
@@ -65,6 +74,7 @@ class Buyer(Model):
         return dict(
             id=self.uid,
             name=self.name,
+            username=self.username,
             icon=self.icon,
             scaling=self.scaling,
             last_order_at=last_order and last_order.created_at,
@@ -114,7 +124,7 @@ class Buyer(Model):
 
         # may raise BearDatabaseError
         inserted = db.insert_buyer(
-                name=self.name, icon=self.icon, scaling=self.scaling)
+                name=self.name, username=self.username, icon=self.icon, scaling=self.scaling)
         self._database = db
 
         self._uid = inserted.uid

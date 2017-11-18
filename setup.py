@@ -22,7 +22,6 @@ setup(
     install_requires=[
         'Flask',
         'uwsgi',
-        'bokeh',
     ],
     tests_require=[
         'pytest == 2.8.2',

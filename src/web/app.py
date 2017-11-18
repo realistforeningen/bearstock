@@ -1,6 +1,7 @@
 
 from flask import Flask, render_template, g, jsonify, request, redirect
 import json
+import datetime
 
 from bearstock.database import Database, Buyer
 from bearstock.statistics import get_top_bot
@@ -43,7 +44,7 @@ def buyers_list():
 
 @app.route('/buyers', methods=['POST'])
 def buyers_create():
-    buyer = Buyer(name=request.form['name'], scaling=1)
+    buyer = Buyer(username=request.form['username'], scaling=1)
     buyer.insert_into(g.db)
     return redirect("/buyers/{}".format(buyer.uid))
 
@@ -67,6 +68,7 @@ def buyers_edit(id):
 def buyers_update(id):
     buyer = g.db.get_buyer(int(id))
     buyer.name = request.form['name']
+    buyer.username = request.form['username']
     buyer.icon = request.form['icon']
     buyer.update_in_db()
     return redirect('/')
@@ -95,51 +97,28 @@ def register_json():
         products=products,
         buyers=[buyer.as_dict() for buyer in buyers ],
         orders=[order.as_dict(with_derived=True) for order in orders ],
+        is_open=g.db.get_config_stock_running(),
     )
 
 ## Plots
 
+@app.route('/stocks.json')
+def stocks_json():
+    products = g.db.get_all_products()
+    stocks = []
+    for product in products:
+        time = product.timeline[0]
+        prices = product.timeline[2]
 
-from bokeh.embed import components
-from bokeh.plotting import figure
-from bokeh.models import Legend
-from bokeh.resources import INLINE
-from bokeh.util.string import encode_utf8
-from bokeh.layouts import layout
-from bokeh.palettes import Category20
+        stocks.append({
+            'key': product.code,
+            'values': list({'x': x, 'y': y} for x, y in zip(time, prices))
+        })
+    return jsonify(stocks=stocks)
+
 
 @app.route('/stats')
 def stats():
-    fig = figure(title="Stocks")
+    return render_template('stats.html')
 
-    fig.xaxis.axis_label = 'Time'
-    fig.yaxis.axis_label = 'Price (NOK)'
-    fig.toolbar.logo = None
-    fig.toolbar_location = None
-
-    products = g.db.get_all_products()
-
-    legends = []
-
-    palette = Category20[20]
-
-    for idx, p in enumerate(products):
-        l = fig.line(p.timeline[0], p.timeline[2], line_width=1, line_color=palette[idx % len(palette)])
-        legends.append((p.code, [l]))
-
-    js_resources = INLINE.render_js()
-    css_resources = INLINE.render_css()
-
-    fig.add_layout(Legend(items=legends), 'right')
-
-
-    script, div = components(fig)
-
-    return render_template(
-        'stats.html',
-        plot_script=script,
-        plot_div=div,
-        js_resources=js_resources,
-        css_resources=css_resources,
-    )
 
