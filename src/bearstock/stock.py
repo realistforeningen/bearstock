@@ -122,7 +122,7 @@ class Exchange:
         self.logger.info('Performing price calculation finalization')
         new_adjustments = pl.finalize()   # TODO
 
-        hardcoded_min_price = 20
+        hardcoded_min_price = 2000
 
         # construct adjustments for db
         completed_adjustments = {}
@@ -131,7 +131,8 @@ class Exchange:
         for product in included_products:
             adj = int(round(new_adjustments[product.code]*100))
             if product.base_price + adj < hardcoded_min_price:
-                adj = product.base_price - hardcoded_min_price
+                pass
+                # adj = product.base_price - hardcoded_min_price
             completed_adjustments[product.code] = adj
 
         # register the new tick in the database

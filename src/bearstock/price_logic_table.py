@@ -75,24 +75,24 @@ class PriceLogicBase:
         adjustments = self._compute_adjustments() # Price adjustments
         expected_sales = self._expected_sales(adjustments) # Per beer species
         total_expected_sales = self._total_estimated_sales()
+        print(adjustments)
 
-        #deficits = {}   # Compute current deficit this tick per beer species
-        #for code in self.products:
-        #    deficits[code] = self.products[code].base_price + adjustments[code]
-        #    deficits[code] *= expected_sales[code]
+        deficits = {}   # Compute current deficit this tick per beer species
+        for code in self.products:
+            deficits[code] = self.products[code].base_price + adjustments[code]
+            deficits[code] *= expected_sales[code]
 
         # Avoid division by zero for first tick
-        #total_deficits = sum(deficits.values())
-        #if total_deficits == 0:
-        #    total_deficits = 1
+        total_deficits = sum(deficits.values())
+        if total_deficits == 0:
+            total_deficits = 1
 
-        #correction_weights = {      # Scale price adjustments by deficit target
-        #    code: 1 - deficits[code]/total_deficits for code in adjustments
-        #}
+        correction_weights = {      # Scale price adjustments by deficit target
+            code: 1 - deficits[code]/total_deficits for code in adjustments
+        }
 
-        #for code in adjustments:    # Scale the price adjustments
-        #    adjustments[code] *= correction_weights[code]
-
+        for code in adjustments:    # Scale the price adjustments
+            adjustments[code] *= correction_weights[code]
         return adjustments
 
     def _expected_sales(self, adjustments: Dict[str, float]=None) -> Dict[str, float]:
@@ -130,11 +130,11 @@ class PriceLogic(PriceLogicBase):
 
         if units_sold == 0:
             return  -2*base_adjustment
-        if units_sold <= 10000:
+        if units_sold <= 5:
             return -1*base_adjustment
-        if units_sold > 20:
+        if units_sold > 5:
             return 3*base_adjustment
-        if units_sold > 30:
+        if units_sold > 10:
             return 10*base_adjustment
 
     def _compute_adjustments(self) -> Dict[str, float]:
