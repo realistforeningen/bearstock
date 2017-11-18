@@ -65,7 +65,8 @@ class PriceLogicBase:
             product = self.products[code]
 
             if product.base_price + adjustments[code] < min_price:
-                adjustments[code] = 0
+                adjustments[code] = product.base_price - min_price
+
         return adjustments
 
     def _adjust_deficit(self) -> Dict[str, float]:
