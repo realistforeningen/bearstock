@@ -19,19 +19,18 @@ export tag Stats
 	def svg
 		<svg:svg@svg.{grow}>
 
-	def updateChart stocks, chart = @chart
+	def updateChart stocks
 		d3.select(svg.dom)
 			.datum(stocks)
-			.call(chart)
+			.call(@chart)
 
 	def fetchData
 		var data = await fetch("/stocks.json").then(do $1.json)
 		updateChart(data:stocks)
 
-
 	def build
 		nv.addGraph do
-			var chart = nv:models.lineChart
+			var chart = @chart = nv:models.lineChart
 				.showYAxis(yes)
 				.showXAxis(yes)
 				.focusEnable(no)
@@ -47,12 +46,13 @@ export tag Stats
 
 			chart:tooltip.enabled(no)
 
-			updateChart([], chart)
+			updateChart([])
 
-			@chart = chart
-
-		setInterval(&, 10000) do
 			fetchData
+			setInterval(&, 10000) do
+				fetchData
+
+			chart
 
 	def render
 		<self.{@main-css}>
