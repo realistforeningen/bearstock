@@ -32,7 +32,7 @@ def parse_products_csv(filename):
                         product['hidden'] = value is not None and value != ''
                     else:
                         product[key.replace(' ', '_')] = value
-                else:  # extra values are stored under a None key
+                elif value:  # extra values are stored under a None key
                     if not isinstance(value, list):
                         value = [value]
                     product['tags'] += value
