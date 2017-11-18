@@ -13,6 +13,8 @@ export class DB
 	prop orders
 	prop error
 	prop isOpen
+	prop timeskew
+	prop quarantine
 
 	def initialize(options = {})
 		@updateDelay = options:updateDelay
@@ -22,6 +24,8 @@ export class DB
 		@timeout = null
 		@error = null
 		@isOpen = no
+		@timeskew = 0
+		@quarantine = null
 
 	def sync
 		# Override
@@ -35,6 +39,8 @@ export class DB
 		buyers = data:buyers
 		orders = data:orders
 		isOpen = data:is_open
+		timeskew = (Date.now - data:now*1000)
+		quarantine = data:quarantine
 
 	def fetchLoop
 		if @timeout
