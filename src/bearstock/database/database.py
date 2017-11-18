@@ -929,7 +929,7 @@ class Database:
             BearDatabaseError: If the database queries failed.
             ValueError: if ``product`` is not a product or string (product code).
         """
-        ticks = self.get_tick_number()
+        ticks = self.get_tick_number() + 1
         if isinstance(product, str):
             product = self.get_product(product)
         elif isinstance(product, Product):
