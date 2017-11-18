@@ -18,3 +18,8 @@ import EmojiPicker from './emoji-picker'
 
 window:startEmojiPicker = do |dom, props|
 	Imba.mount(<EmojiPicker current=props:currentIcon unavailable=props:usedIcons>, dom)
+
+
+import Stats from './stats'
+window:startStats = do |dom|
+	Imba.mount(<Stats>, dom)
