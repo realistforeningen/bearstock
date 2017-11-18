@@ -21,7 +21,7 @@
   </form>
   <script>
     insertStyles();
-  	startEmojiPicker(emoji, "{{ buyer.icon }}");
+  	startEmojiPicker(emoji, {{ emoji_picker|safe }});
   </script>
 </body>
 </html>

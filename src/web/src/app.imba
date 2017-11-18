@@ -16,5 +16,5 @@ window:startRegister = do |dom|
 
 import EmojiPicker from './emoji-picker'
 
-window:startEmojiPicker = do |dom, currentIcon|
-	Imba.mount(<EmojiPicker active=currentIcon>, dom)
+window:startEmojiPicker = do |dom, props|
+	Imba.mount(<EmojiPicker current=props:currentIcon unavailable=props:usedIcons>, dom)

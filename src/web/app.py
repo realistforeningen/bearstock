@@ -1,5 +1,6 @@
 
 from flask import Flask, render_template, g, jsonify, request, redirect
+import json
 
 from bearstock.database import Database, Buyer
 from bearstock.statistics import get_top_bot
@@ -49,7 +50,18 @@ def buyers_create():
 @app.route('/buyers/<id>')
 def buyers_edit(id):
     buyer = g.db.get_buyer(int(id))
-    return render_template('buyers/edit.html', buyer=buyer)
+    used_icons = g.db.get_all_icons()
+    if buyer.icon in used_icons:
+        used_icons.remove(buyer.icon)
+
+    return render_template(
+        'buyers/edit.html',
+        buyer=buyer,
+        emoji_picker=json.dumps({
+            'currentIcon': buyer.icon,
+            'usedIcons': used_icons
+        })
+    )
 
 @app.route('/buyers/<id>', methods=['POST'])
 def buyers_update(id):

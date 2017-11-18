@@ -196,6 +196,15 @@ class Database:
             callable=retrive_all_buyers
         )
 
+    def get_all_icons(self) -> List[str]:
+        def tolist(cursor: sqlite3.Cursor) -> List[str]:
+            return [row['icon'] for row in cursor]
+
+        return self.exe(
+            'SELECT icon FROM buyers WHERE icon IS NOT NULL',
+            callable=tolist
+        )
+
     def get_all_buyers(self) -> None:
         def action(cursor) -> List[Buyer]:
             buyers: List[Buyer] = []
