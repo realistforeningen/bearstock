@@ -78,7 +78,7 @@ class PriceLogicBase:
 
         deficits = {}   # Compute current deficit this tick per beer species
         for code in self.products:
-            deficits[code] = self.products[code].current_price + adjustments[code]
+            deficits[code] = self.products[code].base_price + adjustments[code]
             deficits[code] *= expected_sales[code]
 
         # Avoid division by zero for first tick
