@@ -74,7 +74,7 @@ class PriceLogicBase:
             if random.random() < 0.2:
                 adjustments[code] += 10
             elif random.random() < 0.5:
-                adjustments[code] -= 5
+                adjustments[code] -= 15
 
         return adjustments
 
