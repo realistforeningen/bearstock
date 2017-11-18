@@ -9,8 +9,8 @@
   <div class="buyer-list container">
     <form method="post" action="/buyers">
       <div class="form">
-        <label>Name</label>
-        <input name="name" value="">
+        <label>Username</label>
+        <input name="username" value="">
         <button>Create new buyer</button>
       </div>
     </form>
@@ -18,7 +18,7 @@
     <h2>Current buyers</h2>
     <ul>
       {% for buyer in buyers %}
-        <li><a href="/buyers/{{ buyer.uid }}">{{ buyer.name }} {{ buyer.icon }}</a></li>
+        <li><a href="/buyers/{{ buyer.uid }}">{{ buyer.username }} {{ buyer.icon }}</a></li>
       {% endfor %}
     </ul>
   </div>

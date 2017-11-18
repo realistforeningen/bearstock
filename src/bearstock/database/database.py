@@ -182,13 +182,14 @@ class Database:
 
     # buyer related methods
 
-    def insert_buyer(self, name: str, icon: str, *, scaling: float = 1.0) -> Buyer:
+    def insert_buyer(self, name: Optional[str], username: str, icon: str, *, scaling: float = 1.0) -> Buyer:
         def inserted_id(cursor: sqlite3.Cursor) -> int:
             return cursor.lastrowid
         inserted_id = self.exe(
-                'INSERT INTO buyers ( name, icon, scaling ) VALUES ( :name, :icon, :scaling )',
+                'INSERT INTO buyers ( name, username, icon, scaling ) VALUES ( :name, :username, :icon, :scaling )',
             args={
                 'name': name,
+                'username': username,
                 'icon': icon,
                 'scaling': scaling,
             },
@@ -209,6 +210,7 @@ class Database:
             args={
                 'uid': buyer.uid,
                 'name': buyer.name,
+                'username': buyer.username,
                 'icon': buyer.icon,
                 'scaling': buyer.scaling,
             }
@@ -230,6 +232,7 @@ class Database:
                 return Buyer(
                     uid=row['id'],
                     name=row['name'],
+                    username=row['username'],
                     icon=row['icon'],
                     scaling=row['scaling'],
                     created_at=row['created_at'],
@@ -239,7 +242,7 @@ class Database:
                 raise BearDatabaseError(f'could not find buyer with id: {uid}')
 
         return self.exe(
-            'SELECT id, name, icon, scaling, created_at FROM buyers WHERE id = :uid',
+            'SELECT id, name, username, icon, scaling, created_at FROM buyers WHERE id = :uid',
             args={'uid': uid,},
             callable=retrive_buyer
         )
@@ -280,6 +283,7 @@ class Database:
                 buyers.append(Buyer(
                     uid=row['id'],
                     name=row['name'],
+                    username=row['username'],
                     icon=row['icon'],
                     scaling=row['scaling'],
                     created_at=row['created_at'],
@@ -287,7 +291,7 @@ class Database:
                 ))
             return buyers
         return self.exe(
-            'SELECT id, name, icon, scaling, created_at FROM buyers ORDER BY name ASC',
+            'SELECT id, name, username, icon, scaling, created_at FROM buyers ORDER BY name ASC',
             callable=action
         )
 

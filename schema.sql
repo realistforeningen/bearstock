@@ -2,7 +2,8 @@
 -- table of buyers
 CREATE TABLE IF NOT EXISTS buyers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
+    username TEXT NOT NULL,
+    name TEXT,
     scaling REAL NOT NULL,
     icon TEXT UNIQUE,
     created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))

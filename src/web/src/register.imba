@@ -298,7 +298,7 @@ tag BuyProduct
 				<p> "{product:current_price} NOK"
 				<p> "Buyer"
 				<p.right>
-					buyer:name
+					buyer:username
 					" "
 					buyer:icon
 
@@ -377,7 +377,7 @@ tag OrderList
 				
 			for order, idx in orders
 				<div .{@order-css}.first=(idx == 0)>
-					<div.left> "{order:buyer:name} {order:buyer:icon}"
+					<div.left> "{order:buyer:username} {order:buyer:icon}"
 					<div .{grow}>
 					<div> "{order:product_code} — {order:price} NOK"
 

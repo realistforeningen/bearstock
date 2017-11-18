@@ -44,7 +44,7 @@ def buyers_list():
 
 @app.route('/buyers', methods=['POST'])
 def buyers_create():
-    buyer = Buyer(name=request.form['name'], scaling=1)
+    buyer = Buyer(username=request.form['username'], scaling=1)
     buyer.insert_into(g.db)
     return redirect("/buyers/{}".format(buyer.uid))
 
@@ -68,6 +68,7 @@ def buyers_edit(id):
 def buyers_update(id):
     buyer = g.db.get_buyer(int(id))
     buyer.name = request.form['name']
+    buyer.username = request.form['username']
     buyer.icon = request.form['icon']
     buyer.update_in_db()
     return redirect('/')
