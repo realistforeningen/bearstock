@@ -63,8 +63,8 @@ class Buyer(Model):
     def last_order(self) -> Optional['Order']:
         return self._database.get_last_order_by(self)
 
-    def sum_relative_cost(self):
-        return self._database.sum_relative_cost_by(self)
+    def relative_cost_stats(self):
+        return self._database.relative_cost_stats_for(self)
 
     def as_dict(self) -> Dict[str, Any]:
         """Return the buyer as a dictionary.

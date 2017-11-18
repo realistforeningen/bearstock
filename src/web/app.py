@@ -110,7 +110,7 @@ def buyers_json():
     dicts = []
     for buyer in buyers:
         d = buyer.as_dict()
-        d['sum_relative_cost'] = buyer.sum_relative_cost()
+        d['relative_cost_stats'] = buyer.relative_cost_stats()
         dicts.append(d)
 
     return jsonify(buyers=dicts)

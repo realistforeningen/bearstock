@@ -82,10 +82,22 @@ export tag Buyers
 	def fetchData
 		var data = await fetch("/buyers.json").then(do $1.json)
 		buyers = data:buyers
-		buyers = buyers.filter do |b| b:sum_relative_cost != 0
+
+		buyers = buyers.filter do |b| b:relative_cost_stats:count != 0
+
+		buyers.forEach do |b|
+			b:sum_relative_cost = Math.ceil(b:relative_cost_stats:sum / b:relative_cost_stats:count)
+
 		buyers.sort do |a, b|
 			a:sum_relative_cost - b:sum_relative_cost
+
 		render
+
+	def bigTraders
+		var b = buyers.slice
+		b.sort do |a, b|
+			a:relative_cost_stats:count - b:relative_cost_stats:count
+		b.reverse
 
 	def build
 		buyers = []
@@ -96,6 +108,8 @@ export tag Buyers
 	styles.insert self,
 		main-css:
 			flex-direction: 'row'
+			flex-wrap: 'wrap'
+			flex: 1
 
 			"& table":
 				border-collapse: 'separate'
@@ -129,9 +143,22 @@ export tag Buyers
 						<th> header
 			<tbody>
 				for buyer in data
+					var num = - buyer:sum_relative_cost
 					<tr>
 						<td.name> "{buyer:icon or ''} {buyer:username}"
-						<td.money .pos=(buyer:sum_relative_cost < 0) .neg=(buyer:sum_relative_cost > 0)> "{- buyer:sum_relative_cost} NOK"
+						<td.money .pos=(num > 0) .neg=(num < 1)> "{num} NOK"
+
+	def countTable headers, data
+		<table>
+			<thead>
+				<tr>
+					for header in headers
+						<th> header
+			<tbody>
+				for buyer in data
+					<tr>
+						<td.name> "{buyer:icon or ''} {buyer:username}"
+						<td.money> buyer:relative_cost_stats:count
 
 	var count = 10
 
@@ -139,6 +166,7 @@ export tag Buyers
 		<self.{@main-css}>
 			table(["Best", "Savings per order"], buyers.slice(0, count))
 			table(["Worst", "Savings per order"], losers.slice(0, count))
+			countTable(["Big traders", "Count"], bigTraders.slice(0, count))
 
 export tag Graph
 	styles.insert self,

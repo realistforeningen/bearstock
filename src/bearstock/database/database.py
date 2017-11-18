@@ -798,14 +798,16 @@ class Database:
             callable=action
         )
 
-    def sum_relative_cost_by(self, buyer: Buyer) -> Optional[Order]:
+    def relative_cost_stats_for(self, buyer: Buyer) -> Optional[Order]:
         def action(cursor) -> Optional[Order]:
             for row in cursor:
-                return row['cost'] or 0
-            return 0
+                return {
+                    'sum': row['sum'] or 0,
+                    'count': row['count'] or 0
+                }
 
         return self.exe((
-            'SELECT sum(relative_cost)/count(relative_cost) as cost '
+            'SELECT sum(relative_cost) as sum, count(relative_cost) as count '
             'FROM orders '
             'WHERE buyer_id = :uid'),
             args={'uid': buyer.uid},
