@@ -123,7 +123,7 @@ class PriceLogic(PriceLogicBase):
 
         product = self.products[code]
         current_price = product.current_price
-        units_sold = sum(product.timeline.sales[-20:])
+        units_sold = sum(product.timeline.sales[-10:])
 
         #base_adjustment = max(1, current_price - product.base_price)
         base_adjustment = 2
