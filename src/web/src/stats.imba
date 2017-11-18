@@ -61,7 +61,7 @@ export tag Prices
 			<div.{@prices-css}>
 				for prod in products
 					<p.code> prod:code
-					<p.name> prod:name
+					<p.name> "{prod:producer} {prod:name}"
 					<p.price.pos=(prod:price_adjustment < 0) .neg=(prod:price_adjustment > 0)> "{prod:current_price} NOK"
 					<p.adj>
 						if prod:price_adjustment > 0
