@@ -56,6 +56,10 @@ class Buyer(Model):
         if self.is_bound():
             self.update_in_db()
 
+    @property
+    def last_order(self) -> Optional['Order']:
+        return self._database.get_last_order_by(self)
+
     def as_dict(self) -> Dict[str, Any]:
         """Return the buyer as a dictionary.
 
@@ -63,11 +67,13 @@ class Buyer(Model):
         The fields in the dictionary are: ``id``, ``name``, ``icon``, ``scaling``, and
         ``created_at``.
         """
+        last_order = self.last_order
         return dict(
             id=self.uid,
             name=self.name,
             icon=self.icon,
             scaling=self.scaling,
+            last_order_at=last_order and last_order.created_at,
             created_at=self._created_at,
         )
 

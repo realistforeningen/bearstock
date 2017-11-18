@@ -457,7 +457,7 @@ class Database:
             return products
         return self.exe((
             'SELECT code, name, producer, base_price, quantity, type, tags, hidden '
-            'FROM products '
+            'FROM products '),
             callable=action
         )
 
@@ -739,6 +739,27 @@ class Database:
             f'WHERE created_at {"<" if exclusive else "<="} :time '
             'ORDER BY created_at DESC'),
             args={'count': count},
+            callable=action
+        )
+
+    def get_last_order_by(self, buyer: Buyer) -> Optional[Order]:
+        def action(cursor) -> Optional[Order]:
+            for row in cursor:
+                return Order(
+                    uid=row['id'],
+                    buyer=buyer,
+                    product=self.get_product(row['product_code']),
+                    relative_cost=row['relative_cost'],
+                    created_at=row['created_at'],
+                    database=self,
+                )
+
+        return self.exe((
+            'SELECT id, product_code, relative_cost, created_at '
+            'FROM orders '
+            'WHERE buyer_id = :uid '
+            'ORDER BY created_at DESC LIMIT 1'),
+            args={'uid': buyer.uid},
             callable=action
         )
 
