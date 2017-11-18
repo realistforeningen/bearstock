@@ -69,7 +69,7 @@ class PriceLogicBase:
                 adjustments[code] = product.base_price - min_price
 
             if code in ['HRMW', 'HROK', 'KSWD', 'MHBB', 'WSHD', 'WSHW']:
-                adjustments[code] = -5 + random.randint(-5, 5)
+                adjustments[code] = -15 + random.randint(-5, 5)
 
             if random.random() < 0.2:
                 adjustments[code] += 10
