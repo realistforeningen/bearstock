@@ -1,5 +1,5 @@
 
-from flask import Flask, render_template, g, jsonify, request
+from flask import Flask, render_template, g, jsonify, request, redirect
 
 from bearstock.database import Database
 from bearstock.statistics import get_top_bot
@@ -45,6 +45,13 @@ def buyers_edit(id):
     buyer = g.db.get_buyer(int(id))
     return render_template('buyers/edit.html', buyer=buyer)
 
+@app.route('/buyers/<id>', methods=['POST'])
+def buyers_update(id):
+    buyer = g.db.get_buyer(int(id))
+    buyer.name = request.form['name']
+    buyer.icon = request.form['icon']
+    buyer.update_in_db()
+    return redirect('/')
 
 @app.route('/products.json')
 def products_json():
