@@ -64,9 +64,9 @@ class PriceLogicBase:
         for code in adjustments:
             product = self.products[code]
 
-            if product.current_price() + adjustments[code] < min_price:
+            if product.current_price + adjustments[code] < min_price:
                 adjustments[code] = 0
-            if product.current_price() + adjustments[code] > max_price:
+            if product.current_price + adjustments[code] > max_price:
                 adjustments[code] = 0
         return adjustments
 
@@ -75,7 +75,7 @@ class PriceLogicBase:
         target_deficit = self._target_deficit_this_tick()
         adjustments = self._compute_adjustments() # Price adjustments
         expected_sales = self._expected_sales(adjustments) # Per beer species
-        total_expected_sales = self.total_estimated_sales()
+        total_expected_sales = self._total_estimated_sales()
 
         deficits = {}   # Compute current deficit this tick per beer species
         for code in self.products:
@@ -124,7 +124,7 @@ class PriceLogic(PriceLogicBase):
 
         product = self.products[code]
         current_price = product.current_price
-        units_sold = product.timeline.sales[-N:]
+        units_sold = sum(product.timeline.sales[-num_lookback_ticks:])
 
         base_adjustment = max(1, current_price - product.base_price)
 
@@ -157,7 +157,7 @@ class PriceLogic(PriceLogicBase):
             sales = product.timeline.sales
 
             weights = [
-                math.exp(-a*(self.current_period_id - t)) for t in range(len(sales))
+                math.exp(-alpha*(self.current_period_id - t)) for t in range(len(sales))
             ]
 
             # Compute weights average

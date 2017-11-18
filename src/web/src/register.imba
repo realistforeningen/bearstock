@@ -187,6 +187,9 @@ tag BuyView
 			negativeFilters.push(name)
 		@collection = null
 
+	def mount
+		clearFilters
+
 	def clearFilters
 		reset
 
@@ -256,21 +259,9 @@ tag BuyProduct
 	def keepModalOpen
 		isBuying
 
-	def buyTimelimit
-		# TODO
-		null
-
 	def accept
 		if isBuying
 			return
-
-		var limit = buyTimelimit
-
-		if limit and limit > 0
-			APP.userError = "You must wait {limit} seconds before you can make another order"
-			cancel
-			return
-
 
 		isBuying = yes
 
@@ -329,8 +320,25 @@ tag BuyerSelection
 			"& > p":
 				padding: "0 5px"
 
+	def buyerLimit buyer
+		if !buyer:last_order_at
+			return
+
+		var limit = APP.db.quarantine*1000
+		if !limit
+			return
+
+		var elapsed = (Date.now - buyer:last_order_at*1000) + APP.db.timeskew
+		limit -= elapsed
+		Math.ceil(limit/1000)
+
 	def selectBuyer buyer
-		APP.modal = <BuyProduct product=product buyer=buyer>
+		var limit = buyerLimit(buyer)
+		if limit and limit > 0
+			APP.userError = "You must wait {limit} seconds before you can make another order"
+			APP.cancelModal
+		else
+			APP.modal = <BuyProduct product=product buyer=buyer>
 
 	def closeModal
 		APP.cancelModal

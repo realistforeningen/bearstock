@@ -32,6 +32,7 @@ class ConfigKeys(Enum):
     TOTAL_BUDGET = auto()
     TICK_LENGTH = auto()
     TOTAL_TICKS = auto()
+    QUARANTINE = auto()
 
 
 class Database:
@@ -137,6 +138,15 @@ class Database:
             return row is not None and row['int_value'] != 0
         return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
                         args={'name': ConfigKeys.STOCK_RUNNING.name},
+                        callable=action)
+
+    def get_config_quarantine(self) -> Optional[int]:
+        def action(cur: sqlite3.Cursor) -> bool:
+            row = cur.fetchone()
+            if row:
+                return row['int_value']
+        return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
+                        args={'name': ConfigKeys.QUARANTINE.name},
                         callable=action)
 
     def set_config_budget(self, budget: int) -> None:
@@ -854,6 +864,7 @@ class Database:
             raise ValueError('product not a product or product code')
 
         code, base_price = product.code, product.base_price
+        sales = self.get_product_sold_per_tick(product)
 
         def action(cursor: sqlite3.Cursor) -> ProductPriceAdjustments:
             timestamps = []
@@ -867,15 +878,13 @@ class Database:
                 prices.append(int(round(base_price + adj[code]/100)))
 
             return ProductPriceAdjustments(
-                timestamps=timestamps, adjustments=adjustments, prices=prices, sales=None
+                timestamps=timestamps, adjustments=adjustments, prices=prices, sales=sales
             )
 
-        data = self.exe(
+        return self.exe(
             'SELECT price_adjustments, timestamp FROM ticks',
             callable=action
         )
-        data.sales = self.get_product_sold_per_tick(product)
-        return data
 
     def get_all_product_historic_prices(self, *, include_hidden: bool = True
                                         ) -> Dict[str, ProductPriceAdjustments]:
@@ -930,7 +939,7 @@ class Database:
             BearDatabaseError: If the database queries failed.
             ValueError: if ``product`` is not a product or string (product code).
         """
-        ticks = self.get_tick_number()
+        ticks = self.get_tick_number() + 1
         if isinstance(product, str):
             product = self.get_product(product)
         elif isinstance(product, Product):

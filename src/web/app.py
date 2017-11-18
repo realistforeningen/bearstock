@@ -2,6 +2,7 @@
 from flask import Flask, render_template, g, jsonify, request, redirect
 import json
 import datetime
+import time
 
 from bearstock.database import Database, Buyer
 from bearstock.statistics import get_top_bot
@@ -10,6 +11,7 @@ DATABASE_FILE = 'bear-app.db'
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 @app.before_request
 def before_request():
@@ -98,6 +100,8 @@ def register_json():
         buyers=[buyer.as_dict() for buyer in buyers ],
         orders=[order.as_dict(with_derived=True) for order in orders ],
         is_open=g.db.get_config_stock_running(),
+        now=time.time(),
+        quarantine=g.db.get_config_quarantine(),
     )
 
 ## Plots
