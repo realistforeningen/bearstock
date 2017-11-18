@@ -8,6 +8,8 @@ from typing import (
     Any,
 )
 
+from bearstock.database.product import Product
+
 
 class PriceLogicBase:
     def __init__(
@@ -28,83 +30,23 @@ class PriceLogicBase:
         periods_left: Number of periods left.
         """
 
-        self.current_surplus = current_surplus
-
         # period data
+        self.current_surplus = current_surplus
         self.current_period_id = current_period_id
         self.period_duration = period_duration
         self.periods_left = max(1, periods_left)
 
-        # product data
-        self.total_products_sold = 0
-        self.products = {}
-        self.brewery_data = {}
-        self.type_data = {}
+        self.products = {} # {code: Product}
 
-    def add_product(
-            self,
-            code: str,
-            brewery: str,
-            base_price: float,
-            products_left: int,
-            product_type: float,
-            price_data: List[Dict[str, float]],
-            params=None
-    ) -> None:
+    def add_product(sel, product: Product, parameters) -> None:
         """
         Parameters
         ----------
 
-        code: Product code.
-        brewery: Name of the brewery.
-        base_price: Product base price.
-        products_left: Number of products left.
-        product_type: Product type.
-        price_data: List of dictionaries each containing the keys 'sold_units' and
-            'adjustment'. One element per period.
-        params: Parameters.
+        product:
+        parameters: 
         """
-
-        # Count products
-        sold_products = sum(
-            ((data['sold_units'] if 'sold_units' in data else 0) for data in price_data)
-        )
-        self.total_products_sold += sold_products  # count all products sold all time
-        total_products = products_left + sold_products  # compute products left
-
-        # store products sold per brewery
-        if brewery.lower() not in self.brewery_data:
-            self.brewery_data[brewery.lower()] = 0
-        self.brewery_data[brewery.lower()] += sold_products
-
-        # store products sold per type
-        if product_type.lower() not in self.type_data:
-            self.type_data[product_type.lower()] = 0
-        self.type_data[product_type.lower()] += sold_products
-
-        # add product
-        self.products[code] = {
-            'brewery': brewery.lower(),
-            'type': product_type.lower(),
-            'base_price': base_price,
-            'prev_abs_adj': (price_data[-1]['adjustment'] if len(price_data) > 0 else 0),
-            'prev_rel_adj': (
-                (price_data[-1]['adjustment'] - price_data[-2]['adjustment'])
-                if len(price_data) > 1 else price_data[-1]['adjustment'] if len(price_data) > 0
-                else 0
-            ),
-            'fraction_left': (
-                (float(products_left)/total_products)
-                if total_products > 0 and products_left >= 0 else 1.0
-            ),
-            'price_data': price_data,
-            'popularity': (
-                sold_products/float(self.total_products_sold) if self.total_products_sold > 0 else 0
-            ),
-            'p': (
-                None
-            ),
-        }
+        self.products[product.code] = product
 
     def finalize(self) -> Dict[str, float]:
         """Finalize the price calculations.
@@ -114,14 +56,17 @@ class PriceLogicBase:
         adjustments: Product code to adjustment dictionary. Missing entries means the
             adjustment is zero.
         """
+        # TODO: get from params
         min_price = 20
         max_price = 200
 
         adjustments = self._adjust_deficit()    # Compute change in price
         for code in adjustments:
-            if self._get_current_price(code) + adjustments[code] < min_price:
+            product = self.products[code]
+
+            if product.current_price() + adjustments[code] < min_price:
                 adjustments[code] = 0
-            elif self._get_current_price(code) + adjustments[code] > max_price:
+            if product.current_price() + adjustments[code] > max_price:
                 adjustments[code] = 0
         return adjustments
 
@@ -130,15 +75,16 @@ class PriceLogicBase:
         target_deficit = self._target_deficit_this_tick()
         adjustments = self._compute_adjustments() # Price adjustments
         expected_sales = self._expected_sales(adjustments) # Per beer species
-        total_expected_sales = max(1, sum(expected_sales.values())) # In total 
+        total_expected_sales = self.total_estimated_sales()
 
         deficits = {}   # Compute current deficit this tick per beer species
         for code in self.products:
-            deficits[code] = self._get_current_price(code) + adjustments[code]
+            deficits[code] = self.products[code].current_price + adjustments[code]
             deficits[code] *= expected_sales[code]
 
+        # Avoid division by zero for first tick
         total_deficits = sum(deficits.values())
-        if total_deficits == 0:     # Avoid division by zero for first tick
+        if total_deficits == 0:
             total_deficits = 1
 
         correction_weights = {      # Scale price adjustments by deficit target
@@ -154,6 +100,10 @@ class PriceLogicBase:
         """Return estimated sales for each beer species."""
         raise NotImplementedError
 
+    def _total_estimated_sales(self): -> float:
+        """Return estimated total sales."""
+        raise NotImplementedError
+
     def _target_deficit_this_tick(self) -> float:
         """Return target deficit this tick."""
         raise NotImplementedError
@@ -164,13 +114,6 @@ class PriceLogicBase:
 
 
 class PriceLogicBasic(PriceLogicBase):
-    def _get_current_price(self, code: str) -> float:
-        # TODO: replace by database lookup
-        product = self.products[code]
-        base_price = product["base_price"]
-        adjustments = sum(map(lambda x: x["adjustment"], product["price_data"]))
-        return base_price + adjustments
-
     def _target_deficit_this_tick(self) -> float:
         total_subsidy = self.current_surplus/max(1, self.periods_left)
         estimate_total_sales = max(1, sum(self._expected_sales().values()))
@@ -178,11 +121,12 @@ class PriceLogicBasic(PriceLogicBase):
 
     def _compute_weight(self, code: str, num_lookback_ticks: int=10) -> float:
         """Compute weights based on number of beer sold."""
-        current_price = self._get_current_price(code)
 
-        units_sold = self._total_sold(num_lookback_ticks)[code]
         product = self.products[code]
-        base_adjustment = max(1, self._get_current_price(code) - product["base_price"])
+        current_price = product.current_price
+        units_sold = product.timeline.sales[-N:]
+
+        base_adjustment = max(1, current_price - product.base_price)
 
         if units_sold == 0:
             return  -4*base_adjustment
@@ -198,39 +142,27 @@ class PriceLogicBasic(PriceLogicBase):
         weights = {code: self._compute_weight(code) for code in self.products}
         total_weight = max(1, sum(weights.values()))
 
+        # TODO: Is this a good idea?
         for code in self.products:
             weights[code] /= total_weight
         return weights
 
-    def _total_sold(self, N: int) -> Dict[str, float]:
-        """Compute the total number of sold beer over N past ticks."""
-        total_sold = {}
-        for code in self.products:
-            product = self.products[code]
-            total_sold[code] = sum(map(
-                lambda x: x["sold_units"],
-                product["price_data"][::-1][:N]
-            ))
-        return total_sold
-
-    def _estimate_total_sales(self) -> float:
+    def _total_estimated_sales(self) -> float:
         """Compute expected sales for a product with code."""
         alpha = 1e-1    # parameter for time weights
         
         expected_sales = {}
         for code in self.products:
-            # List of time points
-            times = list(range(len(self.products[code]["price_data"])))
+            product = self.products[code]
+            sales = product.timeline.sales
 
-            # List of past sales
-            sales = [self.products[code]["price_data"][t]["sold_units"] for t in times]
-
-            # List of weights
-            # TODO: remove +1 if 0 indexed tick numbers ???
-            weights = [math.exp(-alpha*(self.current_period_id - t + 1)) for t in times]
+            weights = [
+                math.exp(-a*(self.current_period_id - t)) for t in range(len(sales))
+            ]
 
             # Compute weights average
             expected_sales[code] = sum([w*s for w, s in zip(weights, sales)])/sum(weights)
+
         return max(1, sum(expected_sales.values()))
 
     def _expected_sales(self, prices: Dict[str, float]=None) -> Dict[str, float]:
@@ -240,10 +172,13 @@ class PriceLogicBasic(PriceLogicBase):
 
         sales = {}
         for code in self.products:
-            current_price = self._get_current_price(code)
+            product = self.products[code]
+            current_price = product.current_price
+            base_price = product.base_price
+
             if prices is not None:
                 current_price += prices[code]
-            base_price = self.products[code]["base_price"]
+
             sales[code] = gamma*math.exp(-beta*(current_price - base_price))
 
         total_sales = self._estimate_total_sales()
