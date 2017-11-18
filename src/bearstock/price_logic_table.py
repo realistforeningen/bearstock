@@ -143,9 +143,6 @@ class PriceLogic(PriceLogicBase):
         weights = {code: self._compute_weight(code) for code in self.products}
         total_weight = max(1, sum(weights.values()))
 
-        # TODO: Is this a good idea?
-        # for code in self.products:
-        #     weights[code] /= total_weight
         return weights
 
     def _total_estimated_sales(self) -> float:
