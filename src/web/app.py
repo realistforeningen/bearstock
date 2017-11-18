@@ -97,6 +97,7 @@ def register_json():
         products=products,
         buyers=[buyer.as_dict() for buyer in buyers ],
         orders=[order.as_dict(with_derived=True) for order in orders ],
+        is_open=g.db.get_config_stock_running(),
     )
 
 ## Plots

@@ -12,6 +12,7 @@ export class DB
 	prop buyers
 	prop orders
 	prop error
+	prop isOpen
 
 	def initialize(options = {})
 		@updateDelay = options:updateDelay
@@ -20,6 +21,7 @@ export class DB
 		@orders = null
 		@timeout = null
 		@error = null
+		@isOpen = no
 
 	def sync
 		# Override
@@ -32,6 +34,7 @@ export class DB
 		products = data:products
 		buyers = data:buyers
 		orders = data:orders
+		isOpen = data:is_open
 
 	def fetchLoop
 		if @timeout
