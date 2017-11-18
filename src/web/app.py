@@ -91,7 +91,7 @@ def orders_create():
 @app.route('/register.json')
 def register_json():
     tick_no = g.db.get_tick_number()
-    products = [p.as_dict(with_derived=True) for p in g.db.get_all_products()]
+    products = [p.as_dict(with_derived=True) for p in g.db.get_all_products() if not p.hidden]
     buyers = g.db.get_all_buyers()
     orders = g.db.get_latest_orders(count=10)
     return jsonify(
