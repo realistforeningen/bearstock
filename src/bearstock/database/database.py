@@ -832,7 +832,7 @@ class Database:
             return adjustments[code]
         raise ValueError(f'no product with code {code} in database prices')
 
-    def get_product_historic_prices(self, product: Union[str, Product]) -> Tuple[List[int], List[int], List[int]]:
+    def get_product_historic_prices(self, product: Union[str, Product]) -> ProductPriceAdjustments:
         """Get historic prices and price adjustments for a product.
 
         Args:
@@ -855,7 +855,7 @@ class Database:
 
         code, base_price = product.code, product.base_price
 
-        def action(cursor: sqlite3.Cursor) -> Tuple[List[int], List[int], List[int]]:
+        def action(cursor: sqlite3.Cursor) -> ProductPriceAdjustments:
             timestamps = []
             adjustments = []
             prices = []
@@ -866,7 +866,9 @@ class Database:
                 adjustments.append(adj[code])
                 prices.append(int(round(base_price + adj[code]/100)))
 
-            return timestamps, adjustments, prices
+            return ProductPriceAdjustments(
+                timeline=timestamps, adjustments=adjustments, prices=prices, sales=None
+            )
 
         data = self.exe(
             'SELECT price_adjustments, timestamp FROM ticks',
