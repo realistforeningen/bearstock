@@ -119,27 +119,24 @@ class PriceLogic(PriceLogicBase):
         estimate_total_sales = max(1, sum(self._expected_sales().values()))
         return total_subsidy/estimate_total_sales
 
-    def _compute_weight(self, code: str, num_lookback_ticks: int=10) -> float:
+    def _compute_weight(self, code: str, num_lookback_ticks: int=5) -> float:
         """Compute weights based on number of beer sold."""
 
         product = self.products[code]
         current_price = product.current_price
-        # units_sold = sum(product.timeline.sales[-10:])
-        units_sold_list = product.timeline.sales
-        print(units_sold_list)
-        units_sold = sum(units_sold_list)
+        units_sold = sum(product.timeline.sales[-10:])
 
-        base_adjustment = max(1, current_price - product.base_price)
+        # base_adjustment = max(1, current_price - product.base_price)
         base_adjustment = 1
 
         if units_sold == 0:
             return  -4*base_adjustment
-        if units_sold <= 5:
+        if units_sold <= 2:
             return -2*base_adjustment
-        if units_sold > 5:
+        if units_sold > 2:
             return 2*base_adjustment
-        if units_sold > 10:
-            return 5*base_adjustment
+        if units_sold > 5:
+            return 10*base_adjustment
 
     def _compute_adjustments(self) -> Dict[str, float]:
         """This is where the magic happens."""

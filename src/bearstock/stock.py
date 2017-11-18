@@ -23,7 +23,7 @@ class Exchange:
     def _create_logger(self) -> logging.Logger:
         """Create and configurate the logger instance."""
         logger: logging.Logger = logging.getLogger(Exchange.__name__)
-        # logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging.DEBUG)
 
         fmt = logging.Formatter('%(asctime)s :: %(name)s :: %(levelname)s :: %(message)s')
 
