@@ -2,17 +2,26 @@
 <html>
 <head>  
   <title>BearStock</title>
+  <script src="/static/assets/app.js"></script>
 </head>
 <body>
 
   <div class="buyer-list container">
+    <form method="post" action="/buyers">
+      <div class="form">
+        <label>Name</label>
+        <input name="name" value="">
+        <button>Create new buyer</button>
+      </div>
+    </form>
+
+    <h2>Current buyers</h2>
     <ul>
       {% for buyer in buyers %}
-        <li><a href="/buyers/{{ buyer.uid }}">{{ buyer.name }}</a></li>
+        <li><a href="/buyers/{{ buyer.uid }}">{{ buyer.name }} {{ buyer.icon }}</a></li>
       {% endfor %}
     </ul>
   </div>
-  <script src="/static/assets/app.js"></script>
   <script>
     insertStyles();
   </script>

@@ -33,28 +33,22 @@ class Buyer(Model):
     def name(self) -> str:
         return self._name
     @name.setter
-    def _(self, name) -> None:
+    def name(self, name) -> None:
         self._name = name
-        if self.is_bound():
-            self.update_in_db()
 
     @property
     def icon(self) -> str:
         return self._icon
     @icon.setter
-    def _(self, icon) -> None:
+    def icon(self, icon) -> None:
         self._icon = icon
-        if self.is_bound():
-            self.update_in_db()
 
     @property
     def scaling(self) -> int:
         return self._scaling
     @scaling.setter
-    def _(self, scaling) -> None:
+    def scaling(self, scaling) -> None:
         self._scaling = scaling
-        if self.is_bound():
-            self.update_in_db()
 
     @property
     def last_order(self) -> Optional['Order']:
@@ -137,7 +131,7 @@ class Buyer(Model):
             raise BearModelError('buyer not bound to a database')
 
         # may raise BearDatabaseError
-        self._database.update_user(self)
+        self._database.update_buyer(self)
 
     @classmethod
     def load_from_db(cls, db: 'Database', uid: int) -> 'Buyer':

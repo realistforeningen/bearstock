@@ -4,7 +4,8 @@ import groups, subgroups, hierarchy from 'emojibase-data/meta/groups.json'
 var styles = require 'imba-styles'
 
 export tag EmojiPicker
-	prop active
+	prop current
+	prop unavailable
 
 	styles.insert self,
 		grid-css:
@@ -14,18 +15,26 @@ export tag EmojiPicker
 			'& p':
 				font-size: "30px"
 				padding: "5px"
+				border-radius: '5px'
+				border: '1px solid #fff'
 
-				"&.active":
+				"&.current":
 					background: '#ddd'
-					outline: '1px solid #333'
+					border: '1px solid green'
+
+				"&.unavailable":
+					background: '#666'
+					opacity: 0.3
 
 	def mount
 		schedule
 
 	def render
 		<self>
-			<input type="hidden" name="icon" value=active>
+			<input type="hidden" name="icon" value=current>
 			<div.{@grid-css}>
-				for emoji in emojis
-					if emoji:version < 5
-						<p.active=(active == emoji:emoji) :tap=["setActive", emoji:emoji]> emoji:emoji
+				for emoji in emojis when emoji:version < 5
+					if emoji:emoji in unavailable
+						<p.unavailable> emoji:emoji
+					else
+						<p.current=(current == emoji:emoji) :tap=["setCurrent", emoji:emoji]> emoji:emoji

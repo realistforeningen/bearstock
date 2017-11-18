@@ -1,7 +1,8 @@
 
-from flask import Flask, render_template, g, jsonify, request
+from flask import Flask, render_template, g, jsonify, request, redirect
+import json
 
-from bearstock.database import Database
+from bearstock.database import Database, Buyer
 from bearstock.statistics import get_top_bot
 
 DATABASE_FILE = 'bear-app.db'
@@ -20,7 +21,7 @@ def teardown_request(exception):
     if db is not None:
         db.close()
 
-@app.route('/')
+@app.route('/register')
 def index():
     return render_template('index.html')
 
@@ -35,33 +36,40 @@ def signup():
 
     return render_template('signup.html')
 
-@app.route('/buyers')
+@app.route('/')
 def buyers_list():
     buyers = g.db.get_all_buyers()
     return render_template('buyers/list.html', buyers=buyers)
 
+@app.route('/buyers', methods=['POST'])
+def buyers_create():
+    buyer = Buyer(name=request.form['name'], scaling=1)
+    buyer.insert_into(g.db)
+    return redirect("/buyers/{}".format(buyer.uid))
+
 @app.route('/buyers/<id>')
 def buyers_edit(id):
     buyer = g.db.get_buyer(int(id))
-    return render_template('buyers/edit.html', buyer=buyer)
+    used_icons = g.db.get_all_icons()
+    if buyer.icon in used_icons:
+        used_icons.remove(buyer.icon)
 
+    return render_template(
+        'buyers/edit.html',
+        buyer=buyer,
+        emoji_picker=json.dumps({
+            'currentIcon': buyer.icon,
+            'usedIcons': used_icons
+        })
+    )
 
-@app.route('/products.json')
-def products_json():
-    tick_no = g.db.get_tick_number()
-    products = [p.as_dict(with_derived=True) for p in g.db.get_all_products()]
-    return jsonify(products=products, tick_no=tick_no)
-
-@app.route('/buyers.json')
-def buyers_json():
-    buyers = g.db.get_all_buyers()
-    return jsonify(buyers=[ buyer.as_dict() for buyer in buyers ])
-
-
-@app.route('/orders.json')
-def orders_json():
-    orders = g.db.get_latest_orders(count=10)
-    return jsonify(orders=[  order.as_dict(with_derived=True) for order in orders ])
+@app.route('/buyers/<id>', methods=['POST'])
+def buyers_update(id):
+    buyer = g.db.get_buyer(int(id))
+    buyer.name = request.form['name']
+    buyer.icon = request.form['icon']
+    buyer.update_in_db()
+    return redirect('/')
 
 @app.route('/orders', methods=['POST'])
 def orders_create():
@@ -76,6 +84,18 @@ def orders_create():
         tick_no=tick_no)
     return jsonify(ok=True, order=order.as_dict(with_derived=True))
 
+@app.route('/register.json')
+def register_json():
+    tick_no = g.db.get_tick_number()
+    products = [p.as_dict(with_derived=True) for p in g.db.get_all_products()]
+    buyers = g.db.get_all_buyers()
+    orders = g.db.get_latest_orders(count=10)
+    return jsonify(
+        tick_no=tick_no,
+        products=products,
+        buyers=[buyer.as_dict() for buyer in buyers ],
+        orders=[order.as_dict(with_derived=True) for order in orders ],
+    )
 
 ## Plots
 

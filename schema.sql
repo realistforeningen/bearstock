@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS buyers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     scaling REAL NOT NULL,
-    icon TEXT NOT NULL,
+    icon TEXT UNIQUE,
     created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 

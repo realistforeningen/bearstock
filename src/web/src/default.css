@@ -33,28 +33,30 @@ body {
   max-width: 800px;
 }
 
-.buyer-edit {
+.form {
   display: grid;
   grid-template-columns: auto 1fr auto;
   grid-gap: 20px;
 
   justify-content: center;
+
+  margin-bottom: 30px;
 }
 
-.buyer-edit input {
+.form input {
   padding: 0.5em 1em;
 }
 
-.buyer-edit label {
+.form label {
   padding: 0.5em;
   grid-column: 1;
 }
 
-.buyer-edit p {
+.form p {
   padding: 0.5em;
 }
 
-.buyer-edit button {
+.form button {
   grid-column: 3;
   border-radius: 5px;
   padding: 0.5em 1em;
