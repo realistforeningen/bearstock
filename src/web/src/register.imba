@@ -10,8 +10,9 @@ import h100, grow, winColors from './styling'
 export tag Register
 	prop db
 	prop modal
-	prop override
 	prop currentError watch: yes
+	prop syncErrorView
+	prop userErrorView
 
 	styles.insert self,
 		main-css:
@@ -69,17 +70,30 @@ export tag Register
 
 	def currentErrorDidSet new
 		if new
-			override = <Bluescreen error=new>
+			syncErrorView = <Bluescreen messages=["Error message: {new}"]>
 		else
-			override = null
+			syncErrorView = null
+
+	def setUserError msg
+		userErrorView = <Bluescreen messages=[msg, "Tap to reboot"] :tap='closeUserError'>
+
+	def closeUserError
+		userErrorView = null
 
 	def buyers
 		db.buyers
 
+	def overrideView
+		if userErrorView
+			return userErrorView
+
+		if syncErrorView
+			return syncErrorView
+
 	def render
 		<self .{@main-css}>
-			if override
-				override.end
+			if var view = overrideView
+				view.end
 			else
 				<Window .{grow}>
 					<.header>
@@ -233,14 +247,26 @@ tag BuyProduct
 	def keepModalOpen
 		isBuying
 
+	def buyTimelimit
+		# TODO
+		null
+
 	def accept
 		if isBuying
 			return
 
+		var limit = buyTimelimit
+
+		if limit and limit > 0
+			APP.userError = "You must wait {limit} seconds before you can make another order"
+			cancel
+			return
+
+
 		isBuying = yes
 
 		await APP.db.order(product, buyer)
-			.catch(do APP.superfail)
+			.catch(do APP.userError = "Order failed")
 
 		isBuying = no
 		cancel
@@ -412,7 +438,7 @@ tag ScrollHint
 				<.{@filler-css}>
 
 tag Bluescreen
-	prop error
+	prop messages
 
 	styles.insert self,
 		main-css:
@@ -432,9 +458,9 @@ tag Bluescreen
 	def render
 		<self.{@main-css}>
 			<div>
-				<p> "A problem has been detected and Windows has been shut down to prevent damage to your life"
-				if error
-					<p> "Error message: {error}"
+				<p> "A problem has been detected and Windows has been shut down to prevent damage to your life:"
+				for msg in messages
+					<p> msg
 
 tag UpdateScreen
 	styles.insert self,
