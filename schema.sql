@@ -10,10 +10,8 @@ CREATE TABLE IF NOT EXISTS buyers (
 
 -- application config
 CREATE TABLE IF NOT EXISTS config (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    int_value INTEGER DEFAULT NULL,
-    text_value TEXT DEFAULT NULL
+    name TEXT PRIMARY KEY,
+    int_value INTEGER DEFAULT NULL
 );
 
 -- table of products
@@ -46,6 +44,7 @@ CREATE TABLE IF NOT EXISTS orders (
     product_code TEXT NOT NULL REFERENCES products(code),
     -- NOTE: base_price is multiple of 1 NOK
     relative_cost INTEGER NOT NULL,
+    tick_no INTEGER NOT NULL REFERENCES ticks(tick_no),
     created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 

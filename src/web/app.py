@@ -68,9 +68,13 @@ def orders_create():
     body = request.get_json()
     product = g.db.get_product(body['product_code'])
     buyer = g.db.get_buyer(body['buyer_id'])
+    tick_no = g.db.get_tick_number()
     price = body['price']
-    g.db.insert_order(buyer=buyer, product=product, relative_cost=(price-product.base_price))
-    return jsonify(ok=True)
+    order = g.db.insert_order(
+        buyer=buyer, product=product,
+        relative_cost=(price-product.base_price),
+        tick_no=tick_no)
+    return jsonify(ok=True, order=order.as_dict(with_derived=True))
 
 
 ## Plots

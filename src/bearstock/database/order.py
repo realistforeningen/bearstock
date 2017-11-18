@@ -11,6 +11,7 @@ class Order(Model):
                  buyer: Optional['Buyer'] = None,
                  product: Optional['Product'] = None,
                  relative_cost: Optional[int] = None,
+                 tick_no: Optional[int] = None,
                  created_at: Optional[int] = None,
                  database: Optional['Database'] = None) -> None:
         super().__init__(database=database)
@@ -19,6 +20,7 @@ class Order(Model):
         self._buyer_id = buyer.uid if buyer is not None else None
         self._product_code = product.code if product is not None else None
         self._relative_cost = relative_cost
+        self._tick_no = tick_no
         self._created_at = created_at
 
     @property
@@ -68,6 +70,11 @@ class Order(Model):
         return self._relative_cost
 
     @property
+    def tick_no(self) -> Optional[int]:
+        """Tick number of the order."""
+        return self.tick_no
+
+    @property
     def created_at(self) -> Optional[int]:
         """Timestamp of the order."""
         return self._created_at
@@ -90,6 +97,7 @@ class Order(Model):
             buyer_id=self._buyer_id,
             product_code=self._product_code,
             relative_cost=self._relative_cost,
+            tick_no=self.tick_no,
             created_at=self._created_at,
             # derived fields
             buyer=None if not with_derived else self.buyer.as_dict(),
@@ -112,6 +120,7 @@ class Order(Model):
         self._buyer_id = order._buyer_id
         self._product_code = order._product_code
         self._relative_cost = order._relative_cost
+        self._tick_no = order._tick_no
         self._created_at = order._created_at
 
     def insert_into(self, db: 'Database', *, rebind: bool = False) -> None:
@@ -141,7 +150,7 @@ class Order(Model):
         # may raise BearDatabaseError
         inserted = db.insert_order(
             buyer_id=self._buyer_id, product_code=self._product_code,
-            relative_cost=self._relative_cost, created_at=self._created_at)
+            relative_cost=self._relative_cost, tick_no=self.tick_no, created_at=self._created_at)
 
         self._uid = inserted._uid
 
