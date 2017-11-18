@@ -867,7 +867,7 @@ class Database:
                 prices.append(int(round(base_price + adj[code]/100)))
 
             return ProductPriceAdjustments(
-                timeline=timestamps, adjustments=adjustments, prices=prices, sales=None
+                timestamps=timestamps, adjustments=adjustments, prices=prices, sales=None
             )
 
         data = self.exe(

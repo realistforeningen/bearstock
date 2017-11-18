@@ -38,7 +38,7 @@ class PriceLogicBase:
 
         self.products = {} # {code: Product}
 
-    def add_product(sel, product: Product, parameters) -> None:
+    def add_product(self, product: Product, parameters) -> None:
         """
         Parameters
         ----------
@@ -100,7 +100,7 @@ class PriceLogicBase:
         """Return estimated sales for each beer species."""
         raise NotImplementedError
 
-    def _total_estimated_sales(self): -> float:
+    def _total_estimated_sales(self) -> float:
         """Return estimated total sales."""
         raise NotImplementedError
 
@@ -113,7 +113,7 @@ class PriceLogicBase:
         raise NotImplementedError
 
 
-class PriceLogicBasic(PriceLogicBase):
+class PriceLogic(PriceLogicBase):
     def _target_deficit_this_tick(self) -> float:
         total_subsidy = self.current_surplus/max(1, self.periods_left)
         estimate_total_sales = max(1, sum(self._expected_sales().values()))
@@ -181,7 +181,7 @@ class PriceLogicBasic(PriceLogicBase):
 
             sales[code] = gamma*math.exp(-beta*(current_price - base_price))
 
-        total_sales = self._estimate_total_sales()
+        total_sales = self._total_estimated_sales()
 
         # Scale so they sum to 1 using Softmax
         maximum = max(sales.values())
