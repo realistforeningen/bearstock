@@ -50,6 +50,8 @@ def main():
                         type=int, required=True, help='The length of a tick.')
     parser.add_argument('--tick-count', metavar='tick_count',
                         type=int, required=True, help='Total number of planned ticks.')
+    parser.add_argument('--quarantine', metavar='quarantine',
+                        type=int, required=True, help='Total number of planned ticks.')
     parsed = parser.parse_args()
 
     # get products and construct zero adjustments
@@ -69,6 +71,7 @@ def main():
     db.set_config_budget(parsed.budget)
     db.set_config_tick_length(parsed.tick_length)
     db.set_config_total_ticks(parsed.tick_count)
+    db.set_config_quarantine(parsed.quarantine)
 
     db.import_products(products, replace_existing=True)
     try:
