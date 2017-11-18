@@ -38,7 +38,7 @@ class PriceLogicBase:
 
         self.products = {} # {code: Product}
 
-    def add_product(self, product: Product, parameters) -> None:
+    def add_product(self, product: Product, parameters=None) -> None:
         """
         Parameters
         ----------
@@ -124,9 +124,13 @@ class PriceLogic(PriceLogicBase):
 
         product = self.products[code]
         current_price = product.current_price
-        units_sold = sum(product.timeline.sales[-num_lookback_ticks:])
+        # units_sold = sum(product.timeline.sales[-10:])
+        units_sold_list = product.timeline.sales
+        print(units_sold_list)
+        units_sold = sum(units_sold_list)
 
         base_adjustment = max(1, current_price - product.base_price)
+        base_adjustment = 1
 
         if units_sold == 0:
             return  -4*base_adjustment
@@ -143,8 +147,8 @@ class PriceLogic(PriceLogicBase):
         total_weight = max(1, sum(weights.values()))
 
         # TODO: Is this a good idea?
-        for code in self.products:
-            weights[code] /= total_weight
+        # for code in self.products:
+        #     weights[code] /= total_weight
         return weights
 
     def _total_estimated_sales(self) -> float:
@@ -163,7 +167,8 @@ class PriceLogic(PriceLogicBase):
             # Compute weights average
             expected_sales[code] = sum([w*s for w, s in zip(weights, sales)])/sum(weights)
 
-        return max(1, sum(expected_sales.values()))
+        foo = max(1, sum(expected_sales.values()))
+        return foo
 
     def _expected_sales(self, prices: Dict[str, float]=None) -> Dict[str, float]:
         """Estimate the sales for each species."""

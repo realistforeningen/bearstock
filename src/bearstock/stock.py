@@ -23,7 +23,7 @@ class Exchange:
     def _create_logger(self) -> logging.Logger:
         """Create and configurate the logger instance."""
         logger: logging.Logger = logging.getLogger(Exchange.__name__)
-        logger.setLevel(logging.DEBUG)
+        # logger.setLevel(logging.DEBUG)
 
         fmt = logging.Formatter('%(asctime)s :: %(name)s :: %(levelname)s :: %(message)s')
 
@@ -115,19 +115,12 @@ class Exchange:
             self.logger.info(f'Adding product {product.code} to the price calculation.')
             pl.add_product(
                 product=product,
-                parameters=None
-            #     parameters=parameters,  # TODO get parametres for code (db)
+                # parameters=parameters,  # TODO get parametres for code (db)
             )
 
         # dict: product.code -> adjustment float (unit of one currency)
         self.logger.info('Performing price calculation finalization')
         new_adjustments = pl.finalize()   # TODO
-
-        # TODO temporary random adjustments
-        # import random
-        # new_adjustments = {}
-        # for product in included_products:
-        #     new_adjustments[product.code] = random.randint(-3, 3)
 
         # construct adjustments for db
         completed_adjustments = {}
@@ -139,4 +132,3 @@ class Exchange:
         # register the new tick in the database
         self.logger.info(f'Storing new price adjustments: {completed_adjustments}')
         self.db.do_tick(completed_adjustments)
-
