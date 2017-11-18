@@ -51,7 +51,7 @@ export class DB
 			.catch(do |err| error = err)
 			.then do
 				sync
-				@setTimeout = setTimeout(&, 10*1000) do fetchLoop
+				@timeout = setTimeout(&, 10*1000) do fetchLoop
 
 	def order product, buyer
 		let req = fetch "/orders"
