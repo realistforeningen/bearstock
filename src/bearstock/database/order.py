@@ -72,7 +72,7 @@ class Order(Model):
     @property
     def tick_no(self) -> Optional[int]:
         """Tick number of the order."""
-        return self.tick_no
+        return self._tick_no
 
     @property
     def created_at(self) -> Optional[int]:
