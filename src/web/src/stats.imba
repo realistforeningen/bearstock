@@ -10,9 +10,19 @@ import grow from './styling'
 require 'imba/src/imba/dom/svg'
 
 export tag Stats
+	styles.insert self,
+		main-css:
+			flex-direction: 'row'
+			margin: '20px'
+
+			"& .prices":
+				border-right: '1px solid #ccc'
+				padding-right: '20px'
+
 	def render
-		<self>
-			<Prices>
+		<self.{@main-css}>
+			<Prices.prices>
+			<Buyers>
 
 export tag Prices
 	prop products
@@ -31,10 +41,6 @@ export tag Prices
 			fetchData
 
 	styles.insert self,
-		main-css:
-			width: '600px'
-			margin: '20px auto'
-
 		prices-css:
 			display: 'grid'
 			grid-template-columns: 'auto 1fr auto auto auto'
@@ -69,6 +75,70 @@ export tag Prices
 						elif prod:price_adjustment < 0
 							"▼"
 					<p.diff> prod:price_adjustment/100
+
+export tag Buyers
+	prop buyers
+
+	def fetchData
+		var data = await fetch("/buyers.json").then(do $1.json)
+		buyers = data:buyers
+		buyers = buyers.filter do |b| b:sum_relative_cost != 0
+		buyers.sort do |a, b|
+			a:sum_relative_cost - b:sum_relative_cost
+		render
+
+	def build
+		buyers = []
+		fetchData
+		setInterval(&, 10000) do
+			fetchData
+
+	styles.insert self,
+		main-css:
+			flex-direction: 'row'
+
+			"& table":
+				border-collapse: 'separate'
+				border-spacing: '10px'
+
+				":first-child":
+					margin-right: '50px'
+
+				"& th":
+					text-align: 'left'
+
+			"& .money":
+				text-align: 'right'
+				font-weight: 'bold'
+
+			'& .pos':
+				color: 'green'
+
+			'& .neg':
+				color: 'red'
+
+	def losers
+		var b = buyers.slice
+		b.reverse
+
+	def table headers, data
+		<table>
+			<thead>
+				<tr>
+					for header in headers
+						<th> header
+			<tbody>
+				for buyer in data
+					<tr>
+						<td.name> "{buyer:icon or ''} {buyer:username}"
+						<td.money .pos=(buyer:sum_relative_cost < 0) .neg=(buyer:sum_relative_cost > 0)> "{- buyer:sum_relative_cost} NOK"
+
+	var count = 10
+
+	def render
+		<self.{@main-css}>
+			table(["Best", "Savings per order"], buyers.slice(0, count))
+			table(["Worst", "Savings per order"], losers.slice(0, count))
 
 export tag Graph
 	styles.insert self,

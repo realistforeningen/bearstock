@@ -104,6 +104,16 @@ def register_json():
         quarantine=g.db.get_config_quarantine(),
     )
 
+@app.route('/buyers.json')
+def buyers_json():
+    buyers = g.db.get_all_buyers()
+    dicts = []
+    for buyer in buyers:
+        d = buyer.as_dict()
+        d['sum_relative_cost'] = buyer.sum_relative_cost()
+        dicts.append(d)
+
+    return jsonify(buyers=dicts)
 ## Plots
 
 @app.route('/stocks.json')

@@ -798,7 +798,19 @@ class Database:
             callable=action
         )
 
-    # price methods
+    def sum_relative_cost_by(self, buyer: Buyer) -> Optional[Order]:
+        def action(cursor) -> Optional[Order]:
+            for row in cursor:
+                return row['cost'] or 0
+            return 0
+
+        return self.exe((
+            'SELECT sum(relative_cost)/count(relative_cost) as cost '
+            'FROM orders '
+            'WHERE buyer_id = :uid'),
+            args={'uid': buyer.uid},
+            callable=action
+        )    # price methods
 
     def do_tick(self, price_adjustments: Dict[str, Any], *, tick_no: Optional[int] = None) -> None:
         """Insert a new set of price adjustments into the database and increment the ticks.
