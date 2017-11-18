@@ -314,7 +314,7 @@ tag BuyerSelection
 			margin: "14px 0"
 			flex-direction: "row"
 			flex-wrap: "wrap"
-			font-size: "30px"
+			font-size: "40px"
 			max-width: "400px"
 
 			"& > p":
