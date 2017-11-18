@@ -2,12 +2,13 @@
 <html>
 <head>  
   <title>BearStock</title>
+  <script src="/static/assets/app.js"></script>
 </head>
 <body>
-	{{ js_resources|safe }}
-	{{ css_resources|safe }}
-	{{ plot_div|safe }}
-	{{ plot_script|safe }}
+  <script>
+    insertStyles();
+  	startStats(document.body);
+  </script>
 </body>
 </html>
 

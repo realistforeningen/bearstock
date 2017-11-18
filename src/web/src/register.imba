@@ -248,6 +248,7 @@ tag BuyProduct
 	prop buyer
 	prop product
 	prop isBuying
+	prop isComplete
 
 	def keepModalOpen
 		isBuying
@@ -274,7 +275,7 @@ tag BuyProduct
 			.catch(do APP.userError = "Order failed")
 
 		isBuying = no
-		cancel
+		isComplete = yes
 		APP.render
 
 	def cancel
@@ -297,11 +298,14 @@ tag BuyProduct
 				<p> "{product:current_price} NOK"
 				<p> "Buyer"
 				<p.right>
-					buyer:name
+					buyer:username
 					" "
 					buyer:icon
 
-				if isBuying
+				if isComplete
+					<div.right.buttons>
+						<Button.bold :tap="cancel"> "Order accepted!"
+				elif isBuying
 					<div.right> "Buying…"
 				else
 					<div.right.buttons>
@@ -373,7 +377,7 @@ tag OrderList
 				
 			for order, idx in orders
 				<div .{@order-css}.first=(idx == 0)>
-					<div.left> "{order:buyer:name} {order:buyer:icon}"
+					<div.left> "{order:buyer:username} {order:buyer:icon}"
 					<div .{grow}>
 					<div> "{order:product_code} — {order:price} NOK"
 
@@ -424,14 +428,14 @@ tag ScrollHint
 			height: spacing
 			width: '100%'
 			zIndex: 1000
-			background: 'linear-gradient(to bottom, #bfbfbf, rgba(255,255,255,0))'
+			background: "linear-gradient(to bottom, {winColors:g2}, {winColors:g2.alpha(0)})"
 
 		bottom-css:
 			position: 'absolute'
 			bottom: 0
 			height: spacing
 			width: '100%'
-			background: 'linear-gradient(to top, #bfbfbf, rgba(255,255,255,0))'
+			background: "linear-gradient(to top, {winColors:g2}, {winColors:g2.alpha(0)})"
 			zIndex: 1000
 
 		scroller-css:

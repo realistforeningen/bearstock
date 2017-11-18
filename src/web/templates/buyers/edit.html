@@ -12,9 +12,9 @@
       <label>ID</label>
       <p>#{{ buyer.uid }}</p>
       <label>Name</label>
-      <input type="text" name="name" value="{{ buyer.name }}">
+      <input type="text" name="name" value="{{ buyer.name or '' }}">
       <label>Username</label>
-      <input type="text" name="username">
+      <input type="text" name="username" value="{{ buyer.username }}">
       <label>Icon</label>
       <div id="emoji"></div>
     </div>
