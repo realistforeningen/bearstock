@@ -80,6 +80,9 @@ export tag Register
 	def closeUserError
 		userErrorView = null
 
+	def tapCloseWindow
+		userError = "Doctor, it hurts when I press the close button"
+
 	def buyers
 		db.buyers
 
@@ -98,6 +101,8 @@ export tag Register
 				<Window .{grow}>
 					<.header>
 						<p> "BearStock v2"
+						<.{grow}>
+						<.close :tap='tapCloseWindow'>
 					<.content>
 						<BuyView.{grow}>
 	
@@ -277,7 +282,10 @@ tag BuyProduct
 
 	def render
 		<self> <Window>
-			<.header> product:name
+			<.header>
+				<p> product:name
+				<.{grow}>
+				<.close :tap='cancel'>
 			<.content.{@grid-css}>
 				<p> "Code"
 				<p> <strong> product:code
@@ -317,9 +325,15 @@ tag BuyerSelection
 	def selectBuyer buyer
 		APP.modal = <BuyProduct product=product buyer=buyer>
 
+	def closeModal
+		APP.cancelModal
+
 	def render
 		<self> <Window>
-			<.header> "Buyer Identification"
+			<.header>
+				<p> "Buyer Identification"
+				<.{grow}>
+				<.close :tap='closeModal'>
 			<.content>
 				<.{@buyers-css}>
 					for buyer in APP.buyers
