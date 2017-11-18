@@ -8,6 +8,14 @@ CREATE TABLE IF NOT EXISTS buyers (
     created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 
+-- application config
+CREATE TABLE IF NOT EXISTS config (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    int_value INTEGER DEFAULT NULL,
+    text_value TEXT DEFAULT NULL
+);
+
 -- table of products
 -- code refers to a short "stock-like" code identifying the product
 CREATE TABLE IF NOT EXISTS products (

@@ -1,138 +1,133 @@
 
-from threading import Thread
-import time
-from datetime import datetime
-import sqlite3
-import pickle
 from collections import defaultdict
+from datetime import datetime
+from threading import Thread
+import logging
+import pickle
+import sqlite3
+import time
 
 from bearstock.database import Database
 from bearstock.price_logic import PriceLogic, Params
-
-default_params = {
-    # lookback
-    'ex_periods': 12,
-    'ex_lookback': 12,
-    # decrease
-    'decrease_scaling': 0.0075,
-    'acqu_weight': 3,
-    'prev_abs_adjust_weight': 2,
-    'prev_rel_adjust_weight': 4,
-    'time_since_sale_weight': 9,
-    'time_since_sale_power': 1.02,
-    # increase
-    'increase_scaling': 0.6,
-    'past_purchase_importance': 15.0,
-    # min price
-    'min_price': 5.,
-}
-# product code to parameters, parameter keys are given above
-product_parameters = {
-
-}
-
-# def todict(cursor, key_field=0, value_field=1):
-#     res = {}
-#     for row in cursor:
-#         res[row[key_field]] = row[value_field]
-#     return res
-#
-# def dictmapper(row):
-#     data = {}
-#     for key in row.keys():
-#         data[key] = row[key]
-#     return data
-#
-# def torows(cursor, mapper=dictmapper):
-#     return [mapper(row) for row in cursor]
-
-DATABASE_FILE = 'bear-app.db'
 
 
 class Exchange:
     """Server running the stock exchange."""
 
-    @classmethod
-    def run_in_thread(self):
-        thread = Thread(target=self.run_default)
-        thread.daemon = True
-        thread.start()
-
-    @classmethod
-    def run_default(self):
-        Exchange(Database.default()).run()
-
-    BUDGET = 5000 - 856
-    PERIOD_DURATION = 5*60  # [s]
-    EVENT_LENGTH = 6*60*60  # [s]
-    TOTAL_PERIOD_COUNT = EVENT_LENGTH / PERIOD_DURATION
+    DATABASE_FILE = 'bear-app.db'
 
     def __init__(self, db):
         self.db = db
 
-    def run(self):
-        print("* Running stock in the background")
+        self.logger = self._create_logger()
 
-        # set default parameters
-        Params.set_default_from_dict(default_params)
+    def _create_logger(self) -> logging.Logger:
+        """Create and configurate the logger instance."""
+        logger: logging.Logger = logging.getLogger(Exchange.__name__)
+
+        fmt = logging.Formatter('%(asctime)s :: %(name)s :: %(levelName)s :: %(message)s')
+
+        sh = logging.StreamHandler()
+        sh.setLevel(logging.ERROR)
+        sh.setFormatter(fmt)
+
+        fh = logging.FileHandler(f'Exchange-{time.time()}.log')
+        fh.setLevel(logging.ERROR)
+        fh.setFormatter(fmt)
+
+        logger.addHandler(sh)
+        logger.addHandler(fh)
+
+        return logger
+
+    @classmethod
+    def run_default(self):
+        Exchange(Database(Exchange.DATABASE_FILE)).run()
+
+    @classmethod
+    def run_in_thread(self):
+        thread = Thread(target=self.run_default(),
+                        name='BearStock-exchange',
+                        daemon=True)
+        thread.start()
+
+    def run(self):
+        self.logger.info('Running stock in the background')
 
         while True:
-            ts = self.db.last_price_time()
-
-            if ts is None:
-                print("* Stock is closed")
+            # checkk if the stock is started
+            if self.db.get_config_stock_running():
+                self.logger('Stock is closed')
                 time.sleep(10)
                 continue
 
-            print(" * Stock is ticking")
-            now = datetime.now()
-            elapsed = (now - ts).total_seconds()
-            pending = self.PERIOD_DURATION - elapsed
+            # determine wait
+            self.logger('Stock is ticking')
+            pending = min(
+                self.db.get_tick_last_timestamp() - time.time(),
+                self.db.get_config_tick_length()
+            )
             if pending > 0:
+                self.logger(f'Stock is waiting for {pending} s')
                 time.sleep(pending)
+
+            # action!
+            self.logger.info('Stock is about perform tick')
             self.tick()
 
     def tick(self):
-        # database transaction
-        with self.db.conn:
-            surplus = self.BUDGET + self.db.stock_account()
-            period_count = self.db.prices_count()
-            period_id = period_count - 1
-            periods_left = self.TOTAL_PERIOD_COUNT - period_count
+        # what's left of the budget
+        surplus = self.get_config_budget() + self.db.get_purchase_surplus()
+        # the index/number of the tick we are about to do and how many are left
+        tick_no = self.get_tick_number()
+        ticks_left = self.db.get_config_total_ticks() - tick_no
 
-            pl = PriceLogic(
-                current_surplus=surplus,
-                period_id=period_id,
-                period_duration=self.PERIOD_DURATION,
-                periods_left=periods_left
+        self.logger.info(f'Performing tick #{tick_no} - {ticks_left} ticks left')
+
+        # the price computations should never see zero or negative tick id's
+        if ticks_left <= 0:
+            self.logger.error('The stock should be closed! Past the last tick!')
+            periods_left = 1
+
+        pl = PriceLogic(
+            current_surplus=surplus,
+            current_period_id=tick_no,
+            period_duration=self.db.get_config_tick_length(),
+            periods_left=ticks_left,
+        )
+
+        # current price adjustments before computation
+        included_products = []
+        hidden_products = []
+        for product in self.db.get_all_products():
+            if not product.hidden:
+                included_products.append(product)
+            else:
+                hidden_products.append(product)
+
+        # add products to teh computation
+        for product in included_products:
+            self.logger.info(f'Adding product {product.code} to the price calculation.')
+            # TODO change signature of add_product in price logic (oke Jakob)
+            pl.add_product(
+                product=product,
+                parameters=parameters,  # TODO get parametres for code (db)
             )
 
-            base_prices = self.db.base_prices()
-            stock_left = self.db.stock_left()
-            price_adjustments = self.db.price_adjustments()
-            breweries = self.db.breweries()
-            types = self.db.types()
+        # dict: product.code -> adjustment float (unit of one currency)
+        self.logger.info('Performing price calculation finalization')
+        new_adjustments = pl.finalize()
 
-            for key in base_prices:
-                # update params
-                params = None
-                if key in product_parameters:
-                    params = Params(params=product_parameters[key])
-                # add product
-                pl.add_product(
-                    code=key,
-                    brewery=breweries[key],
-                    base_price=base_prices[key],
-                    products_left=stock_left[key],
-                    prod_type=types[key],
-                    price_data=price_adjustments[key],
-                    params=params
-                )
+        # construct adjustments for db
+        completed_adjustments = {}
+        for product in hidden_products:
+            completed_adjustments[product.code] = product.price_adjustment
+        for product in included_products:
+            completed_adjustments[product.code] = int(round(new_adjustments[code]*100))
 
-            new_adjustments = pl.finalize()
-            for key in new_adjustments:
-                new_adjustments[key] = new_adjustments[key]
-            self.db.insert_prices(new_adjustments)
+        # register the new tick in the database
+        self.logger.info(f'Storing new price adjustments: {completed_adjustments}')
+        self.db.do_tick(completed_adjustments)
 
 if __name__ == '__main__':
     Exchange.run_default()

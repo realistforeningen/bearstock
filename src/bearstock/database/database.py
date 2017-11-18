@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 import pickle
 import sqlite3
 from collections import namedtuple
+from enum import Enum, auto
 
 from .errors import BearDatabaseError, BearModelError
 from .buyer import Buyer
@@ -12,7 +13,7 @@ from .order import Order
 from .product import Product
 
 __all__ = [
-    'Database',
+    'Database', 'ConfigKeys',
 ]
 
 # custom type descriptions
@@ -23,6 +24,13 @@ T = TypeVar('T')
 ProductPriceAdjustments = namedtuple(
     'ProductPriceAdjustments', ['timestamps', 'adjustments', 'prices']
 )
+
+
+class ConfigKeys(Enum):
+    STOCK_RUNNING = auto()
+    TOTAL_BUDGET = auto()
+    TICK_LENGTH = auto()
+    TOTAL_TICKS = auto()
 
 
 class Database:
@@ -112,6 +120,56 @@ class Database:
             raise BearDatabaseError('query failed') from e
 
         return result
+
+    # config methods
+
+    def set_config_stock_running(self, is_running: bool) -> None:
+        self.exe('UPDATE config SET int_value = :running WHERE name LIKE :name',
+                 args={'name': ConfigKeys.STOCK_RUNNING.name,
+                       'running': 1 if is_running else 0})
+
+    def get_config_stock_running(self) -> bool:
+        def action(cur: sqlite3.Cursor) -> bool:
+            return cur.fetchone()['int_value'] == 1
+        return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
+                        args={'name': ConfigKeys.STOCK_RUNNING.name},
+                        callable=action)
+
+    def set_config_budget(self, budget: int) -> None:
+        self.exe('UPDATE config SET int_value = :budget WHERE name LIKE :name',
+                 args={'name': ConfigKeys.TOTAL_BUDGET.name,
+                       'budget': budget})
+
+    def get_config_budget(self) -> int:
+        def action(cur: sqlite3.Cursor) -> int:
+            return cur.fetchone()['int_value']
+        return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
+                        args={'name': ConfigKeys.TOTAL_BUDGET.name},
+                        callable=action)
+
+    def set_config_tick_length(self, duration: int) -> None:
+        self.exe('UPDATE config SET int_value = :duration WHERE name LIKE :name',
+                 args={'name': ConfigKeys.TICK_LENGTH.name,
+                       'duration': duration})
+
+    def get_config_tick_length(self) -> int:
+        def action(cur: sqlite3.Cursor) -> int:
+            return cur.fetchone()['int_value']
+        return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
+                        args={'name': ConfigKeys.TICK_LENGTH.name},
+                        callable=action)
+
+    def set_config_total_ticks(self, total: int) -> None:
+        self.exe('UPDATE config SET int_value = :total WHERE name LIKE :name',
+                 args={'name': ConfigKeys.TOTAL_TICKS.name,
+                       'total': total})
+
+    def get_config_total_ticks(self) -> int:
+        def action(cur: sqlite3.Cursor) -> int:
+            return cur.fetchone()['int_value']
+        return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
+                        args={'name': ConfigKeys.TOTAL_TICKS.name},
+                        callable=action)
 
     # buyer related methods
 
@@ -825,7 +883,22 @@ class Database:
             callable=action
         )
 
-#    # How much money is on our own account?
-#    def stock_account(self):
-#        return self.e('SELECT SUM(relative_cost) FROM orders').fetchone()[0] or 0
+    def get_tick_last_timestamp(self) -> int:
+        """Get the timestamp of the last tick.
+
+        Raises:
+            BearDatabaseError: If the database query failed.
+        """
+        def action(cursor: sqlite3.Cursor) -> int:
+            return cursor.fetchone()['timestamp']
+        return self.exe(
+            'SELECT timestamp FROM ticks ORDER BY timestamp DESC LIMIT 1',
+            callable=action
+        )
+
+   def get_purchase_surplus(self):
+       """Get the total surplus from orders relative to product base prices."""
+       def action(cur: sqlite3.Cursor) -> int:
+           return cur.fetchone()[0] or 0
+       return self.exe('SELECT SUM(relative_cost) FROM orders', callable=action)
 
