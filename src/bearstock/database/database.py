@@ -302,7 +302,7 @@ class Database:
                 ))
             return buyers
         return self.exe(
-            'SELECT id, name, username, icon, scaling, created_at FROM buyers ORDER BY name ASC',
+            'SELECT id, name, username, icon, scaling, created_at FROM buyers ORDER BY username ASC',
             callable=action
         )
 
