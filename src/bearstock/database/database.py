@@ -420,7 +420,7 @@ class Database:
             BearDatabaseError: If the update query failed.
             ValueError: If the product is not bound to this database.
         """
-        if not self.is_model_mine(buyer):
+        if not self.is_model_mine(product):
             raise ValueError('buyer not bound to this database')
         self.exe((
             'UPDATE products SET '

@@ -184,7 +184,7 @@ class Product(Model):
         if not self.is_bound():
             raise BearDatabaseError('product not bound to any connected database')
 
-        product = self.load_from_db(self._database, self.uid)
+        product = self.load_from_db(self._database, self.code)
 
         self._name = product._name
         self._producer = product._producer
