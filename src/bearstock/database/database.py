@@ -10,6 +10,7 @@ from .errors import BearDatabaseError, BearModelError
 from .buyer import Buyer
 from .model import Model
 from .order import Order
+from .parameters import Parameters
 from .product import Product
 
 __all__ = [
@@ -22,7 +23,7 @@ T = TypeVar('T')
 
 # collection types
 ProductPriceAdjustments = namedtuple(
-    'ProductPriceAdjustments', ['timestamps', 'adjustments', 'prices']
+    'ProductPriceAdjustments', ['timestamps', 'adjustments', 'prices', 'sales']
 )
 
 
@@ -863,10 +864,12 @@ class Database:
 
             return timestamps, adjustments, prices
 
-        return self.exe(
+        data = self.exe(
             'SELECT price_adjustments, timestamp FROM ticks',
             callable=action
         )
+        data.sales = self.get_product_sold_per_tick(product)
+        return data
 
     def get_all_product_historic_prices(self, *, include_hidden: bool = True
                                         ) -> Dict[str, ProductPriceAdjustments]:
@@ -886,6 +889,9 @@ class Database:
             product.code: product.base_price
                 for product in self.get_all_products() if (hidden or product.hidden)
         }
+
+        sales = self.get_all_products_sold_per_tick()
+
         def action(cursor: sqlite3.Cursor) -> Dict[str, ProductPriceAdjustments]:
             products = {
                 code: ProductPriceAdjustments for code in base_prices
@@ -897,6 +903,9 @@ class Database:
                     products[code].timestamps.append(row['timestamp'])
                     products[code].adjustments.append(adj[code])
                     products[code].prices.append(int(round(base_prices[code] + adj[code]/100)))
+
+                for code in adj:
+                    products[code].sales = sales[code]
 
             return products
 
@@ -994,4 +1003,71 @@ class Database:
        def action(cur: sqlite3.Cursor) -> int:
            return cur.fetchone()[0] or 0
        return self.exe('SELECT SUM(relative_cost) FROM orders', callable=action)
+
+    # parameters methods
+
+    def insert_parameters(self, timestamp: int, parameters: Dict[str, Any]) -> Parameters:
+        def action(cursor: sqlite3.Cursor) -> int:
+            return cursor.lastrowid
+        inserted_id = self.exe(
+            'INSERT INTO parameters ( timestamp, data ) VALUES ( :timestamp, :data )',
+            args={
+                'timestamp': timestamp,
+                'parameters': sqlite3.Binary(pickle.dumps(parameters)),
+            },
+            callable=action
+        )
+        return self.get_parameters(inserted_id)
+
+    def update_parameters(self, parameters: Parameters) -> None:
+        if not self.is_model_mine(parameters):
+            raise ValueError('parameters not bound to this database')
+
+        self.exe(
+            'UPDATE parameters SET data = :data WHERE id = :uid',
+            args={
+                'uid': parameters.uid,
+                'data': sqlite3.Binary(pickle.dumps(parameters)),
+            }
+        )
+
+    def get_parameters(self, uid: int) -> Parameters:
+        if not isinstance(uid, int):
+            raise ValueError('uid not an integer')
+
+        def action(cursor: sqlite3.Cursor) -> Parameters:
+            row = cursor.fetchone()
+            if row is not None:
+                return Parameters(
+                    uid=row['id'],
+                    timestamp=row['timestamp'],
+                    parameters=pickle.loads(row['data']),
+                    database=self,
+                )
+            else:
+                raise BearDatabaseError(f'could not find parameters with id: {uid}')
+
+        return self.exe(
+            'SELECT id, timestamp, data FROM parameters WHERE id = :uid',
+            args={'uid': uid,},
+            callable=action
+        )
+
+    def get_latest_parameters(self) -> Parameters:
+        def action(cursor: sqlite3.Cursor) -> Parameters:
+            row = cursor.fetchone()
+            if row is not None:
+                return Parameters(
+                    uid=row['id'],
+                    timestamp=row['timestamp'],
+                    parameters=pickle.loads(row['data']),
+                    database=self,
+                )
+            else:
+                raise BearDatabaseError(f'could not find parameters with id: {uid}')
+
+        return self.exe(
+            'SELECT id, timestamp, data FROM parameters ORDER BY timestamp DESC LIMIT 1',
+            callable=action,
+        )
 
