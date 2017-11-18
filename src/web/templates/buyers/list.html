@@ -14,9 +14,11 @@
         <button>Create new buyer</button>
       </div>
     </form>
+
+    <h2>Current buyers</h2>
     <ul>
       {% for buyer in buyers %}
-        <li><a href="/buyers/{{ buyer.uid }}">{{ buyer.name }}</a></li>
+        <li><a href="/buyers/{{ buyer.uid }}">{{ buyer.name }} {{ buyer.icon }}</a></li>
       {% endfor %}
     </ul>
   </div>

@@ -21,7 +21,7 @@ def teardown_request(exception):
     if db is not None:
         db.close()
 
-@app.route('/')
+@app.route('/register')
 def index():
     return render_template('index.html')
 
@@ -36,7 +36,7 @@ def signup():
 
     return render_template('signup.html')
 
-@app.route('/buyers')
+@app.route('/')
 def buyers_list():
     buyers = g.db.get_all_buyers()
     return render_template('buyers/list.html', buyers=buyers)

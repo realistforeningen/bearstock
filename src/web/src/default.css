@@ -38,10 +38,9 @@ body {
   grid-template-columns: auto 1fr auto;
   grid-gap: 20px;
 
-  justify-content: center;  
-}
+  justify-content: center;
 
-.form {
+  margin-bottom: 30px;
 }
 
 .form input {
