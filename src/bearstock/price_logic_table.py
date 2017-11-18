@@ -64,9 +64,9 @@ class PriceLogicBase:
         for code in adjustments:
             product = self.products[code]
 
-            if product.current_price + adjustments[code] < min_price:
+            if product.base_price + adjustments[code] < min_price:
                 adjustments[code] = 0
-            if product.current_price + adjustments[code] > max_price:
+            if product.base_price + adjustments[code] > max_price:
                 adjustments[code] = 0
         return adjustments
 
