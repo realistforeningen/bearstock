@@ -10,6 +10,58 @@ import grow from './styling'
 require 'imba/src/imba/dom/svg'
 
 export tag Stats
+	def render
+		<self>
+			<Prices>
+
+export tag Prices
+	prop products
+
+	def fetchData
+		var data = await fetch("/products.json").then(do $1.json)
+		products = data:products
+		products.sort do |a, b|
+			console.log(a)
+			a:code.localeCompare(b:code)
+		render
+
+	def build
+		products = []
+		fetchData
+		setInterval(&, 10000) do
+			fetchData
+
+	styles.insert self,
+		main-css:
+			width: '600px'
+			margin: '20px auto'
+
+		prices-css:
+			display: 'grid'
+			grid-template-columns: 'auto 1fr auto'
+			grid-gap: '10px 20px'
+
+			'& .code, & .price':
+				font-weight: 'bold'
+
+			'& .pos':
+				color: 'green'
+
+			'& .neg':
+				color: 'red'
+
+			'& > div':
+				flex-direction: 'row'
+
+	def render
+		<self.{@main-css}>
+			<div.{@prices-css}>
+				for prod in products
+					<p.code> prod:code
+					<p.name> prod:name
+					<p.price.pos=(prod:price_adjustment < 0) .neg=(prod:price_adjustment > 0)> "{prod:current_price} NOK"
+
+export tag Graph
 	styles.insert self,
 		main-css:
 			position: 'fixed'

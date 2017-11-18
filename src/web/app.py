@@ -120,6 +120,11 @@ def stocks_json():
         })
     return jsonify(stocks=stocks)
 
+@app.route('/products.json')
+def products_json():
+    products = [p.as_dict(with_derived=True) for p in g.db.get_all_products() if not p.hidden]
+    return jsonify(products=products)
+
 
 @app.route('/stats')
 def stats():
