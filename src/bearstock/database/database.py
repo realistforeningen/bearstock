@@ -854,6 +854,7 @@ class Database:
             raise ValueError('product not a product or product code')
 
         code, base_price = product.code, product.base_price
+        sales = self.get_product_sold_per_tick(product)
 
         def action(cursor: sqlite3.Cursor) -> ProductPriceAdjustments:
             timestamps = []
@@ -867,15 +868,13 @@ class Database:
                 prices.append(int(round(base_price + adj[code]/100)))
 
             return ProductPriceAdjustments(
-                timeline=timestamps, adjustments=adjustments, prices=prices, sales=None
+                timestamps=timestamps, adjustments=adjustments, prices=prices, sales=sales
             )
 
-        data = self.exe(
+        return self.exe(
             'SELECT price_adjustments, timestamp FROM ticks',
             callable=action
         )
-        data.sales = self.get_product_sold_per_tick(product)
-        return data
 
     def get_all_product_historic_prices(self, *, include_hidden: bool = True
                                         ) -> Dict[str, ProductPriceAdjustments]:
