@@ -132,7 +132,8 @@ class Database:
 
     def get_config_stock_running(self) -> bool:
         def action(cur: sqlite3.Cursor) -> bool:
-            return cur.fetchone()['int_value'] == 1
+            row = cur.fetchone()
+            return row is not None and row['int_value'] != 0
         return self.exe('SELECT int_value FROM config WHERE name LIKE :name',
                         args={'name': ConfigKeys.STOCK_RUNNING.name},
                         callable=action)
@@ -262,6 +263,7 @@ class Database:
             callable=retrive_all_buyers
         )
 
+    # XXX refactor to get_all_buyer_icons
     def get_all_icons(self) -> List[str]:
         def tolist(cursor: sqlite3.Cursor) -> List[str]:
             return [row['icon'] for row in cursor]
@@ -285,7 +287,7 @@ class Database:
                 ))
             return buyers
         return self.exe(
-            'SELECT id, name, icon, scaling, created_at FROM buyers',
+            'SELECT id, name, icon, scaling, created_at FROM buyers ORDER BY name ASC',
             callable=action
         )
 
@@ -755,6 +757,7 @@ class Database:
             callable=action
         )
 
+    # XXX refactor to get_order_last_by_buyer
     def get_last_order_by(self, buyer: Buyer) -> Optional[Order]:
         def action(cursor) -> Optional[Order]:
             for row in cursor:

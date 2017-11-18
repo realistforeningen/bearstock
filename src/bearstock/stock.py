@@ -24,15 +24,16 @@ class Exchange:
     def _create_logger(self) -> logging.Logger:
         """Create and configurate the logger instance."""
         logger: logging.Logger = logging.getLogger(Exchange.__name__)
+        logger.setLevel(logging.DEBUG)
 
-        fmt = logging.Formatter('%(asctime)s :: %(name)s :: %(levelName)s :: %(message)s')
+        fmt = logging.Formatter('%(asctime)s :: %(name)s :: %(levelname)s :: %(message)s')
 
         sh = logging.StreamHandler()
-        sh.setLevel(logging.ERROR)
+        sh.setLevel(logging.INFO)
         sh.setFormatter(fmt)
 
         fh = logging.FileHandler(f'Exchange-{time.time()}.log')
-        fh.setLevel(logging.ERROR)
+        fh.setLevel(logging.INFO)
         fh.setFormatter(fmt)
 
         logger.addHandler(sh)
@@ -42,7 +43,10 @@ class Exchange:
 
     @classmethod
     def run_default(self):
-        Exchange(Database(Exchange.DATABASE_FILE)).run()
+        db = Database(Exchange.DATABASE_FILE)
+        db.connect()
+
+        Exchange(db).run()
 
     @classmethod
     def run_in_thread(self):
@@ -56,19 +60,20 @@ class Exchange:
 
         while True:
             # checkk if the stock is started
-            if self.db.get_config_stock_running():
-                self.logger('Stock is closed')
+            if not self.db.get_config_stock_running():
+                self.logger.info('Stock is closed')
                 time.sleep(10)
                 continue
 
             # determine wait
-            self.logger('Stock is ticking')
-            pending = min(
-                self.db.get_tick_last_timestamp() - time.time(),
-                self.db.get_config_tick_length()
-            )
+            self.logger.info('Stock is ticking')
+
+            pending = self.db.get_tick_last_timestamp() - time.time()
+            if pending <= 0:
+                pending = self.db.get_config_tick_length()
+
             if pending > 0:
-                self.logger(f'Stock is waiting for {pending} s')
+                self.logger.info(f'Stock is waiting for {pending} s')
                 time.sleep(pending)
 
             # action!
@@ -77,9 +82,9 @@ class Exchange:
 
     def tick(self):
         # what's left of the budget
-        surplus = self.get_config_budget() + self.db.get_purchase_surplus()
+        surplus = self.db.get_config_budget() + self.db.get_purchase_surplus()
         # the index/number of the tick we are about to do and how many are left
-        tick_no = self.get_tick_number()
+        tick_no = self.db.get_tick_number()
         ticks_left = self.db.get_config_total_ticks() - tick_no
 
         self.logger.info(f'Performing tick #{tick_no} - {ticks_left} ticks left')
@@ -89,12 +94,12 @@ class Exchange:
             self.logger.error('The stock should be closed! Past the last tick!')
             periods_left = 1
 
-        pl = PriceLogic(
-            current_surplus=surplus,
-            current_period_id=tick_no,
-            period_duration=self.db.get_config_tick_length(),
-            periods_left=ticks_left,
-        )
+        # pl = PriceLogic(
+        #     current_surplus=surplus,
+        #     current_period_id=tick_no,
+        #     period_duration=self.db.get_config_tick_length(),
+        #     periods_left=ticks_left,
+        # )  # TODO
 
         # current price adjustments before computation
         included_products = []
@@ -109,25 +114,29 @@ class Exchange:
         for product in included_products:
             self.logger.info(f'Adding product {product.code} to the price calculation.')
             # TODO change signature of add_product in price logic (oke Jakob)
-            pl.add_product(
-                product=product,
-                parameters=parameters,  # TODO get parametres for code (db)
-            )
+            # pl.add_product(
+            #     product=product,
+            #     parameters=parameters,  # TODO get parametres for code (db)
+            # )  # TODO
 
         # dict: product.code -> adjustment float (unit of one currency)
         self.logger.info('Performing price calculation finalization')
-        new_adjustments = pl.finalize()
+        # new_adjustments = pl.finalize()  # TODO
+
+        # TODO temporary random adjustments
+        import random
+        new_adjustments = {}
+        for product in included_products:
+            new_adjustments[product.code] = random.randint(-3, 3)
 
         # construct adjustments for db
         completed_adjustments = {}
         for product in hidden_products:
             completed_adjustments[product.code] = product.price_adjustment
         for product in included_products:
-            completed_adjustments[product.code] = int(round(new_adjustments[code]*100))
+            completed_adjustments[product.code] = int(round(new_adjustments[product.code]*100))
 
         # register the new tick in the database
         self.logger.info(f'Storing new price adjustments: {completed_adjustments}')
         self.db.do_tick(completed_adjustments)
 
-if __name__ == '__main__':
-    Exchange.run_default()

@@ -65,6 +65,7 @@ def main():
         db.exe(statement)
 
     # set configuration
+    db.set_config_stock_running(False)
     db.set_config_budget(parsed.budget)
     db.set_config_tick_length(parsed.tick_length)
     db.set_config_total_ticks(parsed.tick_count)
